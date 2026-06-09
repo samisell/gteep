@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { motion, useInView } from 'framer-motion';
 import {
   ArrowRight,
@@ -254,8 +255,16 @@ export default function HomePageClient({
       {/* SECTION 1: HERO */}
       {/* ================================================================== */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#065f46] via-[#047857] to-[#0f172a]" />
+        {/* Background image */}
+        <Image
+          src="/images/hero-banner.png"
+          alt="GTEEP - Gilead Trust Economic Empowerment Project hero banner"
+          fill
+          className="object-cover"
+          priority
+        />
+        {/* Background gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#065f46]/90 via-[#047857]/85 to-[#0f172a]/90" />
 
         {/* Animated floating shapes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
@@ -721,34 +730,52 @@ export default function HomePageClient({
           >
             {featuredOutputs.map((output) => (
               <motion.div key={output.id} variants={staggerItem}>
-                <div className="group p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
-                  <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-xs w-fit mb-4 hover:bg-[#d97706]/30">
-                    {getOutputTypeLabel(output.type)}
-                  </Badge>
-                  <h3
-                    className="text-lg font-semibold text-white mb-3 leading-snug group-hover:text-[#f59e0b] transition-colors"
-                    style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                  >
-                    {output.title}
-                  </h3>
-                  <p className="text-sm text-[#94a3b8] leading-relaxed mb-4 flex-grow">{output.excerpt}</p>
-                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                    {output.date && (
-                      <span className="text-xs text-[#64748b]">
-                        {new Date(output.date + 'T00:00:00').toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
-                    )}
-                    <Button
-                      variant="link"
-                      className="text-[#f59e0b] hover:text-[#d97706] p-0 h-auto text-sm group/link ml-auto"
+                <div className="group rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full flex flex-col overflow-hidden">
+                  {output.image && (
+                    <div className="relative h-40 overflow-hidden">
+                      <Image
+                        src={output.image}
+                        alt={output.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/80 to-transparent" />
+                      <Badge className="absolute top-3 left-3 bg-[#d97706]/80 text-[#f59e0b] border-[#d97706]/30 text-xs backdrop-blur-sm hover:bg-[#d97706]/90">
+                        {getOutputTypeLabel(output.type)}
+                      </Badge>
+                    </div>
+                  )}
+                  {!output.image && (
+                    <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-xs w-fit m-6 mb-0 hover:bg-[#d97706]/30">
+                      {getOutputTypeLabel(output.type)}
+                    </Badge>
+                  )}
+                  <div className="p-6 flex flex-col flex-grow">
+                    <h3
+                      className="text-lg font-semibold text-white mb-3 leading-snug group-hover:text-[#f59e0b] transition-colors"
+                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                     >
-                      Read More
-                      <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
-                    </Button>
+                      {output.title}
+                    </h3>
+                    <p className="text-sm text-[#94a3b8] leading-relaxed mb-4 flex-grow">{output.excerpt}</p>
+                    <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                      {output.date && (
+                        <span className="text-xs text-[#64748b]">
+                          {new Date(output.date + 'T00:00:00').toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+                      )}
+                      <Button
+                        variant="link"
+                        className="text-[#f59e0b] hover:text-[#d97706] p-0 h-auto text-sm group/link ml-auto"
+                      >
+                        Read More
+                        <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -872,11 +899,25 @@ export default function HomePageClient({
                 <motion.div key={post.id} variants={staggerItem}>
                   <Card className="group h-full overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-[#e2e8f0]">
                     {/* Image area */}
-                    <div className="h-48 bg-gradient-to-br from-[#065f46] to-[#047857] relative flex items-center justify-center">
-                      <div className="text-center text-white/80">
-                        <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-60" />
-                        <p className="text-sm font-medium">GTEEP Insights</p>
-                      </div>
+                    <div className="h-48 relative overflow-hidden">
+                      {post.image ? (
+                        <>
+                          <Image
+                            src={post.image}
+                            alt={post.title}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#065f46]/40 to-transparent" />
+                        </>
+                      ) : (
+                        <div className="h-full bg-gradient-to-br from-[#065f46] to-[#047857] flex items-center justify-center">
+                          <div className="text-center text-white/80">
+                            <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-60" />
+                            <p className="text-sm font-medium">GTEEP Insights</p>
+                          </div>
+                        </div>
+                      )}
                       {/* Category badge */}
                       {post.categories.length > 0 && (
                         <Badge className="absolute top-4 left-4 bg-white/20 text-white backdrop-blur-sm border-white/30 hover:bg-white/30">

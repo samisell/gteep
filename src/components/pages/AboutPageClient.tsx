@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import PageHeader from '@/components/shared/PageHeader';
 import { AnimatedSection, StaggerContainer, StaggerItem } from '@/components/shared/AnimatedSection';
 import { Card, CardContent } from '@/components/ui/card';
@@ -168,17 +169,25 @@ export default function AboutPageClient({
             {/* Right: Visual element */}
             <AnimatedSection delay={0.2}>
               <div className="relative">
-                <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-[#065f46] via-[#047857] to-[#0f172a] overflow-hidden shadow-2xl">
+                <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl relative">
+                  <Image
+                    src="/images/about-team.png"
+                    alt="GTEEP team working together for community empowerment"
+                    fill
+                    className="object-cover"
+                  />
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#065f46]/60 via-[#047857]/40 to-[#0f172a]/60" />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center text-white/80 p-8">
-                      <Handshake className="w-20 h-20 mx-auto mb-4 opacity-40" />
+                    <div className="text-center text-white p-8">
+                      <Handshake className="w-20 h-20 mx-auto mb-4 opacity-60" />
                       <p
                         className="text-2xl font-bold mb-2"
                         style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                       >
                         GTEEP
                       </p>
-                      <p className="text-sm text-white/60">
+                      <p className="text-sm text-white/80">
                         Gilead Trust Economic Empowerment Project
                       </p>
                     </div>

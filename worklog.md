@@ -275,3 +275,112 @@ Stage Summary:
 - Shared: PageHeader.tsx (gradient bg update)
 - All pages fully functional with GTEEP branding and mock data
 - Zero lint errors, all pages compile and render
+
+---
+Task ID: 4
+Agent: full-stack-developer
+Task: Update GTEEP components to use AI-generated images
+
+Work Log:
+- Updated HomePageClient.tsx hero section with hero-banner.png as background image using next/image with fill + object-cover + priority for LCP optimization, kept gradient overlay at 90% opacity for text readability
+- Updated blog cards in HomePageClient.tsx: replaced gradient placeholder + BookOpen icon with actual post.image using next/image fill + object-cover, added hover scale effect, kept gradient fallback for posts without images
+- Updated output cards in HomePageClient.tsx: added output.image display with 40px height image area, gradient-to-t overlay, and type badge positioned over image; kept text-only badge fallback for outputs without images
+- Updated AboutPageClient.tsx mission section: replaced gradient+Handshake icon visual with about-team.png image using next/image fill + object-cover, added gradient overlay at 60%/40%/60% opacity, kept Handshake icon and GTEEP text overlay on top
+- Updated WhatWeDoPageClient.tsx activity sections: replaced gradient backgrounds with activity.image using next/image fill + object-cover when available, added gradient overlay for icon/text readability, kept icon and title overlay for branding, kept gradient fallback for activities without images
+- Added `import Image from 'next/image'` to all three files
+- All images have proper alt text
+- Dev server compiles successfully, no errors in dev.log
+- ESLint passes with zero errors
+
+Stage Summary:
+- 3 files modified: HomePageClient.tsx, AboutPageClient.tsx, WhatWeDoPageClient.tsx
+- Hero section now shows hero-banner.png with gradient overlay
+- Blog cards show actual post images with hover scale animation
+- Output cards show actual images with type badge overlay
+- About mission section shows about-team.png with gradient overlay and icon
+- What We Do activity sections show actual activity images with icon overlay
+- All gradient overlays preserved for text readability
+- Fallbacks maintained for items without image data
+- Zero lint errors, all pages render successfully
+---
+Task ID: 1
+Agent: main
+Task: Update .env with new WordPress URL (gteep.jileadtrust.com)
+
+Work Log:
+- Updated WORDPRESS_GRAPHQL_URL from bolaoakanji.net to gteep.jileadtrust.com
+- Updated WORDPRESS_REST_URL from bolaoakanji.net to gteep.jileadtrust.com
+- Updated WORDPRESS_MEDIA_URL from bolaoakanji.net to gteep.jileadtrust.com
+- Updated SITE_NAME from "Prof. Bola Akanji" to "GTEEP"
+- Updated SMTP_FROM_NAME from "Prof. Bola Akanji" to "GTEEP"
+
+Stage Summary:
+- All .env URLs now point to gteep.jileadtrust.com
+- Site name updated to GTEEP branding
+
+---
+Task ID: 2
+Agent: main
+Task: Update GraphQL client default URL to match new WP URL
+
+Work Log:
+- Updated fallback URL in graphql-client.ts from bolaoakanji.net to gteep.jileadtrust.com
+
+Stage Summary:
+- GraphQL client now defaults to gteep.jileadtrust.com/graphql
+
+---
+Task ID: 3
+Agent: main
+Task: Generate AI placeholder images for GTEEP website
+
+Work Log:
+- Generated hero-banner.png (1344x768) - African professionals in conference room
+- Generated data-speaks.png (1344x768) - Data visualization dashboard
+- Generated community-empowerment.png (1344x768) - Community empowerment workshop
+- Generated youth-mentoring.png (1344x768) - Youth mentoring program
+- Generated women-livelihood.png (1344x768) - Women economic empowerment
+- Generated about-team.png (1344x768) - Professional team portrait
+- Generated og-image.png (1344x768) - Social media sharing image
+
+Stage Summary:
+- All 7 AI-generated images created in /public/images/ and /public/
+
+---
+Task ID: 4
+Agent: full-stack-developer
+Task: Update GTEEP components to use AI-generated images
+
+Work Log:
+- Updated HomePageClient.tsx hero section with hero-banner.png background
+- Updated blog cards to show actual post images with hover effects
+- Updated output cards with image areas
+- Updated AboutPageClient.tsx with about-team.png
+- Updated WhatWeDoPageClient.tsx with activity images
+
+Stage Summary:
+- All major components now display real AI-generated images
+- Gradient overlays preserved for text readability
+- LCP optimization with priority loading on hero image
+
+---
+Task ID: 5-6
+Agent: main
+Task: Verify site works and self-verify with Agent Browser
+
+Work Log:
+- ESLint passes with zero errors
+- Dev server running cleanly on port 3000
+- Agent Browser verification completed for all pages
+- Homepage renders correctly with hero image, activities, philosophy, team, outputs, partners, blog
+- About Us page renders correctly with mission, philosophy, leadership, advisory board, trustees
+- What We Do page renders correctly with all 6 activities
+- Our Outputs page renders correctly with tab-based filtering
+- Contact Us page renders correctly with form and sidebar
+- No console errors detected
+- Footer sticks to bottom correctly with min-h-screen flex layout
+
+Stage Summary:
+- All pages verified working correctly
+- No errors or issues found
+- Site is fully functional with GTEEP branding

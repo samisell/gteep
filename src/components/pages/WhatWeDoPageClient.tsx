@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import PageHeader from '@/components/shared/PageHeader';
 import { AnimatedSection } from '@/components/shared/AnimatedSection';
 import { Button } from '@/components/ui/button';
@@ -99,17 +100,33 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
                   {/* Icon/Visual Side */}
                   <div className={`${!isEven ? 'lg:col-start-2' : ''}`}>
                     <div className="relative">
-                      <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-[#065f46] via-[#047857] to-[#0f172a] overflow-hidden shadow-xl flex items-center justify-center">
-                        <div className="text-center text-white/80 p-8">
-                          <div className={`w-20 h-20 rounded-2xl ${color.iconBg} flex items-center justify-center mx-auto mb-4`}>
-                            <IconComponent className={`w-10 h-10 ${color.iconText}`} />
+                      <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-xl relative">
+                        {activity.image ? (
+                          <>
+                            <Image
+                              src={activity.image}
+                              alt={activity.title}
+                              fill
+                              className="object-cover"
+                            />
+                            {/* Gradient overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#065f46]/50 via-transparent to-[#0f172a]/50" />
+                          </>
+                        ) : (
+                          <div className="h-full bg-gradient-to-br from-[#065f46] via-[#047857] to-[#0f172a]" />
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center text-white/90 p-8">
+                            <div className={`w-20 h-20 rounded-2xl ${color.iconBg} flex items-center justify-center mx-auto mb-4`}>
+                              <IconComponent className={`w-10 h-10 ${color.iconText}`} />
+                            </div>
+                            <p
+                              className="text-xl font-bold"
+                              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                            >
+                              {activity.title}
+                            </p>
                           </div>
-                          <p
-                            className="text-xl font-bold"
-                            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                          >
-                            {activity.title}
-                          </p>
                         </div>
                         {/* Decorative circles */}
                         <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-[#d97706]/15 blur-xl" />
