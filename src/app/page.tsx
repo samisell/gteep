@@ -1,28 +1,24 @@
-import { getPublications, getProjects, getEvents, getPartners, getTestimonials, getSiteSettings } from '@/graphql/fetchers';
 import HomePageClient from '@/components/pages/HomePageClient';
+import {
+  mockSiteSettings,
+  mockActivities,
+  mockPhilosophy,
+  mockTeamMembers,
+  mockOutputs,
+  mockPartners,
+  mockBlogPosts,
+} from '@/graphql/mock-data';
 
-export default async function HomePage() {
-  const [settings, publicationsData, projectsData, eventsData, partners, testimonials] = await Promise.all([
-    getSiteSettings(),
-    getPublications(6),
-    getProjects(4),
-    getEvents(4),
-    getPartners(),
-    getTestimonials(),
-  ]);
-
-  const publications = publicationsData.publications.filter((_, i) => i < 3);
-  const projects = projectsData.projects.filter((_, i) => i < 3);
-  const events = eventsData.events.filter((_, i) => i < 3);
-
+export default function HomePage() {
   return (
     <HomePageClient
-      settings={settings}
-      publications={publications}
-      projects={projects}
-      events={events}
-      partners={partners}
-      testimonials={testimonials}
+      settings={mockSiteSettings}
+      activities={mockActivities}
+      philosophy={mockPhilosophy}
+      teamMembers={mockTeamMembers}
+      outputs={mockOutputs}
+      partners={mockPartners}
+      blogPosts={mockBlogPosts}
     />
   );
 }

@@ -7,12 +7,12 @@ import {
   Linkedin,
   Twitter,
   BookOpen,
-  GraduationCap,
   Mail,
   ArrowRight,
   MapPin,
   Phone,
   ExternalLink,
+  Heart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,22 +20,22 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
 const quickLinks = [
-  { href: '/about', label: 'About Prof. Akanji' },
-  { href: '/research', label: 'Research & Publications' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/events', label: 'Events & Workshops' },
-  { href: '/resources', label: 'Resources & Data' },
-  { href: '/media', label: 'Media & News' },
-  { href: '/contact', label: 'Contact' },
+  { href: '/', label: 'Home' },
+  { href: '/about', label: 'About Us' },
+  { href: '/what-we-do', label: 'What We Do' },
+  { href: '/partners', label: 'Our Partners' },
+  { href: '/outputs', label: 'Our Outputs' },
+  { href: '/blog', label: 'Blog' },
+  { href: '/contact', label: 'Contact Us' },
 ];
 
-const researchAreas = [
-  'International Trade Policy',
-  'African Economic Integration',
-  'Regional Value Chains',
-  'Industrial Development',
-  'WTO & Trade Agreements',
-  'Economic Transformation',
+const focusAreas = [
+  'Policy Research',
+  'Policy Engagement',
+  'Data Speaks',
+  'Youth Mentoring',
+  "Women's Economic Livelihood",
+  'Citizen Enlightenment',
 ];
 
 const socialLinks = [
@@ -50,14 +50,14 @@ const socialLinks = [
     icon: Twitter,
   },
   {
-    href: 'https://researchgate.net',
-    label: 'ResearchGate',
+    href: 'https://facebook.com',
+    label: 'Facebook',
     icon: BookOpen,
   },
   {
-    href: 'https://scholar.google.com',
-    label: 'Google Scholar',
-    icon: GraduationCap,
+    href: 'https://instagram.com',
+    label: 'Instagram',
+    icon: Heart,
   },
 ];
 
@@ -97,7 +97,7 @@ export default function Footer() {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    toast.success('Thank you for subscribing! You\'ll receive our latest research updates.');
+    toast.success("Thank you for subscribing! You'll receive our latest policy insights and updates.");
     setEmail('');
     setIsSubscribing(false);
   };
@@ -126,19 +126,22 @@ export default function Footer() {
           {/* Column 1: About */}
           <motion.div variants={itemVariants} className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="inline-flex items-center gap-3 group mb-5">
-              <div className="w-9 h-9 rounded-lg gradient-emerald flex items-center justify-center shadow-emerald transition-transform duration-300 group-hover:scale-105">
-                <span className="text-white font-bold text-base heading-font">B</span>
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-700 to-emerald-600 flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-105">
+                <span className="text-white font-bold text-base heading-font">G</span>
               </div>
-              <div>
-                <span className="text-lg font-bold heading-font gradient-text-emerald-gold leading-tight">
-                  Prof. Bola Akanji
+              <div className="flex flex-col">
+                <span className="text-lg font-bold heading-font bg-gradient-to-r from-emerald-400 to-amber-400 bg-clip-text text-transparent leading-tight">
+                  GTEEP
+                </span>
+                <span className="text-[9px] tracking-widest uppercase text-amber-500/60">
+                  Economic Empowerment
                 </span>
               </div>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed mb-6">
-              Leading researcher in international trade policy, African economic integration,
-              and regional development. Advancing evidence-based policy for Africa&apos;s
-              economic transformation.
+              Gilead Trust Economic Empowerment Project — Evidence-driven policy analysis
+              for socially inclusive development. Empowering communities through research,
+              engagement, and strategic policy interventions across Africa.
             </p>
 
             {/* Social Links */}
@@ -150,7 +153,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-emerald-800/50 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 group"
-                  aria-label={social.label}
+                  aria-label={`Follow us on ${social.label}`}
                 >
                   <social.icon className="h-4 w-4 text-slate-400 group-hover:text-emerald-400 transition-colors" />
                 </a>
@@ -179,17 +182,17 @@ export default function Footer() {
             </ul>
           </motion.div>
 
-          {/* Column 3: Research Areas */}
+          {/* Column 3: Our Focus */}
           <motion.div variants={itemVariants}>
             <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-5 flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              Research Areas
+              Our Focus
             </h3>
             <ul className="space-y-2.5">
-              {researchAreas.map((area) => (
+              {focusAreas.map((area) => (
                 <li key={area}>
                   <Link
-                    href="/research"
+                    href="/what-we-do"
                     className="text-slate-400 hover:text-amber-400 text-sm transition-colors duration-200 flex items-center gap-1.5 group"
                   >
                     <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-amber-500 transition-colors duration-200" />
@@ -204,32 +207,35 @@ export default function Footer() {
           <motion.div variants={itemVariants}>
             <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-5 flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Stay Connected
+              Contact
             </h3>
 
             {/* Contact Info */}
             <div className="space-y-3 mb-6">
               <a
-                href="mailto:b.akanji@gteep.com"
+                href="mailto:info@gteep.com"
                 className="flex items-center gap-2.5 text-slate-400 hover:text-emerald-400 text-sm transition-colors"
               >
                 <Mail className="h-4 w-4 text-emerald-600 shrink-0" />
-                b.akanji@gteep.com
+                info@gteep.com
               </a>
               <div className="flex items-center gap-2.5 text-slate-400 text-sm">
                 <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
                 Lagos, Nigeria
               </div>
-              <div className="flex items-center gap-2.5 text-slate-400 text-sm">
+              <a
+                href="tel:+2348012345678"
+                className="flex items-center gap-2.5 text-slate-400 hover:text-emerald-400 text-sm transition-colors"
+              >
                 <Phone className="h-4 w-4 text-emerald-600 shrink-0" />
                 +234 801 234 5678
-              </div>
+              </a>
             </div>
 
             {/* Newsletter */}
             <div>
               <p className="text-slate-400 text-xs mb-3">
-                Subscribe for research updates &amp; insights
+                Subscribe for policy insights &amp; updates
               </p>
               <form onSubmit={handleNewsletterSubmit} className="flex gap-2">
                 <Input
@@ -239,12 +245,14 @@ export default function Footer() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-9 bg-slate-800/50 border-slate-700 text-slate-300 placeholder:text-slate-500 text-sm focus:border-emerald-600 focus:ring-emerald-600/20 rounded-lg"
                   required
+                  aria-label="Email address for newsletter"
                 />
                 <Button
                   type="submit"
                   size="sm"
                   disabled={isSubscribing}
                   className="bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-800 hover:to-emerald-700 text-white shrink-0 rounded-lg h-9 px-3"
+                  aria-label="Subscribe to newsletter"
                 >
                   {isSubscribing ? (
                     <motion.div
@@ -267,7 +275,7 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-slate-500 text-xs text-center sm:text-left">
-              &copy; {currentYear} Prof. Bola Akanji. All rights reserved.
+              &copy; {currentYear} GTEEP. All rights reserved.
             </p>
             <div className="flex items-center gap-4 text-xs">
               <Link
@@ -283,16 +291,6 @@ export default function Footer() {
               >
                 Terms of Use
               </Link>
-              <Separator orientation="vertical" className="h-3 bg-slate-700" />
-              <a
-                href="https://gteep.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-slate-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
-              >
-                GTEEP
-                <ExternalLink className="h-3 w-3" />
-              </a>
             </div>
           </div>
         </div>

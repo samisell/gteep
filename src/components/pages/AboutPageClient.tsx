@@ -3,467 +3,498 @@
 import { motion } from 'framer-motion';
 import PageHeader from '@/components/shared/PageHeader';
 import { AnimatedSection, StaggerContainer, StaggerItem } from '@/components/shared/AnimatedSection';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  GraduationCap,
-  Award,
-  Users,
-  BookOpen,
-  Briefcase,
-  Globe,
+  Handshake,
+  Microscope,
+  TrendingUp,
+  UserCheck,
+  Scale,
   ArrowRight,
-  ExternalLink,
-  MapPin,
-  Calendar,
-  Target,
-  Lightbulb,
+  Mail,
 } from 'lucide-react';
-import type { WPPage } from '@/types';
+import Link from 'next/link';
+import type {
+  WPSiteSettings,
+  GTEEPPhilosophy,
+  GTEEPTeamMember,
+} from '@/types';
+
+// =============================================================================
+// Props
+// =============================================================================
 
 interface AboutPageClientProps {
-  page: WPPage;
+  settings: WPSiteSettings;
+  philosophy: GTEEPPhilosophy[];
+  teamMembers: GTEEPTeamMember[];
 }
 
-const careerMilestones = [
-  {
-    year: '1996',
-    title: 'PhD in Economics',
-    description: 'University of Ibadan, Nigeria. Dissertation on trade policy and regional integration in West Africa.',
-    icon: GraduationCap,
-  },
-  {
-    year: '1998',
-    title: 'Lecturer, University of Ibadan',
-    description: 'Appointed Lecturer II in the Department of Economics, teaching international trade and development economics.',
-    icon: Briefcase,
-  },
-  {
-    year: '2005',
-    title: 'Senior Research Fellow',
-    description: 'Promoted to Senior Research Fellow at the Trade Policy Research Centre, leading multi-country trade studies.',
-    icon: Target,
-  },
-  {
-    year: '2010',
-    title: 'AERC Collaborative Research',
-    description: 'Began long-standing research collaboration with the African Economic Research Consortium on trade policy.',
-    icon: Globe,
-  },
-  {
-    year: '2015',
-    title: 'Policy Advisor to ECOWAS',
-    description: 'Appointed as policy advisor to the ECOWAS Commission on trade facilitation and NTB elimination.',
-    icon: Briefcase,
-  },
-  {
-    year: '2018',
-    title: 'AfDB Research Partnership',
-    description: 'Secured major research funding from the African Development Bank for AfCFTA implementation monitoring.',
-    icon: Award,
-  },
-  {
-    year: '2022',
-    title: 'IDRC Gender & Trade Project',
-    description: 'Launched the gender-responsive trade facilitilitation project with IDRC funding across West Africa.',
-    icon: Users,
-  },
-  {
-    year: '2023',
-    title: 'AfCFTA Monitoring Lead',
-    description: 'Leading the multi-country AfCFTA implementation monitoring and impact assessment research program.',
-    icon: Lightbulb,
-  },
-];
+// =============================================================================
+// Icon Maps
+// =============================================================================
 
-const researchFocusAreas = [
-  {
-    title: 'AfCFTA Implementation',
-    description: 'Monitoring and assessing the implementation and impacts of the African Continental Free Trade Area.',
-    icon: Globe,
-  },
-  {
-    title: 'Regional Trade Integration',
-    description: 'Research on trade integration in ECOWAS, COMESA, and other African regional economic communities.',
-    icon: MapPin,
-  },
-  {
-    title: 'Trade Facilitation',
-    description: 'Studying non-tariff barriers, single window systems, and trade facilitation reforms across Africa.',
-    icon: Target,
-  },
-  {
-    title: 'Gender & Trade',
-    description: 'Investigating gender dimensions of trade policy and developing gender-responsive trade tools.',
-    icon: Users,
-  },
-  {
-    title: 'Industrialization & Value Chains',
-    description: 'Examining regional value chains and structural transformation pathways for African industrialization.',
-    icon: Lightbulb,
-  },
-  {
-    title: 'Agricultural Trade & Food Security',
-    description: 'Analyzing agricultural value chains, food security, and the impact of trade on smallholder farmers.',
-    icon: BookOpen,
-  },
-];
+function getPhilosophyIcon(iconName: string) {
+  const iconMap: Record<string, React.ElementType> = {
+    Handshake,
+    Microscope,
+    TrendingUp,
+    UserCheck,
+    Scale,
+  };
+  return iconMap[iconName] || Handshake;
+}
 
-const awards = [
-  'African Trade Research Excellence Award, African Development Bank (2023)',
-  'Fellow, African Academy of Sciences (2021)',
-  'Best Paper Award, Journal of African Trade (2020)',
-  'Distinguished Researcher, University of Ibadan (2019)',
-  'IDRC Research Impact Award (2018)',
-  'Fellow, Nigerian Economic Society (2016)',
-];
+// =============================================================================
+// Team Avatar
+// =============================================================================
 
-const affiliations = [
-  'African Economic Research Consortium (AERC) — Research Fellow',
-  'African Academy of Sciences — Fellow',
-  'Nigerian Economic Society — Fellow & Past Council Member',
-  'International Trade and Finance Association — Board Member',
-  'African Trade Policy Network — Steering Committee Member',
-  'University of Ibadan — Professor of Economics',
-];
+function TeamAvatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
+  const initials = name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
-export default function AboutPageClient({ page }: AboutPageClientProps) {
+  const sizeClasses = {
+    sm: 'w-12 h-12 text-sm',
+    md: 'w-16 h-16 text-lg',
+    lg: 'w-24 h-24 text-2xl',
+  };
+
   return (
-    <main className="min-h-screen">
+    <div
+      className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-[#059669] to-[#065f46] flex items-center justify-center text-white font-bold shadow-lg shrink-0`}
+      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+    >
+      {initials}
+    </div>
+  );
+}
+
+// =============================================================================
+// Animation Variants
+// =============================================================================
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.12 },
+  },
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+};
+
+// =============================================================================
+// Main Component
+// =============================================================================
+
+export default function AboutPageClient({
+  settings,
+  philosophy,
+  teamMembers,
+}: AboutPageClientProps) {
+  const executive = teamMembers.filter((m) => m.category === 'executive');
+  const directors = teamMembers.filter((m) => m.category === 'director');
+  const advisoryBoard = teamMembers.filter((m) => m.category === 'advisory-board');
+  const trustees = teamMembers.filter((m) => m.category === 'board-of-trustees');
+
+  const missionDescription = settings.acfOptions?.aboutSummary ||
+    'GTEEP is a non-profit organization dedicated to advancing socially inclusive development in Africa through evidence-driven policy research, strategic engagement, and community empowerment. Founded on the belief that data speaks more than rhetoric, we work to ensure that policy decisions are grounded in rigorous analysis and that the voices of ordinary citizens are heard in the policy process.';
+
+  return (
+    <main className="pt-20">
+      {/* Page Header */}
       <PageHeader
-        title="About Prof. Akanji"
-        subtitle="Academic • Researcher • Policy Advisor"
-        description="A distinguished economist dedicated to advancing knowledge and policy in African trade and development."
-        breadcrumb={[{ label: 'About' }]}
-        variant="large"
+        title="About Us"
+        subtitle="Gilead Trust Economic Empowerment Project"
+        description="Evidence-driven policy analysis for socially inclusive development in Africa."
+        breadcrumb={[{ label: 'About Us' }]}
       />
 
-      {/* Biography Section */}
-      <section className="py-16 md:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-2">
-            {/* Left: Portrait placeholder */}
+      {/* ================================================================== */}
+      {/* MISSION SECTION */}
+      {/* ================================================================== */}
+      <section className="py-16 md:py-24 bg-white" aria-label="Our Mission">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-12 lg:grid-cols-2 items-center">
+            {/* Left: Mission Text */}
             <AnimatedSection>
-              <div className="relative">
-                <div className="aspect-[4/5] overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 shadow-xl">
-                  <div className="flex h-full items-center justify-center">
-                    <div className="text-center">
-                      <GraduationCap className="mx-auto h-20 w-20 text-emerald-300" />
-                      <p className="mt-4 text-sm text-emerald-400">Professor Portrait</p>
-                    </div>
-                  </div>
-                </div>
-                {/* Decorative badge */}
-                <div className="absolute -bottom-4 -right-4 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-lg">
-                  25+ Years of Research
-                </div>
-              </div>
-            </AnimatedSection>
-
-            {/* Right: Bio text */}
-            <AnimatedSection delay={0.2}>
               <div className="space-y-6">
-                <h2 className="text-3xl font-bold text-foreground">
-                  Professor Bola Akanji
+                <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1">
+                  Our Mission
+                </Badge>
+                <h2
+                  className="text-3xl sm:text-4xl font-bold text-[#0f172a]"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  Empowering Communities Through Evidence-Based Policy
                 </h2>
-                <div className="h-1 w-16 rounded-full bg-emerald-600" />
-                <p className="text-lg leading-relaxed text-muted-foreground">
-                  Professor Bola Akanji is a distinguished economist and academic with
-                  over 25 years of experience in research, teaching, and policy advisory
-                  across Africa and globally.
+                <div className="h-1 w-20 rounded-full bg-gradient-to-r from-[#059669] to-[#d97706]" />
+                <p className="text-[#64748b] leading-relaxed text-base md:text-lg">
+                  {missionDescription}
                 </p>
-                <p className="leading-relaxed text-muted-foreground">
-                  With a PhD in Economics from the University of Ibadan, Prof. Akanji has
-                  built a career at the intersection of academic research and real-world
-                  policy impact. Specializing in international trade, regional integration,
-                  and development economics, the research portfolio spans multiple African
-                  countries and regional economic communities.
-                </p>
-                <p className="leading-relaxed text-muted-foreground">
-                  Beyond academic research, Prof. Akanji serves as a policy advisor to
-                  several African governments and regional organizations, including the
-                  African Union Commission, ECOWAS Commission, and the United Nations
-                  Economic Commission for Africa (UNECA). This dual role ensures that
-                  research findings translate into actionable policy recommendations.
-                </p>
-
-                {/* Quick stats */}
-                <div className="grid grid-cols-3 gap-4 pt-4">
-                  {[
-                    { label: 'Publications', value: '40+' },
-                    { label: 'Projects Led', value: '12' },
-                    { label: 'Countries', value: '15+' },
-                  ].map((stat) => (
-                    <div
-                      key={stat.label}
-                      className="rounded-lg bg-emerald-50 p-4 text-center dark:bg-emerald-950/30"
-                    >
-                      <p className="text-2xl font-bold text-emerald-700">{stat.value}</p>
-                      <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    </div>
-                  ))}
+                <div className="flex flex-wrap gap-4 pt-4">
+                  <Button
+                    asChild
+                    className="bg-[#065f46] hover:bg-[#064e3b] text-white rounded-xl px-6"
+                  >
+                    <Link href="/what-we-do">
+                      Our Activities
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white rounded-xl px-6"
+                  >
+                    <Link href="/contact">
+                      <Mail className="w-4 h-4 mr-2" />
+                      Contact Us
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </AnimatedSection>
-          </div>
-        </div>
-      </section>
 
-      {/* Career Timeline */}
-      <section className="bg-slate-50 py-16 md:py-20 dark:bg-slate-900/50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <AnimatedSection>
-            <div className="mb-12 text-center">
-              <h2 className="text-3xl font-bold text-foreground">Career Milestones</h2>
-              <p className="mt-3 text-muted-foreground">
-                A journey of research excellence and policy impact spanning over two decades.
-              </p>
-            </div>
-          </AnimatedSection>
-
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-emerald-200 md:left-1/2 md:-translate-x-px" />
-
-            <StaggerContainer className="space-y-8">
-              {careerMilestones.map((milestone, idx) => {
-                const Icon = milestone.icon;
-                const isEven = idx % 2 === 0;
-                return (
-                  <StaggerItem key={milestone.year}>
-                    <div
-                      className={`relative flex items-start gap-6 pl-12 md:pl-0 ${
-                        isEven ? 'md:flex-row' : 'md:flex-row-reverse'
-                      }`}
-                    >
-                      {/* Dot on timeline */}
-                      <div className="absolute left-2.5 top-1 z-10 h-3 w-3 rounded-full border-2 border-emerald-600 bg-white md:left-1/2 md:-translate-x-1/2" />
-
-                      {/* Content */}
-                      <div className={`flex-1 ${isEven ? 'md:pr-12 md:text-right' : 'md:pl-12'}`}>
-                        <Card className="inline-block border-0 shadow-md">
-                          <CardContent className="p-5">
-                            <div className={`flex items-center gap-3 ${isEven ? 'md:flex-row-reverse' : ''}`}>
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                                <Icon className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <Badge variant="outline" className="mb-1 text-emerald-700 border-emerald-200">
-                                  {milestone.year}
-                                </Badge>
-                                <h3 className="font-semibold text-foreground">{milestone.title}</h3>
-                                <p className="mt-1 text-sm text-muted-foreground">{milestone.description}</p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-
-                      {/* Spacer for other side */}
-                      <div className="hidden flex-1 md:block" />
-                    </div>
-                  </StaggerItem>
-                );
-              })}
-            </StaggerContainer>
-          </div>
-        </div>
-      </section>
-
-      {/* Research Focus Areas */}
-      <section className="py-16 md:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <AnimatedSection>
-            <div className="mb-12 text-center">
-              <h2 className="text-3xl font-bold text-foreground">Research Focus Areas</h2>
-              <p className="mt-3 text-muted-foreground">
-                Core areas of research expertise and ongoing scholarly inquiry.
-              </p>
-            </div>
-          </AnimatedSection>
-
-          <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {researchFocusAreas.map((area) => {
-              const Icon = area.icon;
-              return (
-                <StaggerItem key={area.title}>
-                  <Card className="h-full border-0 shadow-md transition-shadow hover:shadow-lg">
-                    <CardContent className="p-6">
-                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-                        <Icon className="h-6 w-6" />
-                      </div>
-                      <h3 className="mb-2 text-lg font-semibold text-foreground">{area.title}</h3>
-                      <p className="text-sm text-muted-foreground">{area.description}</p>
-                    </CardContent>
-                  </Card>
-                </StaggerItem>
-              );
-            })}
-          </StaggerContainer>
-        </div>
-      </section>
-
-      {/* Education & Awards */}
-      <section className="bg-slate-50 py-16 md:py-20 dark:bg-slate-900/50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-2">
-            {/* Education */}
-            <AnimatedSection>
-              <Card className="h-full border-0 shadow-md">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3">
-                    <GraduationCap className="h-6 w-6 text-emerald-600" />
-                    Education & Qualifications
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex gap-4 rounded-lg bg-white p-4 shadow-sm">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                      <GraduationCap className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">PhD in Economics</h4>
-                      <p className="text-sm text-muted-foreground">University of Ibadan, Nigeria (1996)</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Dissertation: Trade Policy and Regional Integration in West Africa
+            {/* Right: Visual element */}
+            <AnimatedSection delay={0.2}>
+              <div className="relative">
+                <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-[#065f46] via-[#047857] to-[#0f172a] overflow-hidden shadow-2xl">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-white/80 p-8">
+                      <Handshake className="w-20 h-20 mx-auto mb-4 opacity-40" />
+                      <p
+                        className="text-2xl font-bold mb-2"
+                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                      >
+                        GTEEP
+                      </p>
+                      <p className="text-sm text-white/60">
+                        Gilead Trust Economic Empowerment Project
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-4 rounded-lg bg-white p-4 shadow-sm">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                      <GraduationCap className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">MSc in Economics</h4>
-                      <p className="text-sm text-muted-foreground">University of Ibadan, Nigeria (1991)</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4 rounded-lg bg-white p-4 shadow-sm">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                      <GraduationCap className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">BSc in Economics (First Class Honours)</h4>
-                      <p className="text-sm text-muted-foreground">University of Ibadan, Nigeria (1988)</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </AnimatedSection>
-
-            {/* Awards */}
-            <AnimatedSection delay={0.2}>
-              <Card className="h-full border-0 shadow-md">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3">
-                    <Award className="h-6 w-6 text-amber-600" />
-                    Awards & Recognition
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
-                    {awards.map((award, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-500" />
-                        <span className="text-sm text-muted-foreground">{award}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+                  {/* Decorative circles */}
+                  <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[#d97706]/20 blur-2xl" />
+                  <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-[#059669]/20 blur-2xl" />
+                </div>
+              </div>
             </AnimatedSection>
           </div>
         </div>
       </section>
 
-      {/* Professional Affiliations */}
-      <section className="py-16 md:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <AnimatedSection>
-            <div className="mb-12 text-center">
-              <h2 className="text-3xl font-bold text-foreground">Professional Affiliations</h2>
-            </div>
-          </AnimatedSection>
-
-          <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {affiliations.map((affiliation, idx) => (
-              <StaggerItem key={idx}>
-                <div className="flex items-start gap-3 rounded-lg border border-slate-200 p-4 transition-colors hover:border-emerald-300 hover:bg-emerald-50/50">
-                  <Globe className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-                  <span className="text-sm text-foreground">{affiliation}</span>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+      {/* ================================================================== */}
+      {/* PHILOSOPHY SECTION */}
+      {/* ================================================================== */}
+      <section className="py-16 md:py-24 bg-[#0f172a] relative overflow-hidden" aria-label="Our Philosophy">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-[#059669]/10 blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-[#d97706]/8 blur-3xl" />
         </div>
-      </section>
 
-      {/* Teaching & Mentorship */}
-      <section className="bg-[#0f172a] py-16 md:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <AnimatedSection>
-            <div className="mb-12 text-center">
-              <h2 className="text-3xl font-bold text-white">Teaching & Mentorship</h2>
-              <p className="mt-3 text-slate-300">
-                Committed to nurturing the next generation of African economists.
-              </p>
-            </div>
-          </AnimatedSection>
-
-          <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { label: 'Graduate Courses', value: '8+', desc: 'Economics & trade policy courses taught' },
-              { label: 'PhD Students Supervised', value: '20+', desc: 'Successfully supervised to completion' },
-              { label: 'MSc Students Mentored', value: '50+', desc: 'Across multiple African universities' },
-              { label: 'Capacity Building Workshops', value: '30+', desc: 'Facilitated across Africa' },
-            ].map((stat) => (
-              <StaggerItem key={stat.label}>
-                <div className="rounded-xl bg-white/5 p-6 text-center backdrop-blur-sm border border-white/10">
-                  <p className="text-3xl font-bold text-emerald-400">{stat.value}</p>
-                  <p className="mt-1 font-semibold text-white">{stat.label}</p>
-                  <p className="mt-1 text-xs text-slate-400">{stat.desc}</p>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 md:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <AnimatedSection>
-            <div className="rounded-2xl bg-gradient-to-r from-emerald-800 to-emerald-700 p-8 md:p-12 text-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-white">
-                Explore Research & Publications
+            <div className="text-center mb-16">
+              <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-sm px-3 py-1 mb-4">
+                Our Philosophy
+              </Badge>
+              <h2
+                className="text-3xl sm:text-4xl font-bold text-white mt-2"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Our Philosophy
               </h2>
-              <p className="mt-3 text-emerald-100 max-w-2xl mx-auto">
-                Discover the full body of research, from journal articles and book chapters
-                to working papers and policy briefs.
+              <p className="mt-4 text-[#94a3b8] max-w-2xl mx-auto">
+                The core principles that guide our work and shape our approach to development in Africa.
               </p>
-              <div className="mt-6 flex flex-wrap justify-center gap-4">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-white text-emerald-800 hover:bg-emerald-50"
+            </div>
+          </AnimatedSection>
+
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {philosophy.map((item, index) => {
+              const IconComponent = getPhilosophyIcon(item.icon);
+              const isLarge = index === 0;
+              return (
+                <motion.div
+                  key={item.id}
+                  variants={staggerItem}
+                  className={isLarge ? 'sm:col-span-2 lg:col-span-2' : ''}
                 >
-                  <a href="/publications">
-                    View Publications
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="border-white text-white hover:bg-white/10"
+                  <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+                    <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+                      <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+                    </div>
+                    <h3
+                      className="text-lg font-semibold text-white mb-2"
+                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                    >
+                      {item.title}
+                    </h3>
+                    <p className="text-sm text-[#94a3b8] leading-relaxed">{item.description}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ================================================================== */}
+      {/* LEADERSHIP: EXECUTIVE DIRECTOR */}
+      {/* ================================================================== */}
+      <section className="py-16 md:py-24 bg-white" aria-label="Leadership">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedSection>
+            <div className="text-center mb-16">
+              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+                Leadership
+              </Badge>
+              <h2
+                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Our Leadership
+              </h2>
+              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+                Experienced leaders driving GTEEP&apos;s mission for evidence-based, inclusive policy across Africa.
+              </p>
+            </div>
+          </AnimatedSection>
+
+          {/* Executive Director - Featured Card */}
+          {executive.map((member) => (
+            <motion.div
+              key={member.id}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="mb-12"
+            >
+              <div className="group max-w-4xl mx-auto p-8 rounded-2xl border border-[#e2e8f0] hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-[#f0fdf4] to-white">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                  <TeamAvatar name={member.name} size="lg" />
+                  <div className="text-center sm:text-left flex-1">
+                    <Badge className="bg-[#065f46] text-white text-xs mb-2 hover:bg-[#065f46]">
+                      Executive Director
+                    </Badge>
+                    <h3
+                      className="text-2xl font-bold text-[#0f172a] mb-1"
+                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                    >
+                      {member.name}
+                    </h3>
+                    <p className="text-[#059669] font-medium mb-3">{member.role}</p>
+                    <p className="text-sm text-[#64748b] leading-relaxed">{member.bio}</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+
+          {/* Directors Grid */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {directors.map((member) => (
+              <motion.div key={member.id} variants={staggerItem}>
+                <div className="group p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white text-center">
+                  <div className="flex justify-center mb-4">
+                    <TeamAvatar name={member.name} size="md" />
+                  </div>
+                  <Badge variant="secondary" className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-xs mb-2">
+                    Director
+                  </Badge>
+                  <h3
+                    className="text-lg font-semibold text-[#0f172a] mb-1"
+                    style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                  >
+                    {member.name}
+                  </h3>
+                  <p className="text-[#059669] font-medium text-sm mb-3">{member.role}</p>
+                  <p className="text-sm text-[#64748b] leading-relaxed line-clamp-4">{member.bio}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ================================================================== */}
+      {/* ADVISORY BOARD */}
+      {/* ================================================================== */}
+      <AnimatedSection>
+        <section className="py-16 md:py-24 bg-[#f8fafc]" aria-label="Advisory Board">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <Badge className="bg-[#fef3c7] text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
+                Advisory Board
+              </Badge>
+              <h2
+                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Our Advisory Board
+              </h2>
+              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+                Distinguished experts who provide strategic guidance and direction to our work.
+              </p>
+            </div>
+
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
+            >
+              {advisoryBoard.map((member) => (
+                <motion.div key={member.id} variants={staggerItem}>
+                  <Card className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center">
+                    <CardContent className="p-0">
+                      <div className="flex justify-center mb-3">
+                        <TeamAvatar name={member.name} size="sm" />
+                      </div>
+                      <h3
+                        className="text-sm font-semibold text-[#0f172a] mb-1"
+                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                      >
+                        {member.name}
+                      </h3>
+                      <p className="text-xs text-[#059669] font-medium">{member.role}</p>
+                      <p className="text-xs text-[#64748b] leading-relaxed mt-2 line-clamp-3">
+                        {member.bio}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* ================================================================== */}
+      {/* BOARD OF TRUSTEES */}
+      {/* ================================================================== */}
+      <AnimatedSection>
+        <section className="py-16 md:py-24 bg-white" aria-label="Board of Trustees">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+                Board of Trustees
+              </Badge>
+              <h2
+                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Board of Trustees
+              </h2>
+              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+                Providing governance oversight and strategic direction for GTEEP&apos;s mission.
+              </p>
+            </div>
+
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto"
+            >
+              {trustees.map((member) => (
+                <motion.div key={member.id} variants={staggerItem}>
+                  <Card className="group p-6 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center">
+                    <CardContent className="p-0">
+                      <div className="flex justify-center mb-3">
+                        <TeamAvatar name={member.name} size="md" />
+                      </div>
+                      <h3
+                        className="text-base font-semibold text-[#0f172a] mb-1"
+                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                      >
+                        {member.name}
+                      </h3>
+                      <p className="text-xs text-[#059669] font-medium">{member.role}</p>
+                      <p className="text-xs text-[#64748b] leading-relaxed mt-2 line-clamp-3">
+                        {member.bio}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* ================================================================== */}
+      {/* CTA SECTION */}
+      {/* ================================================================== */}
+      <section className="py-16 md:py-20" aria-label="Call to Action">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedSection>
+            <div className="rounded-2xl bg-gradient-to-r from-[#065f46] to-[#0f172a] p-8 md:p-12 text-center relative overflow-hidden">
+              {/* Decorative elements */}
+              <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[#d97706]/15 blur-2xl" />
+                <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-[#059669]/15 blur-2xl" />
+              </div>
+
+              <div className="relative z-10">
+                <h2
+                  className="text-2xl md:text-3xl font-bold text-white"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                 >
-                  <a href="/contact">
-                    Get in Touch
-                    <ExternalLink className="ml-2 h-4 w-4" />
-                  </a>
-                </Button>
+                  Get Involved with GTEEP
+                </h2>
+                <p className="mt-3 text-emerald-100 max-w-2xl mx-auto">
+                  Whether you&apos;re a researcher, policymaker, or development practitioner, we&apos;d love to hear from you.
+                </p>
+                <div className="mt-6 flex flex-wrap justify-center gap-4">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl"
+                  >
+                    <Link href="/contact">
+                      <Mail className="w-4 h-4 mr-2" />
+                      Contact Us
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="border-white/30 text-white hover:bg-white/10 rounded-xl"
+                  >
+                    <Link href="/outputs">
+                      View Our Outputs
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </div>
           </AnimatedSection>

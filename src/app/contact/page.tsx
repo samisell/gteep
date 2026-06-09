@@ -1,12 +1,13 @@
-import ContactPageClient from '@/components/pages/ContactPageClient';
 import type { Metadata } from 'next';
+import ContactPageClient from '@/components/pages/ContactPageClient';
+import { mockSiteSettings } from '@/graphql/mock-data';
 
 export const metadata: Metadata = {
-  title: 'Contact - Prof. Bola Akanji',
+  title: 'Contact Us - GTEEP',
   description:
-    'Contact Professor Bola Akanji for research collaborations, speaking engagements, policy advisory, or academic inquiries.',
+    'Get in touch with GTEEP for research collaborations, policy advisory, partnerships, or general inquiries.',
 };
 
-export default async function ContactPage() {
-  return <ContactPageClient />;
+export default function ContactPage() {
+  return <ContactPageClient settings={mockSiteSettings} />;
 }

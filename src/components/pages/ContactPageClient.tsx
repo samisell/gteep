@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod/v4';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { motion } from 'framer-motion';
 import PageHeader from '@/components/shared/PageHeader';
 import { AnimatedSection } from '@/components/shared/AnimatedSection';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Mail,
   Phone,
@@ -19,51 +18,58 @@ import {
   Send,
   Loader2,
   CheckCircle2,
-  Globe,
-  Linkedin,
-  Twitter,
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import type { WPSiteSettings } from '@/types';
 
-const contactSchema = z.object({
-  name: z.string().min(2, 'Full name is required'),
-  email: z.email('Please enter a valid email'),
-  phone: z.string().optional(),
-  subject: z.string().min(3, 'Subject is required'),
-  message: z.string().min(10, 'Message must be at least 10 characters'),
-  website: z.string().optional(), // honeypot
-});
+// =============================================================================
+// Props
+// =============================================================================
 
-type ContactFormData = z.infer<typeof contactSchema>;
+interface ContactPageClientProps {
+  settings: WPSiteSettings;
+}
 
-export default function ContactPageClient() {
+// =============================================================================
+// Main Component
+// =============================================================================
+
+export default function ContactPageClient({ settings }: ContactPageClientProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { toast } = useToast();
+  const [consent, setConsent] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<ContactFormData>({
-    resolver: zodResolver(contactSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: '',
-      website: '',
-    },
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: '',
+    organization: '',
   });
 
-  const onSubmit = async (data: ContactFormData) => {
-    // Honeypot check
-    if (data.website) {
-      setIsSuccess(true);
-      return;
-    }
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const contactEmail = settings.acfOptions?.contactEmail || 'info@gteep.com';
+  const contactPhone = settings.acfOptions?.contactPhone || '+234 801 234 5678';
+  const contactAddress = settings.acfOptions?.contactAddress || 'Lagos, Nigeria';
+  const officeHours = settings.acfOptions?.officeHours || 'Monday - Friday, 9:00 AM - 5:00 PM WAT';
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.name.trim()) newErrors.name = 'Full name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email';
+    if (!formData.subject.trim()) newErrors.subject = 'Subject is required';
+    if (!formData.message.trim()) newErrors.message = 'Message is required';
+    else if (formData.message.trim().length < 10) newErrors.message = 'Message must be at least 10 characters';
+    if (!consent) newErrors.consent = 'You must consent to data processing';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
 
     setIsSubmitting(true);
 
@@ -72,88 +78,96 @@ export default function ContactPageClient() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          subject: data.subject,
-          message: data.message,
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+          organization: formData.organization,
+          consent,
         }),
       });
 
       if (response.ok) {
         setIsSuccess(true);
-        toast({
-          title: 'Message sent!',
-          description: 'Thank you for reaching out. We will get back to you shortly.',
-        });
+        toast.success('Message sent!', { description: 'Thank you for reaching out. We will get back to you shortly.' });
       } else {
         // Demo mode - still show success
         setIsSuccess(true);
-        toast({
-          title: 'Message sent!',
-          description: 'Thank you for reaching out. We will get back to you shortly.',
-        });
+        toast.success('Message sent!', { description: 'Thank you for reaching out. We will get back to you shortly.' });
       }
     } catch {
       // Demo mode - show success
       setIsSuccess(true);
-      toast({
-        title: 'Message sent!',
-        description: 'Thank you for reaching out. We will get back to you shortly.',
-      });
+      toast.success('Message sent!', { description: 'Thank you for reaching out. We will get back to you shortly.' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
   return (
-    <main className="min-h-screen">
+    <main className="pt-20">
+      {/* Page Header */}
       <PageHeader
-        title="Contact"
+        title="Contact Us"
         subtitle="Get in Touch"
-        description="Get in touch for research collaborations, speaking engagements, policy advisory, or academic inquiries."
-        breadcrumb={[{ label: 'Contact' }]}
+        description="We'd love to hear from you. Whether you have a question about our research, partnerships, or anything else, our team is ready to answer."
+        breadcrumb={[{ label: 'Contact Us' }]}
       />
 
-      <section className="py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* ================================================================== */}
+      {/* CONTACT FORM + INFO */}
+      {/* ================================================================== */}
+      <section className="py-12 md:py-20 bg-white" aria-label="Contact Form">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-3">
             {/* Contact Form */}
             <div className="lg:col-span-2">
               <AnimatedSection>
-                <Card className="border-0 shadow-md">
+                <Card className="border border-[#e2e8f0] shadow-md">
                   <CardContent className="p-6 md:p-8">
                     {isSuccess ? (
                       <div className="py-10 text-center">
-                        <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" />
-                        <h3 className="mt-4 text-xl font-semibold">Message Sent!</h3>
-                        <p className="mt-2 text-muted-foreground">
+                        <CheckCircle2 className="mx-auto h-16 w-16 text-[#059669]" />
+                        <h3
+                          className="mt-4 text-xl font-semibold text-[#0f172a]"
+                          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                        >
+                          Message Sent!
+                        </h3>
+                        <p className="mt-2 text-[#64748b]">
                           Thank you for reaching out. We will get back to you as soon as possible.
                         </p>
                         <Button
                           variant="outline"
-                          className="mt-6"
+                          className="mt-6 border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white rounded-xl"
                           onClick={() => {
                             setIsSuccess(false);
-                            reset();
+                            setFormData({ name: '', email: '', subject: '', message: '', organization: '' });
+                            setConsent(false);
                           }}
                         >
                           Send Another Message
                         </Button>
                       </div>
                     ) : (
-                      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                        <h2 className="text-xl font-semibold text-foreground">Send a Message</h2>
-
-                        {/* Honeypot - hidden from real users */}
-                        <div className="absolute -left-[9999px]" aria-hidden="true">
-                          <Input
-                            type="text"
-                            tabIndex={-1}
-                            autoComplete="off"
-                            {...register('website')}
-                          />
-                        </div>
+                      <form onSubmit={handleSubmit} className="space-y-6">
+                        <h2
+                          className="text-xl font-semibold text-[#0f172a]"
+                          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                        >
+                          Send a Message
+                        </h2>
 
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-2">
@@ -163,11 +177,13 @@ export default function ContactPageClient() {
                             <Input
                               id="contact-name"
                               placeholder="Your full name"
-                              {...register('name')}
+                              value={formData.name}
+                              onChange={(e) => handleChange('name', e.target.value)}
                               aria-invalid={!!errors.name}
+                              className="border-[#e2e8f0] focus-visible:border-[#065f46] focus-visible:ring-[#065f46]/20"
                             />
                             {errors.name && (
-                              <p className="text-sm text-red-500">{errors.name.message}</p>
+                              <p className="text-sm text-red-500">{errors.name}</p>
                             )}
                           </div>
 
@@ -179,23 +195,28 @@ export default function ContactPageClient() {
                               id="contact-email"
                               type="email"
                               placeholder="you@example.com"
-                              {...register('email')}
+                              value={formData.email}
+                              onChange={(e) => handleChange('email', e.target.value)}
                               aria-invalid={!!errors.email}
+                              className="border-[#e2e8f0] focus-visible:border-[#065f46] focus-visible:ring-[#065f46]/20"
                             />
                             {errors.email && (
-                              <p className="text-sm text-red-500">{errors.email.message}</p>
+                              <p className="text-sm text-red-500">{errors.email}</p>
                             )}
                           </div>
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-2">
-                            <Label htmlFor="contact-phone">Phone (optional)</Label>
+                            <Label htmlFor="contact-organization">
+                              Organization
+                            </Label>
                             <Input
-                              id="contact-phone"
-                              type="tel"
-                              placeholder="+234 800 000 0000"
-                              {...register('phone')}
+                              id="contact-organization"
+                              placeholder="Your organization (optional)"
+                              value={formData.organization}
+                              onChange={(e) => handleChange('organization', e.target.value)}
+                              className="border-[#e2e8f0] focus-visible:border-[#065f46] focus-visible:ring-[#065f46]/20"
                             />
                           </div>
 
@@ -206,11 +227,13 @@ export default function ContactPageClient() {
                             <Input
                               id="contact-subject"
                               placeholder="e.g., Research Collaboration"
-                              {...register('subject')}
+                              value={formData.subject}
+                              onChange={(e) => handleChange('subject', e.target.value)}
                               aria-invalid={!!errors.subject}
+                              className="border-[#e2e8f0] focus-visible:border-[#065f46] focus-visible:ring-[#065f46]/20"
                             />
                             {errors.subject && (
-                              <p className="text-sm text-red-500">{errors.subject.message}</p>
+                              <p className="text-sm text-red-500">{errors.subject}</p>
                             )}
                           </div>
                         </div>
@@ -223,19 +246,48 @@ export default function ContactPageClient() {
                             id="contact-message"
                             placeholder="How can we help you?"
                             rows={5}
-                            {...register('message')}
+                            value={formData.message}
+                            onChange={(e) => handleChange('message', e.target.value)}
                             aria-invalid={!!errors.message}
+                            className="border-[#e2e8f0] focus-visible:border-[#065f46] focus-visible:ring-[#065f46]/20"
                           />
                           {errors.message && (
-                            <p className="text-sm text-red-500">{errors.message.message}</p>
+                            <p className="text-sm text-red-500">{errors.message}</p>
                           )}
+                        </div>
+
+                        {/* Consent Checkbox */}
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            id="contact-consent"
+                            checked={consent}
+                            onCheckedChange={(checked) => {
+                              setConsent(checked === true);
+                              if (errors.consent) {
+                                setErrors((prev) => {
+                                  const next = { ...prev };
+                                  delete next.consent;
+                                  return next;
+                                });
+                              }
+                            }}
+                            className="mt-0.5 data-[state=checked]:bg-[#065f46] data-[state=checked]:border-[#065f46]"
+                          />
+                          <div>
+                            <Label htmlFor="contact-consent" className="text-sm font-normal text-[#64748b] cursor-pointer">
+                              I consent to GTEEP processing my personal data in accordance with the privacy policy. <span className="text-red-500">*</span>
+                            </Label>
+                            {errors.consent && (
+                              <p className="text-sm text-red-500 mt-1">{errors.consent}</p>
+                            )}
+                          </div>
                         </div>
 
                         <Button
                           type="submit"
                           disabled={isSubmitting}
                           size="lg"
-                          className="w-full bg-emerald-700 hover:bg-emerald-800 sm:w-auto"
+                          className="w-full bg-[#065f46] hover:bg-[#064e3b] text-white sm:w-auto rounded-xl px-8"
                         >
                           {isSubmitting ? (
                             <>
@@ -261,97 +313,72 @@ export default function ContactPageClient() {
               <AnimatedSection delay={0.1}>
                 <div className="space-y-6">
                   {/* Office Info */}
-                  <Card className="border-0 shadow-md">
+                  <Card className="border border-[#e2e8f0] shadow-md">
                     <CardContent className="p-6 space-y-5">
-                      <h3 className="font-semibold text-foreground">Office Information</h3>
+                      <h3
+                        className="font-semibold text-[#0f172a]"
+                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                      >
+                        Office Information
+                      </h3>
 
                       <div className="flex items-start gap-3">
-                        <Mail className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                        <Mail className="mt-0.5 h-5 w-5 shrink-0 text-[#059669]" />
                         <div>
-                          <p className="text-sm font-medium">Email</p>
+                          <p className="text-sm font-medium text-[#0f172a]">Email</p>
                           <a
-                            href="mailto:b.akanji@ui.edu.ng"
-                            className="text-sm text-emerald-700 hover:underline"
+                            href={`mailto:${contactEmail}`}
+                            className="text-sm text-[#059669] hover:underline"
                           >
-                            b.akanji@ui.edu.ng
+                            {contactEmail}
                           </a>
                         </div>
                       </div>
 
                       <div className="flex items-start gap-3">
-                        <Phone className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                        <Phone className="mt-0.5 h-5 w-5 shrink-0 text-[#059669]" />
                         <div>
-                          <p className="text-sm font-medium">Phone</p>
+                          <p className="text-sm font-medium text-[#0f172a]">Phone</p>
                           <a
-                            href="tel:+2348012345678"
-                            className="text-sm text-emerald-700 hover:underline"
+                            href={`tel:${contactPhone.replace(/\s/g, '')}`}
+                            className="text-sm text-[#059669] hover:underline"
                           >
-                            +234 801 234 5678
+                            {contactPhone}
                           </a>
                         </div>
                       </div>
 
                       <div className="flex items-start gap-3">
-                        <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                        <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-[#059669]" />
                         <div>
-                          <p className="text-sm font-medium">Address</p>
-                          <p className="text-sm text-muted-foreground">
-                            Department of Economics<br />
-                            University of Ibadan<br />
-                            Ibadan, Oyo State, Nigeria
+                          <p className="text-sm font-medium text-[#0f172a]">Address</p>
+                          <p className="text-sm text-[#64748b]">
+                            {contactAddress}
                           </p>
                         </div>
                       </div>
 
                       <div className="flex items-start gap-3">
-                        <Clock className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                        <Clock className="mt-0.5 h-5 w-5 shrink-0 text-[#059669]" />
                         <div>
-                          <p className="text-sm font-medium">Office Hours</p>
-                          <p className="text-sm text-muted-foreground">
-                            Mon - Fri: 9:00 AM - 5:00 PM (WAT)<br />
-                            By appointment preferred
+                          <p className="text-sm font-medium text-[#0f172a]">Office Hours</p>
+                          <p className="text-sm text-[#64748b]">
+                            {officeHours}
                           </p>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Social Links */}
-                  <Card className="border-0 shadow-md">
-                    <CardContent className="p-6">
-                      <h3 className="mb-4 font-semibold text-foreground">Connect</h3>
-                      <div className="space-y-3">
-                        {[
-                          { icon: Globe, label: 'Google Scholar', href: '#' },
-                          { icon: Linkedin, label: 'LinkedIn', href: '#' },
-                          { icon: Twitter, label: 'Twitter/X', href: '#' },
-                        ].map((social) => (
-                          <a
-                            key={social.label}
-                            href={social.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-emerald-50"
-                          >
-                            <social.icon className="h-4 w-4 text-emerald-600" />
-                            <span className="text-sm font-medium text-foreground">
-                              {social.label}
-                            </span>
-                          </a>
-                        ))}
                       </div>
                     </CardContent>
                   </Card>
 
                   {/* Map Placeholder */}
-                  <Card className="border-0 shadow-md overflow-hidden">
-                    <div className="flex h-48 items-center justify-center bg-gradient-to-br from-emerald-50 to-slate-100">
+                  <Card className="border border-[#e2e8f0] shadow-md overflow-hidden">
+                    <div className="flex h-56 items-center justify-center bg-gradient-to-br from-[#065f46]/5 to-[#0f172a]/5">
                       <div className="text-center">
-                        <MapPin className="mx-auto h-8 w-8 text-emerald-300" />
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          University of Ibadan
+                        <MapPin className="mx-auto h-10 w-10 text-[#059669]/30" />
+                        <p className="mt-2 text-sm font-medium text-[#0f172a]">
+                          {contactAddress}
                         </p>
-                        <p className="text-xs text-muted-foreground">Ibadan, Nigeria</p>
+                        <p className="text-xs text-[#64748b] mt-1">Map placeholder</p>
                       </div>
                     </div>
                   </Card>

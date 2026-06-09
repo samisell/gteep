@@ -1,14 +1,13 @@
-import { getPartners } from '@/graphql/fetchers';
-import PartnersPageClient from '@/components/pages/PartnersPageClient';
 import type { Metadata } from 'next';
+import PartnersPageClient from '@/components/pages/PartnersPageClient';
+import { mockPartners } from '@/graphql/mock-data';
 
 export const metadata: Metadata = {
-  title: 'Partners - Prof. Bola Akanji',
+  title: 'Our Partners - GTEEP',
   description:
-    'Collaborating institutions and organizations that support Professor Bola Akanji\'s research on African trade and development.',
+    'GTEEP collaborates with leading universities, research institutes, governments, and international organizations across Africa and beyond.',
 };
 
-export default async function PartnersPage() {
-  const partners = await getPartners();
-  return <PartnersPageClient partners={partners} />;
+export default function PartnersPage() {
+  return <PartnersPageClient partners={mockPartners} />;
 }

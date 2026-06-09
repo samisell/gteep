@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Menu, X, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,13 +17,12 @@ import { cn } from '@/lib/utils';
 
 const navLinks = [
   { href: '/', label: 'Home' },
-  { href: '/about', label: 'About' },
-  { href: '/research', label: 'Research & Publications' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/events', label: 'Events' },
-  { href: '/resources', label: 'Resources' },
-  { href: '/media', label: 'Media' },
-  { href: '/contact', label: 'Contact' },
+  { href: '/about', label: 'About Us' },
+  { href: '/what-we-do', label: 'What We Do' },
+  { href: '/partners', label: 'Our Partners' },
+  { href: '/outputs', label: 'Our Outputs' },
+  { href: '/blog', label: 'Blog' },
+  { href: '/contact', label: 'Contact Us' },
 ];
 
 export default function Navbar() {
@@ -44,7 +43,7 @@ export default function Navbar() {
     };
   }, []);
 
-  // Derive mobile menu closed state when pathname changes
+  // Close mobile menu when pathname changes
   const [prevPathname, setPrevPathname] = useState(pathname);
   if (prevPathname !== pathname) {
     setPrevPathname(pathname);
@@ -65,7 +64,7 @@ export default function Navbar() {
         className={cn(
           'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
           isScrolled
-            ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-soft border-b border-emerald-100/50 dark:border-emerald-900/30'
+            ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-lg border-b border-emerald-100/50 dark:border-emerald-900/30'
             : 'bg-transparent'
         )}
       >
@@ -74,21 +73,26 @@ export default function Navbar() {
             {/* Logo / Brand */}
             <Link href="/" className="flex items-center gap-3 group">
               <div className="relative">
-                <div className="w-10 h-10 rounded-xl gradient-emerald flex items-center justify-center shadow-emerald transition-transform duration-300 group-hover:scale-105">
-                  <span className="text-white font-bold text-lg heading-font">B</span>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-700 to-emerald-600 flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-105">
+                  <span className="text-white font-bold text-lg heading-font">G</span>
                 </div>
               </div>
               <div className="flex flex-col">
-                <span className="text-lg lg:text-xl font-bold heading-font gradient-text-dark dark:gradient-text-emerald-gold leading-tight">
-                  Prof. Bola Akanji
+                <span className={cn(
+                  'text-lg lg:text-xl font-bold heading-font leading-tight transition-colors duration-300',
+                  isScrolled
+                    ? 'bg-gradient-to-r from-emerald-800 to-emerald-600 bg-clip-text text-transparent'
+                    : 'bg-gradient-to-r from-emerald-800 to-emerald-600 bg-clip-text text-transparent'
+                )}>
+                  GTEEP
                 </span>
                 <span className={cn(
                   'text-[10px] lg:text-xs tracking-widest uppercase transition-colors duration-300',
                   isScrolled
-                    ? 'text-emerald-700/70 dark:text-emerald-400/70'
-                    : 'text-emerald-800/60 dark:text-emerald-300/60'
+                    ? 'text-amber-700/70 dark:text-amber-400/70'
+                    : 'text-amber-700/60 dark:text-amber-300/60'
                 )}>
-                  Economics &bull; Trade &bull; Development
+                  Economic Empowerment
                 </span>
               </div>
             </Link>
@@ -137,10 +141,10 @@ export default function Navbar() {
             <div className="flex items-center gap-3">
               <Button
                 asChild
-                className="hidden lg:inline-flex bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-800 hover:to-emerald-700 text-white shadow-emerald transition-all duration-300 hover:shadow-emerald-lg hover:-translate-y-0.5 rounded-lg"
+                className="hidden lg:inline-flex bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-800 hover:to-emerald-700 text-white shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 rounded-lg"
               >
                 <Link href="/contact">
-                  Get in Touch
+                  Contact Us
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
@@ -151,7 +155,7 @@ export default function Navbar() {
                 size="icon"
                 className="lg:hidden relative"
                 onClick={() => setIsMobileMenuOpen(true)}
-                aria-label="Open menu"
+                aria-label="Open navigation menu"
               >
                 <Menu className="h-6 w-6 text-slate-700 dark:text-slate-200" />
               </Button>
@@ -164,13 +168,18 @@ export default function Navbar() {
       <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
         <SheetContent side="right" className="w-[300px] sm:w-[360px] p-0">
           <SheetHeader className="p-6 pb-4 border-b border-emerald-100 dark:border-emerald-900/30 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950 dark:to-slate-900">
-            <SheetTitle className="flex flex-col items-start">
-              <span className="text-xl font-bold heading-font gradient-text-dark dark:gradient-text-emerald-gold">
-                Prof. Bola Akanji
-              </span>
-              <span className="text-[10px] tracking-widest uppercase text-emerald-700/60 dark:text-emerald-400/60 mt-1">
-                Economics &bull; Trade &bull; Development
-              </span>
+            <SheetTitle className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-700 to-emerald-600 flex items-center justify-center shadow-md">
+                <span className="text-white font-bold text-base heading-font">G</span>
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-xl font-bold heading-font bg-gradient-to-r from-emerald-800 to-emerald-600 bg-clip-text text-transparent">
+                  GTEEP
+                </span>
+                <span className="text-[10px] tracking-widest uppercase text-amber-700/60 dark:text-amber-400/60 mt-0.5">
+                  Economic Empowerment
+                </span>
+              </div>
             </SheetTitle>
           </SheetHeader>
 
@@ -206,10 +215,10 @@ export default function Navbar() {
             <SheetClose asChild>
               <Button
                 asChild
-                className="w-full bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-800 hover:to-emerald-700 text-white shadow-emerald rounded-lg"
+                className="w-full bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-800 hover:to-emerald-700 text-white shadow-md rounded-lg"
               >
                 <Link href="/contact">
-                  Get in Touch
+                  Contact Us
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>

@@ -1,42 +1,42 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import {
-  Globe,
   ArrowRight,
-  BookOpen,
+  FileSearch,
   Users,
-  MapPin,
-  FlaskConical,
-  Wheat,
-  Factory,
-  Scale,
-  Calendar,
-  Clock,
-  Quote,
-  Mail,
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
+  Lightbulb,
+  BarChart3,
   GraduationCap,
-  Briefcase,
-  FileText,
-  Award,
+  Heart,
+  Handshake,
+  Microscope,
+  TrendingUp,
+  UserCheck,
+  Scale,
+  Globe,
   Building2,
-  Star,
+  FlaskConical,
+  Mail,
+  Phone,
+  MapPin,
+  ChevronDown,
+  BookOpen,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import type {
-  WPPublication,
-  WPProject,
-  WPEvent,
-  WPPartner,
-  WPTestimonial,
   WPSiteSettings,
+  GTEEPActivity,
+  GTEEPPhilosophy,
+  GTEEPTeamMember,
+  GTEEPOutput,
+  GTEEPPartner,
+  GTEEPBlogPost,
 } from '@/types';
 
 // =============================================================================
@@ -45,11 +45,12 @@ import type {
 
 interface HomePageClientProps {
   settings: WPSiteSettings;
-  publications: WPPublication[];
-  projects: WPProject[];
-  events: WPEvent[];
-  partners: WPPartner[];
-  testimonials: WPTestimonial[];
+  activities: GTEEPActivity[];
+  philosophy: GTEEPPhilosophy[];
+  teamMembers: GTEEPTeamMember[];
+  outputs: GTEEPOutput[];
+  partners: GTEEPPartner[];
+  blogPosts: GTEEPBlogPost[];
 }
 
 // =============================================================================
@@ -130,81 +131,95 @@ function SectionReveal({ children, className = '' }: { children: React.ReactNode
 }
 
 // =============================================================================
-// Helper: Publication type badge label
+// Helper: Activity icon mapping
 // =============================================================================
 
-function getPublicationTypeLabel(type?: string): string {
+function getActivityIcon(iconName: string) {
+  const iconMap: Record<string, React.ElementType> = {
+    FileSearch,
+    Users,
+    Lightbulb,
+    BarChart3,
+    GraduationCap,
+    Heart,
+  };
+  return iconMap[iconName] || FileSearch;
+}
+
+// =============================================================================
+// Helper: Philosophy icon mapping
+// =============================================================================
+
+function getPhilosophyIcon(iconName: string) {
+  const iconMap: Record<string, React.ElementType> = {
+    Handshake,
+    Microscope,
+    TrendingUp,
+    UserCheck,
+    Scale,
+  };
+  return iconMap[iconName] || Handshake;
+}
+
+// =============================================================================
+// Helper: Partner icon mapping
+// =============================================================================
+
+function getPartnerIcon(type: string) {
+  const iconMap: Record<string, React.ElementType> = {
+    university: GraduationCap,
+    'international-organization': Globe,
+    government: Building2,
+    'research-institute': FlaskConical,
+    ngo: Users,
+    'private-sector': Building2,
+  };
+  return iconMap[type] || Building2;
+}
+
+// =============================================================================
+// Helper: Output type label
+// =============================================================================
+
+function getOutputTypeLabel(type: string): string {
   const labels: Record<string, string> = {
-    'journal-article': 'Journal Article',
-    'book-chapter': 'Book Chapter',
-    'working-paper': 'Working Paper',
+    'concept-note': 'Concept Note',
     'policy-brief': 'Policy Brief',
-    'conference-paper': 'Conference Paper',
-    'report': 'Report',
+    'data-stock': 'Data Stock',
+    'video': 'Video',
+    'photo': 'Photo Gallery',
+    'knowledge-product': 'Knowledge Product',
   };
-  return labels[type || ''] || 'Publication';
-}
-
-function getEventTypeLabel(type?: string): string {
-  const labels: Record<string, string> = {
-    'conference': 'Conference',
-    'workshop': 'Workshop',
-    'seminar': 'Seminar',
-    'lecture': 'Lecture',
-    'panel': 'Panel Discussion',
-    'webinar': 'Webinar',
-  };
-  return labels[type || ''] || 'Event';
-}
-
-function getPartnerTypeIcon(type?: string) {
-  switch (type) {
-    case 'university': return GraduationCap;
-    case 'research-institute': return FlaskConical;
-    case 'government': return Building2;
-    case 'international-organization': return Globe;
-    case 'ngo': return Users;
-    case 'private-sector': return Briefcase;
-    default: return Building2;
-  }
+  return labels[type] || 'Output';
 }
 
 // =============================================================================
-// Research Areas Data
+// Helper: Team member avatar with initials
 // =============================================================================
 
-const researchAreas = [
-  {
-    icon: Globe,
-    title: 'African Continental Free Trade Area (AfCFTA)',
-    description: 'Monitoring implementation, assessing trade outcomes, and identifying policy challenges under the AfCFTA framework across participating member states.',
-  },
-  {
-    icon: Scale,
-    title: 'Regional Economic Integration',
-    description: 'Analyzing integration progress in ECOWAS, COMESA, and other regional economic communities, from customs unions to monetary cooperation.',
-  },
-  {
-    icon: FileText,
-    title: 'Trade Facilitation & Policy',
-    description: 'Evaluating trade facilitation reforms, single window systems, and non-tariff barrier reduction strategies to improve intra-African trade flows.',
-  },
-  {
-    icon: Users,
-    title: 'Gender & Trade',
-    description: 'Investigating the gender dimensions of trade policy, including the experiences of women informal cross-border traders and gender-responsive facilitation.',
-  },
-  {
-    icon: Wheat,
-    title: 'Agricultural Value Chains',
-    description: 'Examining agricultural trade integration, value chain development, and food security implications of regional trade agreements.',
-  },
-  {
-    icon: Factory,
-    title: 'Industrial Development',
-    description: 'Exploring industrialization prospects through regional value chains, special economic zones, and trade policy space for structural transformation.',
-  },
-];
+function TeamAvatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
+  const initials = name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const sizeClasses = {
+    sm: 'w-12 h-12 text-sm',
+    md: 'w-16 h-16 text-lg',
+    lg: 'w-24 h-24 text-2xl',
+  };
+
+  return (
+    <div
+      className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-[#059669] to-[#065f46] flex items-center justify-center text-white font-bold shadow-lg shrink-0`}
+      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+    >
+      {initials}
+    </div>
+  );
+}
 
 // =============================================================================
 // Main Component
@@ -212,28 +227,38 @@ const researchAreas = [
 
 export default function HomePageClient({
   settings,
-  publications,
-  projects,
-  events,
+  activities,
+  philosophy,
+  teamMembers,
+  outputs,
   partners,
-  testimonials,
+  blogPosts,
 }: HomePageClientProps) {
-  const heroTitle = settings.acfOptions?.heroTitle || 'Prof. Bola Akanji';
-  const heroSubtitle = settings.acfOptions?.heroSubtitle || 'Leading Research in African Trade & Economic Development';
-  const heroDescription = settings.acfOptions?.heroDescription || 'Professor of Economics with over 25 years of research experience in international trade policy, regional integration, and sustainable economic development across Africa. Dedicated to evidence-based policy that transforms livelihoods.';
-  const aboutSummary = settings.acfOptions?.aboutSummary || 'Professor Bola Akanji is a distinguished economist specializing in African trade policy, regional integration, and development economics. With a PhD from the University of Ibadan and over 25 years of research experience, she has published extensively on the AfCFTA, ECOWAS trade protocols, and the gender dimensions of trade.';
+  const heroDescription = settings.acfOptions?.heroDescription ||
+    'Evidence-driven policy analysis for socially inclusive development. We champion partnerships for African development, people-centered growth, and gender equitable economic transformation.';
+
+  const executive = teamMembers.filter((m) => m.category === 'executive');
+  const directors = teamMembers.filter((m) => m.category === 'director');
+  const advisoryBoard = teamMembers.filter((m) => m.category === 'advisory-board');
+  const trustees = teamMembers.filter((m) => m.category === 'board-of-trustees');
+
+  // Get featured outputs: first policy brief, first data stock, first knowledge product
+  const firstPolicyBrief = outputs.find((o) => o.type === 'policy-brief');
+  const firstDataStock = outputs.find((o) => o.type === 'data-stock');
+  const firstKnowledgeProduct = outputs.find((o) => o.type === 'knowledge-product');
+  const featuredOutputs = [firstPolicyBrief, firstDataStock, firstKnowledgeProduct].filter(Boolean) as GTEEPOutput[];
 
   return (
-    <main className="min-h-screen">
+    <main>
       {/* ================================================================== */}
-      {/* 1. HERO SECTION */}
+      {/* SECTION 1: HERO */}
       {/* ================================================================== */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#065f46] via-[#047857] to-[#0f172a]" />
 
         {/* Animated floating shapes */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <motion.div
             className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-white/5"
             animate={{ y: [0, 30, 0], x: [0, 15, 0] }}
@@ -269,21 +294,21 @@ export default function HomePageClient({
             animate="visible"
             className="space-y-6 sm:space-y-8"
           >
-            {/* Subtitle badge */}
+            {/* Badge */}
             <motion.div variants={staggerItem}>
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20">
                 <Globe className="w-4 h-4" />
-                Academic Research & Policy Advisory
+                Economic Empowerment &amp; Policy Research
               </span>
             </motion.div>
 
             {/* Main heading */}
             <motion.h1
               variants={staggerItem}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight"
+              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white tracking-tight"
               style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
             >
-              {heroTitle}
+              GTEEP
             </motion.h1>
 
             {/* Subtitle */}
@@ -291,7 +316,7 @@ export default function HomePageClient({
               variants={staggerItem}
               className="text-lg sm:text-xl md:text-2xl text-[#f59e0b] font-semibold"
             >
-              {heroSubtitle}
+              Gilead Trust Economic Empowerment Project
             </motion.p>
 
             {/* Description */}
@@ -307,17 +332,23 @@ export default function HomePageClient({
               <Button
                 size="lg"
                 className="bg-[#d97706] hover:bg-[#b45309] text-white px-8 py-6 text-base font-semibold rounded-xl shadow-lg shadow-[#d97706]/25 transition-all hover:shadow-xl hover:shadow-[#d97706]/30 hover:-translate-y-0.5"
+                asChild
               >
-                <BookOpen className="w-5 h-5 mr-2" />
-                Explore Research
+                <a href="/what-we-do">
+                  <BookOpen className="w-5 h-5 mr-2" />
+                  Explore Our Work
+                </a>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="border-white/30 text-white hover:bg-white/10 px-8 py-6 text-base font-semibold rounded-xl backdrop-blur-sm transition-all hover:-translate-y-0.5"
+                asChild
               >
-                Learn More
-                <ArrowRight className="w-5 h-5 ml-2" />
+                <a href="#about">
+                  Learn More
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </a>
               </Button>
             </motion.div>
           </motion.div>
@@ -328,6 +359,7 @@ export default function HomePageClient({
           className="absolute bottom-8 left-1/2 -translate-x-1/2"
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
+          aria-hidden="true"
         >
           <div className="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center p-1">
             <motion.div
@@ -340,94 +372,95 @@ export default function HomePageClient({
       </section>
 
       {/* ================================================================== */}
-      {/* 2. ABOUT PREVIEW SECTION */}
+      {/* SECTION 2: OUR ACTIVITIES (What We Do) */}
       {/* ================================================================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-28 bg-white" id="about">
+        <section className="py-20 sm:py-28 bg-white" id="activities" aria-label="Our Activities">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-              {/* Image */}
-              <div className="relative">
-                <div className="aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-br from-[#065f46] to-[#047857] shadow-2xl">
-                  <div className="w-full h-full flex items-center justify-center p-8">
-                    <div className="text-center text-white/90">
-                      <GraduationCap className="w-20 h-20 mx-auto mb-4 opacity-80" />
-                      <p className="text-lg font-medium" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-                        Prof. Bola Akanji
-                      </p>
-                      <p className="text-sm text-white/70 mt-1">PhD Economics</p>
+            {/* Section header */}
+            <div className="text-center mb-16">
+              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+                What We Do
+              </Badge>
+              <h2
+                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Our Activities
+              </h2>
+              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+                Driving evidence-based policy change through research, engagement, and empowerment across Africa.
+              </p>
+            </div>
+
+            {/* Activity cards */}
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {activities.map((activity) => {
+                const IconComponent = getActivityIcon(activity.icon);
+                return (
+                  <motion.div key={activity.id} variants={staggerItem}>
+                    <div className="group p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white">
+                      <div className="w-12 h-12 rounded-xl bg-[#f0fdf4] flex items-center justify-center mb-4 group-hover:bg-[#065f46] transition-colors">
+                        <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-white transition-colors" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-[#0f172a] mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                        {activity.title}
+                      </h3>
+                      <p className="text-sm text-[#64748b] leading-relaxed">{activity.description}</p>
                     </div>
-                  </div>
-                </div>
-                {/* Decorative accent */}
-                <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-[#d97706]/10 rounded-2xl -z-10" />
-                <div className="absolute -top-4 -left-4 w-24 h-24 bg-[#065f46]/10 rounded-2xl -z-10" />
-              </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
 
-              {/* Text content */}
-              <div className="space-y-6">
-                <div>
-                  <span className="text-[#d97706] font-semibold text-sm uppercase tracking-wider">About</span>
-                  <h2
-                    className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
-                    style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                  >
-                    About Prof. Akanji
-                  </h2>
-                </div>
-
-                <div className="space-y-4 text-[#334155] leading-relaxed">
-                  <p>{aboutSummary.split('.').slice(0, 2).join('.')}.</p>
-                  <p>Beyond academic research, Prof. Akanji serves as a policy advisor to several African governments and regional organizations, including the African Union Commission, ECOWAS Commission, and the United Nations Economic Commission for Africa (UNECA).</p>
-                </div>
-
-                {/* Key highlights */}
-                <div className="grid grid-cols-3 gap-4 pt-4">
-                  {[
-                    { value: '25+', label: 'Years Experience', icon: Award },
-                    { value: '50+', label: 'Publications', icon: BookOpen },
-                    { value: '15+', label: 'Countries', icon: MapPin },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className="text-center p-4 rounded-xl bg-[#f0fdf4] border border-[#065f46]/10 hover:shadow-md transition-shadow"
-                    >
-                      <item.icon className="w-6 h-6 mx-auto text-[#059669] mb-2" />
-                      <p className="text-2xl font-bold text-[#065f46]">{item.value}</p>
-                      <p className="text-xs text-[#475569] mt-1">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <Button
-                  variant="link"
-                  className="text-[#059669] hover:text-[#047857] p-0 h-auto text-base font-semibold group"
-                >
-                  Read More
-                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </div>
+            {/* View all button */}
+            <div className="text-center mt-12">
+              <Button
+                variant="outline"
+                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+                asChild
+              >
+                <a href="/what-we-do">
+                  View All Activities
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </a>
+              </Button>
             </div>
           </div>
         </section>
       </SectionReveal>
 
       {/* ================================================================== */}
-      {/* 3. RESEARCH AREAS SECTION */}
+      {/* SECTION 3: OUR PHILOSOPHY */}
       {/* ================================================================== */}
-      <section className="py-20 sm:py-28 bg-[#0f172a]" id="research">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 sm:py-28 bg-[#0f172a] relative overflow-hidden" id="philosophy" aria-label="Our Philosophy">
+        {/* Decorative blurred circles */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-[#059669]/10 blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-[#d97706]/8 blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#047857]/5 blur-3xl" />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <SectionReveal>
             <div className="text-center mb-16">
-              <span className="text-[#f59e0b] font-semibold text-sm uppercase tracking-wider">Expertise</span>
+              <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-sm px-3 py-1 mb-4">
+                Our Philosophy
+              </Badge>
               <h2
                 className="text-3xl sm:text-4xl font-bold text-white mt-2"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
-                Research Areas
+                Our Philosophy
               </h2>
               <p className="mt-4 text-[#94a3b8] max-w-2xl mx-auto">
-                Pioneering research across key domains of African trade policy, regional integration, and sustainable economic development.
+                The core principles that guide our work and shape our approach to development in Africa.
               </p>
             </div>
           </SectionReveal>
@@ -439,388 +472,324 @@ export default function HomePageClient({
             viewport={{ once: true, margin: '-50px' }}
             className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {researchAreas.map((area) => (
-              <motion.div key={area.title} variants={staggerItem}>
-                <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
-                  <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
-                    <area.icon className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+            {philosophy.map((item, index) => {
+              const IconComponent = getPhilosophyIcon(item.icon);
+              // Make the first item span 2 columns on lg for visual interest
+              const isLarge = index === 0;
+              return (
+                <motion.div
+                  key={item.id}
+                  variants={staggerItem}
+                  className={isLarge ? 'sm:col-span-2 lg:col-span-2' : ''}
+                >
+                  <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+                    <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+                      <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                      {item.title}
+                    </h3>
+                    <p className="text-sm text-[#94a3b8] leading-relaxed">{item.description}</p>
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">{area.title}</h3>
-                  <p className="text-sm text-[#94a3b8] leading-relaxed">{area.description}</p>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </section>
 
       {/* ================================================================== */}
-      {/* 4. FEATURED PUBLICATIONS SECTION */}
+      {/* SECTION 4: WHO WE ARE */}
       {/* ================================================================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-28 bg-white" id="publications">
+        <section className="py-20 sm:py-28 bg-white" id="about" aria-label="Who We Are">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section header */}
             <div className="text-center mb-16">
-              <span className="text-[#d97706] font-semibold text-sm uppercase tracking-wider">Scholarly Work</span>
+              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+                Our Team
+              </Badge>
               <h2
                 className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
-                Featured Publications
+                Who We Are
               </h2>
               <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                Selected publications from a portfolio of over 50 academic works on African trade and development.
+                A dedicated team of researchers, policy analysts, and development practitioners committed to Africa&apos;s transformation.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {publications.map((pub, index) => (
-                <motion.div
-                  key={pub.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                >
-                  <Card className="group h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-[#e2e8f0]">
-                    <CardContent className="p-6 flex flex-col h-full">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Badge className="bg-[#065f46] text-white text-xs hover:bg-[#065f46]">
-                          {getPublicationTypeLabel(pub.acfPublicationFields?.publicationType)}
-                        </Badge>
-                        <span className="text-xs text-[#94a3b8]">{pub.acfPublicationFields?.year}</span>
-                      </div>
-
-                      <h3 className="text-base font-semibold text-[#0f172a] mb-3 leading-snug line-clamp-3 group-hover:text-[#065f46] transition-colors">
-                        {pub.title}
-                      </h3>
-
-                      <p className="text-sm text-[#64748b] mb-2">
-                        {pub.acfPublicationFields?.authors}
-                      </p>
-
-                      {pub.acfPublicationFields?.journal && (
-                        <p className="text-sm text-[#059669] font-medium mb-3 italic">
-                          {pub.acfPublicationFields.journal}
-                          {pub.acfPublicationFields.volume && `, Vol. ${pub.acfPublicationFields.volume}`}
-                        </p>
-                      )}
-
-                      <p className="text-sm text-[#64748b] leading-relaxed mb-4 line-clamp-3 flex-grow">
-                        {pub.excerpt}
-                      </p>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-[#f1f5f9]">
-                        {pub.acfPublicationFields?.citationCount !== undefined && (
-                          <span className="text-xs text-[#94a3b8]">
-                            {pub.acfPublicationFields.citationCount} citations
-                          </span>
-                        )}
-                        <Button variant="link" className="text-[#059669] hover:text-[#047857] p-0 h-auto text-sm group/link ml-auto">
-                          Read More
-                          <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="text-center mt-12">
-              <Button
-                variant="outline"
-                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+            {/* Executive Director - Featured Card */}
+            {executive.map((member) => (
+              <motion.div
+                key={member.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="mb-12"
               >
-                View All Publications
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        </section>
-      </SectionReveal>
-
-      {/* ================================================================== */}
-      {/* 5. FEATURED PROJECTS SECTION */}
-      {/* ================================================================== */}
-      <SectionReveal>
-        <section className="py-20 sm:py-28 bg-[#f8fafc]" id="projects">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <span className="text-[#d97706] font-semibold text-sm uppercase tracking-wider">Active Research</span>
-              <h2
-                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-              >
-                Research Projects
-              </h2>
-              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                Current and completed research projects driving policy change across Africa.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project, index) => (
-                <motion.div
-                  key={project.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                >
-                  <Card className="group h-full overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-[#e2e8f0]">
-                    {/* Featured image area */}
-                    <div className="h-48 bg-gradient-to-br from-[#065f46] to-[#047857] relative flex items-center justify-center">
-                      <div className="text-center text-white/90">
-                        <FlaskConical className="w-12 h-12 mx-auto mb-2 opacity-60" />
-                        <p className="text-sm font-medium">Research Project</p>
-                      </div>
-                      {/* Status badge */}
-                      <Badge
-                        className={`absolute top-4 right-4 ${
-                          project.acfProjectFields?.projectStatus === 'ongoing'
-                            ? 'bg-[#059669] text-white hover:bg-[#059669]'
-                            : project.acfProjectFields?.projectStatus === 'completed'
-                            ? 'bg-[#64748b] text-white hover:bg-[#64748b]'
-                            : 'bg-[#d97706] text-white hover:bg-[#d97706]'
-                        }`}
-                      >
-                        {project.acfProjectFields?.projectStatus === 'ongoing' ? 'Ongoing' :
-                         project.acfProjectFields?.projectStatus === 'completed' ? 'Completed' : 'Upcoming'}
+                <div className="group max-w-4xl mx-auto p-8 rounded-2xl border border-[#e2e8f0] hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-[#f0fdf4] to-white">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                    <TeamAvatar name={member.name} size="lg" />
+                    <div className="text-center sm:text-left flex-1">
+                      <Badge className="bg-[#065f46] text-white text-xs mb-2 hover:bg-[#065f46]">
+                        Executive Director
                       </Badge>
-                    </div>
-
-                    <CardContent className="p-6">
-                      <h3 className="text-lg font-semibold text-[#0f172a] mb-2 leading-snug group-hover:text-[#065f46] transition-colors">
-                        {project.title}
+                      <h3
+                        className="text-2xl font-bold text-[#0f172a] mb-1"
+                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                      >
+                        {member.name}
                       </h3>
+                      <p className="text-[#059669] font-medium mb-3">{member.role}</p>
+                      <p className="text-sm text-[#64748b] leading-relaxed">{member.bio}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
 
-                      {project.acfProjectFields?.fundingAgency && (
-                        <p className="text-sm text-[#059669] font-medium mb-3">
-                          Funded by: {project.acfProjectFields.fundingAgency}
-                        </p>
-                      )}
-
-                      <p className="text-sm text-[#64748b] leading-relaxed line-clamp-3">
-                        {project.excerpt}
-                      </p>
-
-                      <Button variant="link" className="text-[#059669] hover:text-[#047857] p-0 h-auto text-sm mt-4 group/link">
-                        View Details
-                        <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
-                      </Button>
-                    </CardContent>
-                  </Card>
+            {/* Directors - 3-column grid */}
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {directors.map((member) => (
+                <motion.div key={member.id} variants={staggerItem}>
+                  <div className="group p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white text-center">
+                    <div className="flex justify-center mb-4">
+                      <TeamAvatar name={member.name} size="md" />
+                    </div>
+                    <Badge variant="secondary" className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-xs mb-2">
+                      Director
+                    </Badge>
+                    <h3
+                      className="text-lg font-semibold text-[#0f172a] mb-1"
+                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                    >
+                      {member.name}
+                    </h3>
+                    <p className="text-[#059669] font-medium text-sm mb-3">{member.role}</p>
+                    <p className="text-sm text-[#64748b] leading-relaxed line-clamp-4">{member.bio}</p>
+                  </div>
                 </motion.div>
               ))}
-            </div>
-
-            <div className="text-center mt-12">
-              <Button
-                variant="outline"
-                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
-              >
-                View All Projects
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
+            </motion.div>
           </div>
         </section>
       </SectionReveal>
 
       {/* ================================================================== */}
-      {/* 6. UPCOMING EVENTS SECTION */}
+      {/* SECTION 5: ADVISORY BOARD */}
       {/* ================================================================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-28 bg-white" id="events">
+        <section className="py-20 sm:py-28 bg-[#f8fafc]" id="advisory-board" aria-label="Advisory Board">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section header */}
             <div className="text-center mb-16">
-              <span className="text-[#d97706] font-semibold text-sm uppercase tracking-wider">Engagements</span>
+              <Badge className="bg-[#fef3c7] text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
+                Advisory Board
+              </Badge>
               <h2
                 className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
-                Upcoming Events
+                Our Advisory Board
               </h2>
               <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                Conferences, workshops, and lectures featuring Prof. Akanji.
+                Distinguished experts who provide strategic guidance and direction to our work.
               </p>
             </div>
 
-            <div className="space-y-6 max-w-4xl mx-auto">
-              {events.map((event, index) => {
-                const startDate = event.acfEventFields?.eventStartDate;
-                const eventDate = startDate ? new Date(startDate + 'T00:00:00') : null;
-
-                return (
-                  <motion.div
-                    key={event.id}
-                    initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1, duration: 0.5 }}
-                  >
-                    <Card className="group hover:shadow-lg transition-all duration-300 border-[#e2e8f0] overflow-hidden">
-                      <CardContent className="p-0">
-                        <div className="flex flex-col sm:flex-row">
-                          {/* Date column */}
-                          <div className="sm:w-28 bg-[#065f46] flex flex-col items-center justify-center p-4 sm:p-6 text-white shrink-0">
-                            {eventDate ? (
-                              <>
-                                <span className="text-3xl font-bold">
-                                  {eventDate.getDate()}
-                                </span>
-                                <span className="text-sm font-medium uppercase">
-                                  {eventDate.toLocaleDateString('en-US', { month: 'short' })}
-                                </span>
-                                <span className="text-xs text-white/70">
-                                  {eventDate.getFullYear()}
-                                </span>
-                              </>
-                            ) : (
-                              <Calendar className="w-8 h-8 opacity-50" />
-                            )}
-                          </div>
-
-                          {/* Content */}
-                          <div className="flex-1 p-6">
-                            <div className="flex flex-wrap items-center gap-2 mb-2">
-                              <Badge variant="secondary" className="text-xs bg-[#f0fdf4] text-[#059669] border-[#065f46]/20">
-                                {getEventTypeLabel(event.acfEventFields?.eventType)}
-                              </Badge>
-                              {event.acfEventFields?.isVirtual && (
-                                <Badge variant="secondary" className="text-xs bg-[#fef3c7] text-[#d97706] border-[#d97706]/20">
-                                  Virtual
-                                </Badge>
-                              )}
-                              {event.acfEventFields?.eventTime && (
-                                <span className="text-xs text-[#94a3b8] flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {event.acfEventFields.eventTime}
-                                </span>
-                              )}
-                            </div>
-
-                            <h3 className="text-lg font-semibold text-[#0f172a] mb-2 group-hover:text-[#065f46] transition-colors">
-                              {event.title}
-                            </h3>
-
-                            {(event.acfEventFields?.venue || event.acfEventFields?.city) && (
-                              <p className="text-sm text-[#64748b] flex items-center gap-1.5">
-                                <MapPin className="w-3.5 h-3.5 shrink-0" />
-                                {[event.acfEventFields?.venue, event.acfEventFields?.city, event.acfEventFields?.country].filter(Boolean).join(', ')}
-                              </p>
-                            )}
-
-                            {event.acfEventFields?.registrationUrl && (
-                              <Button
-                                variant="link"
-                                className="text-[#059669] hover:text-[#047857] p-0 h-auto text-sm mt-2"
-                              >
-                                Register Now
-                                <ExternalLink className="w-3.5 h-3.5 ml-1" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            <div className="text-center mt-12">
-              <Button
-                variant="outline"
-                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
-              >
-                View All Events
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
+            >
+              {advisoryBoard.map((member) => (
+                <motion.div key={member.id} variants={staggerItem}>
+                  <div className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center">
+                    <div className="flex justify-center mb-3">
+                      <TeamAvatar name={member.name} size="sm" />
+                    </div>
+                    <h3
+                      className="text-sm font-semibold text-[#0f172a] mb-1"
+                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                    >
+                      {member.name}
+                    </h3>
+                    <p className="text-xs text-[#059669] font-medium">{member.role}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </section>
       </SectionReveal>
 
       {/* ================================================================== */}
-      {/* 7. STATISTICS SECTION */}
+      {/* SECTION 6: BOARD OF TRUSTEES */}
       {/* ================================================================== */}
-      <section className="py-20 sm:py-28 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] relative overflow-hidden">
+      <SectionReveal>
+        <section className="py-20 sm:py-28 bg-white" id="trustees" aria-label="Board of Trustees">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section header */}
+            <div className="text-center mb-16">
+              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+                Board of Trustees
+              </Badge>
+              <h2
+                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Board of Trustees
+              </h2>
+              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+                Providing governance oversight and strategic direction for GTEEP&apos;s mission.
+              </p>
+            </div>
+
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto"
+            >
+              {trustees.map((member) => (
+                <motion.div key={member.id} variants={staggerItem}>
+                  <div className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center">
+                    <div className="flex justify-center mb-3">
+                      <TeamAvatar name={member.name} size="sm" />
+                    </div>
+                    <h3
+                      className="text-sm font-semibold text-[#0f172a] mb-1"
+                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                    >
+                      {member.name}
+                    </h3>
+                    <p className="text-xs text-[#059669] font-medium">{member.role}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+      </SectionReveal>
+
+      {/* ================================================================== */}
+      {/* SECTION 7: FEATURED OUTPUTS */}
+      {/* ================================================================== */}
+      <section className="py-20 sm:py-28 bg-[#0f172a] relative overflow-hidden" id="outputs" aria-label="Featured Outputs">
         {/* Decorative elements */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-64 h-64 rounded-full bg-[#065f46]/10 blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-64 h-64 rounded-full bg-[#d97706]/10 blur-3xl" />
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute top-0 right-1/4 w-72 h-72 rounded-full bg-[#059669]/8 blur-3xl" />
+          <div className="absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-[#d97706]/8 blur-3xl" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <SectionReveal>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-              {[
-                { value: 50, suffix: '+', label: 'Publications', icon: BookOpen },
-                { value: 25, suffix: '+', label: 'Years Experience', icon: Award },
-                { value: 15, suffix: '+', label: 'Countries', icon: MapPin },
-                { value: 10, suffix: '+', label: 'Research Projects', icon: FlaskConical },
-              ].map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                  className="text-center"
-                >
-                  <div className="w-16 h-16 mx-auto rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center mb-4">
-                    <stat.icon className="w-8 h-8 text-[#f59e0b]" />
-                  </div>
-                  <p className="text-4xl sm:text-5xl font-bold text-[#f59e0b] mb-2">
-                    <AnimatedCounter end={stat.value} suffix={stat.suffix} />
-                  </p>
-                  <p className="text-sm sm:text-base text-[#94a3b8] font-medium">{stat.label}</p>
-                </motion.div>
-              ))}
+            <div className="text-center mb-16">
+              <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-sm px-3 py-1 mb-4">
+                Our Work
+              </Badge>
+              <h2
+                className="text-3xl sm:text-4xl font-bold text-white mt-2"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Featured Outputs
+              </h2>
+              <p className="mt-4 text-[#94a3b8] max-w-2xl mx-auto">
+                Key research outputs spanning policy briefs, data resources, and knowledge products.
+              </p>
             </div>
           </SectionReveal>
+
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {featuredOutputs.map((output) => (
+              <motion.div key={output.id} variants={staggerItem}>
+                <div className="group p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
+                  <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-xs w-fit mb-4 hover:bg-[#d97706]/30">
+                    {getOutputTypeLabel(output.type)}
+                  </Badge>
+                  <h3
+                    className="text-lg font-semibold text-white mb-3 leading-snug group-hover:text-[#f59e0b] transition-colors"
+                    style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                  >
+                    {output.title}
+                  </h3>
+                  <p className="text-sm text-[#94a3b8] leading-relaxed mb-4 flex-grow">{output.excerpt}</p>
+                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                    {output.date && (
+                      <span className="text-xs text-[#64748b]">
+                        {new Date(output.date + 'T00:00:00').toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
+                    )}
+                    <Button
+                      variant="link"
+                      className="text-[#f59e0b] hover:text-[#d97706] p-0 h-auto text-sm group/link ml-auto"
+                    >
+                      Read More
+                      <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* View all button */}
+          <div className="text-center mt-12">
+            <Button
+              variant="outline"
+              className="border-[#d97706] text-[#f59e0b] hover:bg-[#d97706] hover:text-white px-8 rounded-xl transition-all"
+              asChild
+            >
+              <a href="/outputs">
+                View All Outputs
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </a>
+            </Button>
+          </div>
         </div>
       </section>
 
       {/* ================================================================== */}
-      {/* 8. TESTIMONIALS SECTION */}
+      {/* SECTION 8: PARTNERS */}
       {/* ================================================================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-28 bg-white" id="testimonials">
+        <section className="py-20 sm:py-28 bg-[#f8fafc]" id="partners" aria-label="Our Partners">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section header */}
             <div className="text-center mb-16">
-              <span className="text-[#d97706] font-semibold text-sm uppercase tracking-wider">Testimonials</span>
+              <Badge className="bg-[#fef3c7] text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
+                Collaborations
+              </Badge>
               <h2
                 className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
-                What Colleagues Say
-              </h2>
-            </div>
-
-            <TestimonialsCarousel testimonials={testimonials} />
-          </div>
-        </section>
-      </SectionReveal>
-
-      {/* ================================================================== */}
-      {/* 9. PARTNERS SECTION */}
-      {/* ================================================================== */}
-      <SectionReveal>
-        <section className="py-20 sm:py-28 bg-[#f8fafc]" id="partners">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <span className="text-[#d97706] font-semibold text-sm uppercase tracking-wider">Collaborations</span>
-              <h2
-                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-              >
-                Partners & Collaborations
+                Our Partners
               </h2>
               <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                Working alongside leading institutions across Africa and globally.
+                Working alongside leading institutions across Africa and globally to drive evidence-based policy change.
               </p>
             </div>
 
@@ -832,22 +801,19 @@ export default function HomePageClient({
               className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
             >
               {partners.map((partner) => {
-                const IconComponent = getPartnerTypeIcon(partner.acfPartnerFields?.partnerType);
+                const IconComponent = getPartnerIcon(partner.type);
                 return (
                   <motion.div key={partner.id} variants={staggerItem}>
-                    <div className="group p-6 rounded-2xl bg-white border border-[#e2e8f0] hover:border-[#065f46]/20 hover:shadow-md transition-all duration-300 text-center h-full flex flex-col items-center justify-center">
+                    <div className="group p-6 rounded-2xl bg-white border border-[#e2e8f0] hover:border-[#065f46]/20 hover:shadow-md transition-all duration-300 text-center h-full flex flex-col items-center justify-center hover:-translate-y-1">
                       <div className="w-14 h-14 rounded-xl bg-[#f0fdf4] flex items-center justify-center mb-3 group-hover:bg-[#065f46]/10 transition-colors">
                         <IconComponent className="w-7 h-7 text-[#059669]" />
                       </div>
-                      <h3 className="text-sm font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors">
-                        {partner.title}
+                      <h3 className="text-sm font-semibold text-[#0f172a] mb-2 group-hover:text-[#065f46] transition-colors">
+                        {partner.name}
                       </h3>
-                      {partner.acfPartnerFields?.country && (
-                        <p className="text-xs text-[#94a3b8]">{partner.acfPartnerFields.country}</p>
-                      )}
-                      {partner.acfPartnerFields?.partnerType && (
-                        <Badge variant="secondary" className="mt-2 text-xs capitalize bg-[#f1f5f9] text-[#64748b]">
-                          {partner.acfPartnerFields.partnerType.replace('-', ' ')}
+                      {partner.country && (
+                        <Badge variant="secondary" className="text-xs bg-[#f1f5f9] text-[#64748b]">
+                          {partner.country}
                         </Badge>
                       )}
                     </div>
@@ -855,255 +821,217 @@ export default function HomePageClient({
                 );
               })}
             </motion.div>
-          </div>
-        </section>
-      </SectionReveal>
 
-      {/* ================================================================== */}
-      {/* 10. NEWSLETTER SECTION */}
-      {/* ================================================================== */}
-      <SectionReveal>
-        <section className="py-20 sm:py-28 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#065f46]/10 blur-3xl" />
-          </div>
-
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-[#d97706]/20 flex items-center justify-center mb-6">
-              <Mail className="w-8 h-8 text-[#f59e0b]" />
+            {/* View all button */}
+            <div className="text-center mt-12">
+              <Button
+                variant="outline"
+                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+                asChild
+              >
+                <a href="/partners">
+                  View All Partners
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </a>
+              </Button>
             </div>
-            <h2
-              className="text-3xl sm:text-4xl font-bold text-white mb-4"
-              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-            >
-              Stay Updated
-            </h2>
-            <p className="text-[#94a3b8] mb-8 max-w-lg mx-auto">
-              Subscribe to receive updates on new publications, research findings, and upcoming events directly in your inbox.
-            </p>
-
-            <NewsletterForm />
           </div>
         </section>
       </SectionReveal>
 
       {/* ================================================================== */}
-      {/* 11. CONTACT CTA SECTION */}
+      {/* SECTION 9: BLOG / LATEST INSIGHTS */}
       {/* ================================================================== */}
       <SectionReveal>
-        <section className="py-20 sm:py-28 bg-gradient-to-r from-[#065f46] via-[#047857] to-[#059669] relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/5" />
-            <div className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full bg-[#d97706]/10" />
-          </div>
+        <section className="py-20 sm:py-28 bg-white" id="blog" aria-label="Latest Insights">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section header */}
+            <div className="text-center mb-16">
+              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+                Latest Insights
+              </Badge>
+              <h2
+                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                From Our Blog
+              </h2>
+              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+                Analysis, commentary, and insights on African trade policy, economic development, and social inclusion.
+              </p>
+            </div>
 
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-            <h2
-              className="text-3xl sm:text-4xl font-bold text-white mb-4"
-              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              Get in Touch
-            </h2>
-            <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-              Interested in research collaborations, speaking engagements, or policy advisory? Reach out to discuss how we can work together to advance African trade and development.
-            </p>
-            <Button
-              size="lg"
-              className="bg-white text-[#065f46] hover:bg-[#f0fdf4] px-10 py-6 text-base font-semibold rounded-xl shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
-            >
-              Contact Prof. Akanji
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+              {blogPosts.slice(0, 3).map((post) => (
+                <motion.div key={post.id} variants={staggerItem}>
+                  <Card className="group h-full overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-[#e2e8f0]">
+                    {/* Image area */}
+                    <div className="h-48 bg-gradient-to-br from-[#065f46] to-[#047857] relative flex items-center justify-center">
+                      <div className="text-center text-white/80">
+                        <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-60" />
+                        <p className="text-sm font-medium">GTEEP Insights</p>
+                      </div>
+                      {/* Category badge */}
+                      {post.categories.length > 0 && (
+                        <Badge className="absolute top-4 left-4 bg-white/20 text-white backdrop-blur-sm border-white/30 hover:bg-white/30">
+                          {post.categories[0]}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <CardContent className="p-6 flex flex-col flex-1">
+                      {/* Date */}
+                      <p className="text-xs text-[#94a3b8] mb-2">
+                        {new Date(post.date + 'T00:00:00').toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </p>
+
+                      {/* Title */}
+                      <h3
+                        className="text-base font-semibold text-[#0f172a] mb-3 leading-snug line-clamp-2 group-hover:text-[#065f46] transition-colors"
+                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                      >
+                        {post.title}
+                      </h3>
+
+                      {/* Excerpt */}
+                      <p className="text-sm text-[#64748b] leading-relaxed mb-4 line-clamp-3 flex-grow">
+                        {post.excerpt}
+                      </p>
+
+                      {/* Author & Read More */}
+                      <div className="flex items-center justify-between pt-4 border-t border-[#f1f5f9]">
+                        <span className="text-xs text-[#94a3b8]">By {post.author}</span>
+                        <Button
+                          variant="link"
+                          className="text-[#059669] hover:text-[#047857] p-0 h-auto text-sm group/link"
+                        >
+                          Read More
+                          <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* View all button */}
+            <div className="text-center mt-12">
+              <Button
+                variant="outline"
+                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+                asChild
+              >
+                <a href="/blog">
+                  View All Posts
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </a>
+              </Button>
+            </div>
           </div>
         </section>
       </SectionReveal>
-    </main>
-  );
-}
 
-// =============================================================================
-// Testimonials Carousel Sub-Component
-// =============================================================================
-
-function TestimonialsCarousel({ testimonials }: { testimonials: WPTestimonial[] }) {
-  const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const startAutoplay = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      setDirection(1);
-      setCurrent((prev) => (prev + 1) % testimonials.length);
-    }, 5000);
-  }, [testimonials.length]);
-
-  useEffect(() => {
-    startAutoplay();
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [startAutoplay]);
-
-  const goTo = (index: number) => {
-    setDirection(index > current ? 1 : -1);
-    setCurrent(index);
-    startAutoplay();
-  };
-
-  const goNext = () => {
-    setDirection(1);
-    setCurrent((prev) => (prev + 1) % testimonials.length);
-    startAutoplay();
-  };
-
-  const goPrev = () => {
-    setDirection(-1);
-    setCurrent((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-    startAutoplay();
-  };
-
-  if (testimonials.length === 0) return null;
-
-  const activeTestimonial = testimonials[current];
-
-  const slideVariants = {
-    enter: (dir: number) => ({ x: dir > 0 ? 100 : -100, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir > 0 ? -100 : 100, opacity: 0 }),
-  };
-
-  return (
-    <div className="max-w-4xl mx-auto">
-      <div className="relative">
-        {/* Quote icon */}
-        <div className="absolute -top-4 left-4 sm:left-8">
-          <Quote className="w-12 h-12 text-[#065f46]/10" />
-        </div>
-
-        {/* Testimonial content */}
-        <div className="bg-[#f8fafc] rounded-2xl p-8 sm:p-12 min-h-[280px] flex items-center overflow-hidden relative">
-          <AnimatePresence mode="wait" custom={direction}>
-            <motion.div
-              key={current}
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.4, ease: 'easeInOut' }}
-              className="w-full"
-            >
-              <div className="flex mb-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${
-                      i < (activeTestimonial.acfTestimonialFields?.rating || 5)
-                        ? 'text-[#f59e0b] fill-[#f59e0b]'
-                        : 'text-[#e2e8f0]'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              <blockquote className="text-lg sm:text-xl text-[#334155] leading-relaxed mb-6 italic">
-                &ldquo;{activeTestimonial.content}&rdquo;
-              </blockquote>
-
-              <div>
-                <p className="font-semibold text-[#0f172a]">
-                  {activeTestimonial.acfTestimonialFields?.personName || activeTestimonial.title}
-                </p>
-                <p className="text-sm text-[#64748b]">
-                  {activeTestimonial.acfTestimonialFields?.personTitle}
-                </p>
-                <p className="text-sm text-[#059669] font-medium">
-                  {activeTestimonial.acfTestimonialFields?.personOrganization}
-                </p>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex items-center justify-center gap-4 mt-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={goPrev}
-            className="rounded-full border-[#e2e8f0] hover:bg-[#065f46] hover:text-white hover:border-[#065f46] transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-
-          <div className="flex items-center gap-2">
-            {testimonials.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goTo(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                  index === current
-                    ? 'bg-[#065f46] w-8'
-                    : 'bg-[#cbd5e1] hover:bg-[#94a3b8]'
-                }`}
-                aria-label={`Go to testimonial ${index + 1}`}
-              />
-            ))}
-          </div>
-
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={goNext}
-            className="rounded-full border-[#e2e8f0] hover:bg-[#065f46] hover:text-white hover:border-[#065f46] transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// =============================================================================
-// Newsletter Form Sub-Component
-// =============================================================================
-
-function NewsletterForm() {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-
-    setStatus('loading');
-    // Simulate API call
-    setTimeout(() => {
-      setStatus('success');
-      setEmail('');
-      setTimeout(() => setStatus('idle'), 3000);
-    }, 1000);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-      <Input
-        type="email"
-        placeholder="Enter your email address"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        className="flex-1 h-12 bg-white/10 border-white/20 text-white placeholder:text-white/50 rounded-xl focus-visible:border-[#f59e0b] focus-visible:ring-[#f59e0b]/30"
-      />
-      <Button
-        type="submit"
-        disabled={status === 'loading' || status === 'success'}
-        className="h-12 bg-[#d97706] hover:bg-[#b45309] text-white px-8 rounded-xl font-semibold shadow-lg shadow-[#d97706]/25 transition-all disabled:opacity-70"
+      {/* ================================================================== */}
+      {/* SECTION 10: NEWSLETTER + CONTACT CTA */}
+      {/* ================================================================== */}
+      <section
+        className="py-20 sm:py-28 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] relative overflow-hidden"
+        id="contact"
+        aria-label="Stay Connected"
       >
-        {status === 'loading' ? 'Subscribing...' : status === 'success' ? 'Subscribed!' : 'Subscribe'}
-      </Button>
-    </form>
+        {/* Decorative elements */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#065f46]/10 blur-3xl" />
+          <div className="absolute bottom-0 right-0 w-72 h-72 rounded-full bg-[#d97706]/8 blur-3xl" />
+        </div>
+
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <SectionReveal>
+            <div className="text-center mb-12">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-[#d97706]/20 flex items-center justify-center mb-6">
+                <Mail className="w-8 h-8 text-[#f59e0b]" />
+              </div>
+              <h2
+                className="text-3xl sm:text-4xl font-bold text-white mb-4"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Stay Connected
+              </h2>
+              <p className="text-[#94a3b8] max-w-xl mx-auto">
+                Subscribe to our newsletter for the latest research insights, policy analysis, and updates on our work across Africa.
+              </p>
+            </div>
+
+            {/* Newsletter form */}
+            <div className="max-w-md mx-auto mb-16">
+              <div className="flex gap-3">
+                <Input
+                  type="email"
+                  placeholder="Enter your email address"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-[#d97706] focus:ring-[#d97706]/20 h-12 rounded-xl"
+                  aria-label="Email address for newsletter"
+                />
+                <Button className="bg-[#d97706] hover:bg-[#b45309] text-white px-6 h-12 rounded-xl font-semibold shadow-lg shadow-[#d97706]/25 shrink-0 transition-all hover:shadow-xl hover:shadow-[#d97706]/30">
+                  Subscribe
+                </Button>
+              </div>
+              <p className="text-xs text-[#64748b] mt-3 text-center">
+                We respect your privacy. Unsubscribe at any time.
+              </p>
+            </div>
+
+            {/* Contact info */}
+            <div className="grid sm:grid-cols-3 gap-8 text-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-[#f59e0b]" />
+                </div>
+                <p className="text-white font-medium text-sm">Email</p>
+                <a
+                  href={`mailto:${settings.acfOptions?.contactEmail || 'info@gteep.com'}`}
+                  className="text-[#94a3b8] text-sm hover:text-[#f59e0b] transition-colors"
+                >
+                  {settings.acfOptions?.contactEmail || 'info@gteep.com'}
+                </a>
+              </div>
+
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-[#f59e0b]" />
+                </div>
+                <p className="text-white font-medium text-sm">Address</p>
+                <p className="text-[#94a3b8] text-sm">
+                  {settings.acfOptions?.contactAddress || 'Lagos, Nigeria'}
+                </p>
+              </div>
+
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+                  <Phone className="w-5 h-5 text-[#f59e0b]" />
+                </div>
+                <p className="text-white font-medium text-sm">Phone</p>
+                <a
+                  href={`tel:${settings.acfOptions?.contactPhone || '+234 801 234 5678'}`}
+                  className="text-[#94a3b8] text-sm hover:text-[#f59e0b] transition-colors"
+                >
+                  {settings.acfOptions?.contactPhone || '+234 801 234 5678'}
+                </a>
+              </div>
+            </div>
+          </SectionReveal>
+        </div>
+      </section>
+    </main>
   );
 }

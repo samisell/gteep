@@ -1,6 +1,6 @@
 // =============================================================================
-// WordPress Headless CMS - Comprehensive TypeScript Types
-// Professor Bola Akanji - Economics, Trade & Development Research Website
+// GTEEP - Gilead Trust Economic Empowerment Project
+// Comprehensive TypeScript Types
 // =============================================================================
 
 // -----------------------------------------------------------------------------
@@ -60,13 +60,73 @@ export interface WPSEO {
   };
 }
 
-export interface WPBreadcrumb {
-  text: string;
-  url: string;
+// -----------------------------------------------------------------------------
+// GTEEP-Specific Types
+// -----------------------------------------------------------------------------
+
+export interface GTEEPActivity {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  image?: string;
+}
+
+export interface GTEEPPhilosophy {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+export interface GTEEPTeamMember {
+  id: string;
+  name: string;
+  role: string;
+  category: 'executive' | 'director' | 'board-of-trustees' | 'advisory-board';
+  bio: string;
+  image?: string;
+}
+
+export interface GTEEPOutput {
+  id: string;
+  title: string;
+  slug: string;
+  type: 'concept-note' | 'policy-brief' | 'data-stock' | 'video' | 'photo' | 'knowledge-product';
+  description: string;
+  excerpt: string;
+  date: string;
+  downloadUrl?: string;
+  externalUrl?: string;
+  image?: string;
+  authors?: string;
+  tags?: string[];
+}
+
+export interface GTEEPBlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  date: string;
+  author: string;
+  image?: string;
+  categories: string[];
+}
+
+export interface GTEEPPartner {
+  id: string;
+  name: string;
+  type: 'university' | 'research-institute' | 'government' | 'ngo' | 'international-organization' | 'private-sector';
+  website?: string;
+  country?: string;
+  description?: string;
+  logo?: string;
 }
 
 // -----------------------------------------------------------------------------
-// Content Types
+// WordPress Content Types (kept for future WP backend integration)
 // -----------------------------------------------------------------------------
 
 export interface WPPost {
@@ -99,14 +159,9 @@ export interface WPPage {
   status: string;
   author?: WPAuthor;
   featuredImage?: WPImage | null;
-  template?: {
-    templateName: string;
-  };
   seo?: WPSEO;
   uri: string;
   isFrontPage?: boolean;
-  parent?: WPPage | null;
-  children?: WPPage[];
   acfPageFields?: {
     heroTitle?: string;
     heroSubtitle?: string;
@@ -643,14 +698,6 @@ export interface PaginatedResponse<T> {
 export interface SectionProps {
   className?: string;
   id?: string;
-}
-
-export interface CardProps<T> {
-  item: T;
-  variant?: 'default' | 'compact' | 'featured';
-  showImage?: boolean;
-  showExcerpt?: boolean;
-  showMeta?: boolean;
 }
 
 export interface HeroProps {

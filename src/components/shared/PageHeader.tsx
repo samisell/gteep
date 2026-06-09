@@ -29,7 +29,7 @@ export default function PageHeader({
           : variant === 'compact'
             ? 'py-10 md:py-14'
             : 'py-14 md:py-20',
-        'bg-[#0f172a]',
+        'bg-gradient-to-r from-[#065f46] to-[#0f172a]',
         className
       )}
     >
