@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model DownloadLead {
+  id             String   @id @default(cuid())
+  name           String
+  email          String
+  organization   String?
+  resourceName   String
+  resourceSlug   String
+  resourceUrl    String?
+  downloadToken  String   @unique
+  emailSent      Boolean  @default(false)
+  emailSentAt    DateTime?
+  downloaded     Boolean  @default(false)
+  downloadedAt   DateTime?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("download_leads")
+}
+
+model ContactSubmission {
+  id             String   @id @default(cuid())
+  name           String
+  email          String
+  phone          String?
+  subject        String
+  message        String
+  honeypot       String?
+  adminNotified  Boolean  @default(false)
+  senderNotified Boolean  @default(false)
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("contact_submissions")
+}
+
+model NewsletterSubscription {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  active    Boolean  @default(true)
+  ipAddress String?
+  source    String?  @default("website")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("newsletter_subscriptions")
+}
