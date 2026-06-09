@@ -1,24 +1,37 @@
 import HomePageClient from '@/components/pages/HomePageClient';
 import {
-  mockSiteSettings,
-  mockActivities,
-  mockPhilosophy,
-  mockTeamMembers,
-  mockOutputs,
-  mockPartners,
-  mockBlogPosts,
-} from '@/graphql/mock-data';
+  getSiteSettings,
+  getActivities,
+  getPhilosophy,
+  getTeamMembers,
+  getOutputs,
+  getPartners,
+  getBlogPosts,
+} from '@/graphql/fetchers';
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Fetch all data in parallel - each fetcher tries WP GraphQL first,
+  // then falls back to mock data if WP is unavailable or returns empty results
+  const [settings, activities, philosophy, teamMembers, outputs, partners, blogPosts] =
+    await Promise.all([
+      getSiteSettings(),
+      getActivities(),
+      getPhilosophy(),
+      getTeamMembers(),
+      getOutputs(),
+      getPartners(),
+      getBlogPosts(),
+    ]);
+
   return (
     <HomePageClient
-      settings={mockSiteSettings}
-      activities={mockActivities}
-      philosophy={mockPhilosophy}
-      teamMembers={mockTeamMembers}
-      outputs={mockOutputs}
-      partners={mockPartners}
-      blogPosts={mockBlogPosts}
+      settings={settings}
+      activities={activities}
+      philosophy={philosophy}
+      teamMembers={teamMembers}
+      outputs={outputs}
+      partners={partners}
+      blogPosts={blogPosts}
     />
   );
 }

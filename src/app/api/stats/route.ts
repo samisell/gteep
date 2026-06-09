@@ -1,23 +1,20 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getOutputs, getPartners, getBlogPosts } from '@/graphql/fetchers';
 
 export async function GET() {
   try {
     const [
-      publicationsData,
-      projectsData,
-      eventsData,
+      outputs,
       partners,
-      postsData,
+      blogPosts,
       downloadLeads,
       contactSubmissions,
       newsletterSubs,
     ] = await Promise.all([
-      import('@/graphql/fetchers').then((f) => f.getPublications(100)),
-      import('@/graphql/fetchers').then((f) => f.getProjects(100)),
-      import('@/graphql/fetchers').then((f) => f.getEvents(100)),
-      import('@/graphql/fetchers').then((f) => f.getPartners()),
-      import('@/graphql/fetchers').then((f) => f.getPosts(100)),
+      getOutputs(),
+      getPartners(),
+      getBlogPosts(),
       db.downloadLead.count(),
       db.contactSubmission.count(),
       db.newsletterSubscription.count({ where: { active: true } }),
@@ -34,11 +31,9 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       data: {
-        publications: publicationsData.publications.length,
-        projects: projectsData.projects.length,
-        events: eventsData.events.length,
+        outputs: outputs.length,
         partners: partners.length,
-        posts: postsData.posts.length,
+        blogPosts: blogPosts.length,
         downloadLeads,
         contactSubmissions,
         newsletterSubscribers: newsletterSubs,

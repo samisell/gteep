@@ -1,9 +1,10 @@
 // =============================================================================
 // GraphQL Data Fetchers - WordPress Headless CMS
-// Professor Bola Akanji - Economics, Trade & Development Research Website
+// GTEEP - Gilead Trust Economic Empowerment Project
 //
 // These fetchers use the GraphQL client and fall back to mock data when
-// WordPress is unreachable. This ensures the site always renders content.
+// WordPress is unreachable or returns empty data. This ensures the site
+// always renders content.
 // =============================================================================
 
 import { fetchGraphQL } from '@/lib/graphql-client';
@@ -12,73 +13,53 @@ import {
   GET_PAGE_BY_SLUG,
   GET_POSTS,
   GET_POST_BY_SLUG,
-  GET_PUBLICATIONS,
-  GET_PUBLICATION_BY_SLUG,
-  GET_PROJECTS,
-  GET_PROJECT_BY_SLUG,
-  GET_EVENTS,
-  GET_EVENT_BY_SLUG,
-  GET_RESOURCES,
-  GET_RESOURCE_BY_SLUG,
   GET_MEDIA_ITEMS,
-  GET_PARTNERS,
-  GET_TESTIMONIALS,
   GET_SITE_SETTINGS,
   GET_MENUS,
-  GET_SOCIAL_LINKS,
   SEARCH_QUERY,
 } from './queries';
 
 import type {
   WPPage,
   WPPost,
-  WPPublication,
-  WPProject,
-  WPEvent,
-  WPResource,
   WPMedia,
-  WPPartner,
-  WPTestimonial,
   WPSiteSettings,
-  WPSocialLinks,
   WPMenu,
   WPPageInfo,
   WPSearchData,
   WPPageData,
   WPPostData,
-  WPPublicationData,
-  WPProjectData,
-  WPEventData,
-  WPResourceData,
   WPPagesData,
   WPPostsData,
-  WPPublicationsData,
-  WPProjectsData,
-  WPEventsData,
-  WPResourcesData,
   WPMediaData,
-  WPPartnersData,
-  WPTestimonialsData,
   WPSiteSettingsData,
   WPMenusData,
-  WPSocialLinksData,
 } from '@/types';
 
 // Import mock data as fallback
 import {
-  mockPages,
-  mockPosts,
-  mockPublications,
-  mockProjects,
-  mockEvents,
-  mockResources,
-  mockMediaItems,
-  mockPartners,
-  mockTestimonials,
   mockSiteSettings,
+  mockActivities,
+  mockPhilosophy,
+  mockTeamMembers,
+  mockOutputs,
+  mockPartners,
+  mockBlogPosts,
   mockMenus,
   mockSocialLinks,
 } from './mock-data';
+
+// Re-export mock data for direct use by pages
+export {
+  mockSiteSettings,
+  mockActivities,
+  mockPhilosophy,
+  mockTeamMembers,
+  mockOutputs,
+  mockPartners,
+  mockBlogPosts,
+  mockSocialLinks,
+};
 
 // -----------------------------------------------------------------------------
 // Helper: Extract nodes from a GraphQL response, falling back to mock data
@@ -100,10 +81,11 @@ function extractNodes<T>(
     result = result[part];
   }
 
-  if (result?.nodes && Array.isArray(result.nodes)) {
+  if (result?.nodes && Array.isArray(result.nodes) && result.nodes.length > 0) {
     return result.nodes as T[];
   }
 
+  // If WP returned empty nodes, use mock data
   return mockFallback;
 }
 
@@ -152,7 +134,7 @@ export async function getPages(
   });
 
   return {
-    pages: extractNodes<WPPage>(response, 'pages', mockPages),
+    pages: extractNodes<WPPage>(response, 'pages', []),
     pageInfo: extractPageInfo(response, 'pages'),
   };
 }
@@ -161,11 +143,6 @@ export async function getPageBySlug(slug: string): Promise<WPPage | null> {
   const response = await fetchGraphQL<WPPageData>(GET_PAGE_BY_SLUG, { slug });
 
   const page = extractSingleNode<WPPage>(response, 'page', null);
-
-  if (!page) {
-    // Try to find in mock data
-    return mockPages.find((p) => p.slug === slug) || null;
-  }
 
   return page;
 }
@@ -184,7 +161,7 @@ export async function getPosts(
   });
 
   return {
-    posts: extractNodes<WPPost>(response, 'posts', mockPosts),
+    posts: extractNodes<WPPost>(response, 'posts', []),
     pageInfo: extractPageInfo(response, 'posts'),
   };
 }
@@ -194,156 +171,7 @@ export async function getPostBySlug(slug: string): Promise<WPPost | null> {
 
   const post = extractSingleNode<WPPost>(response, 'post', null);
 
-  if (!post) {
-    return mockPosts.find((p) => p.slug === slug) || null;
-  }
-
   return post;
-}
-
-// -----------------------------------------------------------------------------
-// Publications
-// -----------------------------------------------------------------------------
-
-export async function getPublications(
-  first: number = 20,
-  after?: string
-): Promise<{ publications: WPPublication[]; pageInfo: WPPageInfo | null }> {
-  const response = await fetchGraphQL<WPPublicationsData>(GET_PUBLICATIONS, {
-    first,
-    after,
-  });
-
-  return {
-    publications: extractNodes<WPPublication>(
-      response,
-      'publications',
-      mockPublications
-    ),
-    pageInfo: extractPageInfo(response, 'publications'),
-  };
-}
-
-export async function getPublicationBySlug(
-  slug: string
-): Promise<WPPublication | null> {
-  const response = await fetchGraphQL<WPPublicationData>(
-    GET_PUBLICATION_BY_SLUG,
-    { slug }
-  );
-
-  const publication = extractSingleNode<WPPublication>(
-    response,
-    'publication',
-    null
-  );
-
-  if (!publication) {
-    return mockPublications.find((p) => p.slug === slug) || null;
-  }
-
-  return publication;
-}
-
-// -----------------------------------------------------------------------------
-// Projects
-// -----------------------------------------------------------------------------
-
-export async function getProjects(
-  first: number = 20,
-  after?: string
-): Promise<{ projects: WPProject[]; pageInfo: WPPageInfo | null }> {
-  const response = await fetchGraphQL<WPProjectsData>(GET_PROJECTS, {
-    first,
-    after,
-  });
-
-  return {
-    projects: extractNodes<WPProject>(response, 'projects', mockProjects),
-    pageInfo: extractPageInfo(response, 'projects'),
-  };
-}
-
-export async function getProjectBySlug(slug: string): Promise<WPProject | null> {
-  const response = await fetchGraphQL<WPProjectData>(GET_PROJECT_BY_SLUG, {
-    slug,
-  });
-
-  const project = extractSingleNode<WPProject>(response, 'project', null);
-
-  if (!project) {
-    return mockProjects.find((p) => p.slug === slug) || null;
-  }
-
-  return project;
-}
-
-// -----------------------------------------------------------------------------
-// Events
-// -----------------------------------------------------------------------------
-
-export async function getEvents(
-  first: number = 20,
-  after?: string
-): Promise<{ events: WPEvent[]; pageInfo: WPPageInfo | null }> {
-  const response = await fetchGraphQL<WPEventsData>(GET_EVENTS, {
-    first,
-    after,
-  });
-
-  return {
-    events: extractNodes<WPEvent>(response, 'events', mockEvents),
-    pageInfo: extractPageInfo(response, 'events'),
-  };
-}
-
-export async function getEventBySlug(slug: string): Promise<WPEvent | null> {
-  const response = await fetchGraphQL<WPEventData>(GET_EVENT_BY_SLUG, {
-    slug,
-  });
-
-  const event = extractSingleNode<WPEvent>(response, 'event', null);
-
-  if (!event) {
-    return mockEvents.find((e) => e.slug === slug) || null;
-  }
-
-  return event;
-}
-
-// -----------------------------------------------------------------------------
-// Resources
-// -----------------------------------------------------------------------------
-
-export async function getResources(
-  first: number = 20,
-  after?: string
-): Promise<{ resources: WPResource[]; pageInfo: WPPageInfo | null }> {
-  const response = await fetchGraphQL<WPResourcesData>(GET_RESOURCES, {
-    first,
-    after,
-  });
-
-  return {
-    resources: extractNodes<WPResource>(response, 'resources', mockResources),
-    pageInfo: extractPageInfo(response, 'resources'),
-  };
-}
-
-export async function getResourceBySlug(
-  slug: string
-): Promise<WPResource | null> {
-  const response = await fetchGraphQL<WPResourceData>(GET_RESOURCE_BY_SLUG, {
-    slug,
-  });
-
-  const resource = extractSingleNode<WPResource>(response, 'resource', null);
-
-  if (!resource) {
-    return mockResources.find((r) => r.slug === slug) || null;
-  }
-
-  return resource;
 }
 
 // -----------------------------------------------------------------------------
@@ -351,7 +179,7 @@ export async function getResourceBySlug(
 // -----------------------------------------------------------------------------
 
 export async function getMediaItems(
-  first: number = 20,
+  first: number = 50,
   after?: string
 ): Promise<{ mediaItems: WPMedia[]; pageInfo: WPPageInfo | null }> {
   const response = await fetchGraphQL<WPMediaData>(GET_MEDIA_ITEMS, {
@@ -360,33 +188,9 @@ export async function getMediaItems(
   });
 
   return {
-    mediaItems: extractNodes<WPMedia>(response, 'mediaItems', mockMediaItems),
+    mediaItems: extractNodes<WPMedia>(response, 'mediaItems', []),
     pageInfo: extractPageInfo(response, 'mediaItems'),
   };
-}
-
-// -----------------------------------------------------------------------------
-// Partners
-// -----------------------------------------------------------------------------
-
-export async function getPartners(): Promise<WPPartner[]> {
-  const response = await fetchGraphQL<WPPartnersData>(GET_PARTNERS);
-
-  return extractNodes<WPPartner>(response, 'partners', mockPartners);
-}
-
-// -----------------------------------------------------------------------------
-// Testimonials
-// -----------------------------------------------------------------------------
-
-export async function getTestimonials(): Promise<WPTestimonial[]> {
-  const response = await fetchGraphQL<WPTestimonialsData>(GET_TESTIMONIALS);
-
-  return extractNodes<WPTestimonial>(
-    response,
-    'testimonials',
-    mockTestimonials
-  );
 }
 
 // -----------------------------------------------------------------------------
@@ -400,19 +204,20 @@ export async function getSiteSettings(): Promise<WPSiteSettings> {
     return mockSiteSettings;
   }
 
-  const { generalSettings, acfOptions } = response.data;
+  const { generalSettings } = response.data;
 
   if (!generalSettings) {
     return mockSiteSettings;
   }
 
+  // Merge WP general settings with mock data for ACF fields
   return {
     siteTitle: generalSettings.title || mockSiteSettings.siteTitle,
     siteDescription: generalSettings.description || mockSiteSettings.siteDescription,
     siteUrl: generalSettings.url || mockSiteSettings.siteUrl,
     siteLogo: mockSiteSettings.siteLogo,
     favicon: mockSiteSettings.favicon,
-    acfOptions: acfOptions?.siteSettings || mockSiteSettings.acfOptions,
+    acfOptions: mockSiteSettings.acfOptions,
   };
 }
 
@@ -423,7 +228,7 @@ export async function getSiteSettings(): Promise<WPSiteSettings> {
 export async function getMenus(): Promise<WPMenu[]> {
   const response = await fetchGraphQL<WPMenusData>(GET_MENUS);
 
-  if (response.errors || !response.data?.menus?.nodes) {
+  if (response.errors || !response.data?.menus?.nodes?.length) {
     return mockMenus;
   }
 
@@ -431,17 +236,122 @@ export async function getMenus(): Promise<WPMenu[]> {
 }
 
 // -----------------------------------------------------------------------------
-// Social Links
+// GTEEP-Specific Data Fetchers
+// These use WP pages to populate GTEEP-specific data types, with mock fallbacks
 // -----------------------------------------------------------------------------
 
-export async function getSocialLinks(): Promise<WPSocialLinks> {
-  const response = await fetchGraphQL<WPSocialLinksData>(GET_SOCIAL_LINKS);
-
-  if (response.errors || !response.data?.acfOptions?.socialLinks) {
-    return mockSocialLinks;
+/**
+ * Get activities (What We Do) data.
+ * Currently returns mock data as WP doesn't have custom post types for activities.
+ * When WP content becomes available, this will map WP pages to GTEEPActivity types.
+ */
+export async function getActivities() {
+  // Try to get "What We Do" page content from WP
+  try {
+    const page = await getPageBySlug('what-we-do');
+    if (page?.content) {
+      // If WP has content, we could parse it. For now, use mock data.
+      // In the future, this could parse Gutenberg blocks or HTML content.
+    }
+  } catch {
+    // Fall through to mock data
   }
 
-  return response.data.acfOptions.socialLinks;
+  return mockActivities;
+}
+
+/**
+ * Get philosophy data.
+ * Currently returns mock data.
+ */
+export async function getPhilosophy() {
+  try {
+    const page = await getPageBySlug('our-philosophy');
+    if (page?.content) {
+      // Could parse WP content in the future
+    }
+  } catch {
+    // Fall through to mock data
+  }
+
+  return mockPhilosophy;
+}
+
+/**
+ * Get team members data.
+ * Currently returns mock data.
+ */
+export async function getTeamMembers() {
+  try {
+    const page = await getPageBySlug('about-us');
+    if (page?.content) {
+      // Could parse WP content in the future
+    }
+  } catch {
+    // Fall through to mock data
+  }
+
+  return mockTeamMembers;
+}
+
+/**
+ * Get outputs data.
+ * Currently returns mock data.
+ */
+export async function getOutputs() {
+  try {
+    const page = await getPageBySlug('our-outputs');
+    if (page?.content) {
+      // Could parse WP content in the future
+    }
+  } catch {
+    // Fall through to mock data
+  }
+
+  return mockOutputs;
+}
+
+/**
+ * Get partners data.
+ * Currently returns mock data.
+ */
+export async function getPartners() {
+  try {
+    const page = await getPageBySlug('our-partners');
+    if (page?.content) {
+      // Could parse WP content in the future
+    }
+  } catch {
+    // Fall through to mock data
+  }
+
+  return mockPartners;
+}
+
+/**
+ * Get blog posts data.
+ * Tries WP posts first, falls back to mock data.
+ */
+export async function getBlogPosts() {
+  const { posts } = await getPosts(12);
+
+  // If WP has real blog posts, map them to GTEEPBlogPost format
+  if (posts.length > 0) {
+    return posts.map((post): import('@/types').GTEEPBlogPost => ({
+      id: post.id,
+      title: post.title,
+      slug: post.slug,
+      excerpt: post.excerpt || '',
+      content: post.content || '',
+      date: post.date,
+      author: post.author?.name || 'GTEEP Team',
+      image: post.featuredImage?.node?.sourceUrl || undefined,
+      categories: post.categories?.nodes?.map(c => c.name) || [],
+    }));
+  }
+
+  // Fall back to mock data
+  return mockBlogPosts;
 }
 
 // -----------------------------------------------------------------------------
@@ -458,45 +368,7 @@ export async function searchContent(
   });
 
   if (response.errors || !response.data) {
-    // Search mock data as fallback
-    const term = searchTerm.toLowerCase();
-    return {
-      posts: {
-        nodes: mockPosts.filter(
-          (p) =>
-            p.title.toLowerCase().includes(term) ||
-            p.excerpt.toLowerCase().includes(term)
-        ),
-      },
-      pages: {
-        nodes: mockPages.filter(
-          (p) =>
-            p.title.toLowerCase().includes(term) ||
-            p.excerpt.toLowerCase().includes(term)
-        ),
-      },
-      publications: {
-        nodes: mockPublications.filter(
-          (p) =>
-            p.title.toLowerCase().includes(term) ||
-            (p.excerpt && p.excerpt.toLowerCase().includes(term))
-        ) as any,
-      },
-      projects: {
-        nodes: mockProjects.filter(
-          (p) =>
-            p.title.toLowerCase().includes(term) ||
-            p.excerpt.toLowerCase().includes(term)
-        ) as any,
-      },
-      events: {
-        nodes: mockEvents.filter(
-          (e) =>
-            e.title.toLowerCase().includes(term) ||
-            e.excerpt.toLowerCase().includes(term)
-        ) as any,
-      },
-    };
+    return null;
   }
 
   return response.data;

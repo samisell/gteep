@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy - Prof. Bola Akanji',
-  description: 'Privacy policy for the Professor Bola Akanji research website.',
+  title: 'Privacy Policy - GTEEP',
+  description: 'Privacy policy for the GTEEP website.',
 };
 
 export default function PrivacyPage() {
@@ -88,8 +88,8 @@ export default function PrivacyPage() {
             <h2>8. Contact</h2>
             <p>
               If you have any questions about this Privacy Policy, please contact us at{' '}
-              <a href="mailto:privacy@bolaakanji.org" className="text-emerald-700 hover:underline">
-                privacy@bolaakanji.org
+              <a href="mailto:info@gteep.com" className="text-emerald-700 hover:underline">
+                info@gteep.com
               </a>.
             </p>
 

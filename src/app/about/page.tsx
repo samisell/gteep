@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import AboutPageClient from '@/components/pages/AboutPageClient';
 import {
-  mockSiteSettings,
-  mockPhilosophy,
-  mockTeamMembers,
-} from '@/graphql/mock-data';
+  getSiteSettings,
+  getPhilosophy,
+  getTeamMembers,
+} from '@/graphql/fetchers';
 
 export const metadata: Metadata = {
   title: 'About Us - GTEEP',
@@ -12,12 +12,18 @@ export const metadata: Metadata = {
     'Learn about GTEEP — Gilead Trust Economic Empowerment Project. Evidence-driven policy analysis for socially inclusive development in Africa.',
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const [settings, philosophy, teamMembers] = await Promise.all([
+    getSiteSettings(),
+    getPhilosophy(),
+    getTeamMembers(),
+  ]);
+
   return (
     <AboutPageClient
-      settings={mockSiteSettings}
-      philosophy={mockPhilosophy}
-      teamMembers={mockTeamMembers}
+      settings={settings}
+      philosophy={philosophy}
+      teamMembers={teamMembers}
     />
   );
 }

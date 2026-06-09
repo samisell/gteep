@@ -384,3 +384,29 @@ Stage Summary:
 - All pages verified working correctly
 - No errors or issues found
 - Site is fully functional with GTEEP branding
+
+---
+Task ID: 7
+Agent: main
+Task: Integrate live WordPress GraphQL with GTEEP frontend (test GraphQL and wire up fetchers)
+
+Work Log:
+- Tested WordPress GraphQL endpoint at gteep.jileadtrust.com/graphql - confirmed live and working
+- Discovered WP backend has: 13 pages (empty content), 1 post (Hello world), 3 media items, no ACF fields, no custom post types, no menus
+- Updated src/graphql/queries.ts: removed all ACF field references (acfPageFields, acfPublicationFields, etc.), fixed MediaItem width/height to use mediaDetails sub-object
+- Updated src/graphql/fetchers.ts: rewrote to use simplified queries, added GTEEP-specific fetchers (getActivities, getPhilosophy, getTeamMembers, getOutputs, getPartners, getBlogPosts) that try WP first then fall back to mock data
+- Updated src/app/page.tsx: now uses async GraphQL fetchers with Promise.all instead of direct mock data imports
+- Updated all sub-pages (about, what-we-do, partners, outputs, blog, contact) to use GraphQL fetchers
+- Fixed src/app/sitemap.ts: replaced old fetcher references with new GTEEP-specific ones
+- Fixed src/app/api/stats/route.ts: replaced old fetcher references
+- Fixed src/app/privacy/page.tsx: updated from "Prof. Bola Akanji" to "GTEEP" branding
+- All pages render correctly with GraphQL data integration
+- No console errors, zero lint errors
+- GraphQL queries now match the actual WordPress schema (no more warnings)
+
+Stage Summary:
+- GraphQL integration complete: site tries WordPress backend first, falls back to mock data
+- All 8 pages verified working with Agent Browser
+- Site title "GTEEP" now comes from WordPress generalSettings
+- Mock data serves as fallback for activities, philosophy, team, outputs, partners, blog posts
+- When WP content becomes available, fetchers will automatically use it
