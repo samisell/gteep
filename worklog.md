@@ -451,3 +451,56 @@ Stage Summary:
 - Frontend is ready to consume team members from WordPress
 - When user creates WP categories + posts, the site will automatically display them
 - Clear mapping convention documented in code comments
+
+---
+Task ID: 10
+Agent: Main Orchestrator
+Task: Bring live WordPress data into the website (team photos, blog filtering, site description)
+
+Work Log:
+- Checked WordPress backend: found 1 team member post (Bola Akanji, Executive category) with featured image (IMG_9961.webp)
+- Identified that TeamAvatar component only showed initials, not WP profile photos
+- Identified that blog posts fetcher included team member posts (should exclude them)
+- Identified that getTeamMembers() used all-or-nothing approach (either all WP or all mock)
+- Delegated to subagent: updated TeamAvatar in HomePageClient.tsx and AboutPageClient.tsx to show actual WP profile photos
+- Subagent also updated blog posts filtering (excludes team categories + "Hello world!" post)
+- Subagent updated site description from WP (filters out default "Just another WordPress site" tagline)
+- Fixed critical issue: rewrote getTeamMembers() with per-category merge approach
+  - Each category (executive, director, advisory-board, board-of-trustees) independently uses WP data or falls back to mock
+  - This ensures Bola Akanji's WP data (with real photo) displays for executive, while other categories use mock data until WP posts are added
+- Verified with Agent Browser: Bola Akanji's profile photo (IMG_9961.webp) renders correctly on both Homepage and About page
+- Verified blog posts don't include team member posts or default WP post
+- Zero lint errors, no browser errors, all pages return HTTP 200
+
+Stage Summary:
+- Live WP data now flows into the website:
+  - Team members: Per-category merge (WP data prioritized, mock data fills gaps)
+  - Profile photos: WP featured images render in circular TeamAvatar components
+  - Blog posts: Filtered to exclude team member categories and default WP posts
+  - Site description: WP description used when it's a custom value (not default WP tagline)
+- When more team members are added to WP with their categories, they'll automatically replace mock data per category
+- Bola Akanji's real photo from WP now displays on Homepage and About page
+
+---
+Task ID: 1
+Agent: full-stack-developer
+Task: Update GTEEP site to display live WordPress data (team photos, blog filtering, site description)
+
+Work Log:
+- Read worklog.md to understand previous agent work and current project state
+- Confirmed HomePageClient.tsx TeamAvatar already had imageUrl prop (from prior partial update), but Board of Trustees usage on line 692 was still missing imageUrl={member.image}
+- Fixed HomePageClient.tsx line 692: added imageUrl={member.image} to Board of Trustees TeamAvatar
+- Updated AboutPageClient.tsx TeamAvatar component: added imageUrl optional prop, when provided shows circular next/image with object-cover object-center, falls back to initials gradient when no image
+- Updated all 4 AboutPageClient.tsx TeamAvatar usages to pass imageUrl={member.image}: Executive Director (size=lg), Directors (size=md), Advisory Board (size=sm), Board of Trustees (size=md)
+- Updated fetchers.ts getBlogPosts(): now fetches 50 posts (was 12), filters out posts with team member categories (executive, director, advisory-board, board-of-trustees, team), filters out default "hello-world" WP post, falls back to mock data only if no real blog posts remain after filtering
+- Updated fetchers.ts getSiteSettings(): added explicit handling to use WP description when it's a custom one (not "Just another WordPress site"), falls back to mock description for default WP taglines
+- Confirmed next.config.ts already has `hostname: '**'` remote pattern allowing all image domains including gteep.jileadtrust.com
+- Ran ESLint: zero errors
+- Dev server running cleanly, all pages returning HTTP 200
+
+Stage Summary:
+- TeamAvatar components now display actual WP profile photos (e.g., Bola Akanji's IMG_9961.webp) when available from WordPress, with circular cropping and proper object-cover/object-center
+- All 8 TeamAvatar usages across HomePageClient.tsx and AboutPageClient.tsx now pass member.image as imageUrl
+- Blog posts fetcher excludes team member posts (Executive, Director, Advisory Board, Board of Trustees, Team categories) and the default "Hello world!" post
+- Site description uses WordPress "Research, Outreach, Enlightenment, Empowerment" when available, filters out default WP tagline
+- Zero lint errors, all pages render successfully

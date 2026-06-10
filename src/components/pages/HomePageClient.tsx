@@ -198,7 +198,7 @@ function getOutputTypeLabel(type: string): string {
 // Helper: Team member avatar with initials
 // =============================================================================
 
-function TeamAvatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
+function TeamAvatar({ name, size = 'md', imageUrl }: { name: string; size?: 'sm' | 'md' | 'lg'; imageUrl?: string }) {
   const initials = name
     .split(' ')
     .map((n) => n[0])
@@ -211,6 +211,19 @@ function TeamAvatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 
     md: 'w-16 h-16 text-lg',
     lg: 'w-24 h-24 text-2xl',
   };
+
+  if (imageUrl) {
+    return (
+      <div className={`${sizeClasses[size]} rounded-full overflow-hidden shadow-lg shrink-0 relative`}>
+        <Image
+          src={imageUrl}
+          alt={name}
+          fill
+          className="object-cover object-center"
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -541,7 +554,7 @@ export default function HomePageClient({
               >
                 <div className="group max-w-4xl mx-auto p-8 rounded-2xl border border-[#e2e8f0] hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-[#f0fdf4] to-white">
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                    <TeamAvatar name={member.name} size="lg" />
+                    <TeamAvatar name={member.name} size="lg" imageUrl={member.image} />
                     <div className="text-center sm:text-left flex-1">
                       <Badge className="bg-[#065f46] text-white text-xs mb-2 hover:bg-[#065f46]">
                         Executive Director
@@ -572,7 +585,7 @@ export default function HomePageClient({
                 <motion.div key={member.id} variants={staggerItem}>
                   <div className="group p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white text-center">
                     <div className="flex justify-center mb-4">
-                      <TeamAvatar name={member.name} size="md" />
+                      <TeamAvatar name={member.name} size="md" imageUrl={member.image} />
                     </div>
                     <Badge variant="secondary" className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-xs mb-2">
                       Director
@@ -626,12 +639,12 @@ export default function HomePageClient({
                 <motion.div key={member.id} variants={staggerItem}>
                   <div className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center">
                     <div className="flex justify-center mb-3">
-                      <TeamAvatar name={member.name} size="sm" />
+                      <TeamAvatar name={member.name} size="sm" imageUrl={member.image} />
                     </div>
                     <h3
                       className="text-sm font-semibold text-[#0f172a] mb-1"
                       style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                    >
+    >
                       {member.name}
                     </h3>
                     <p className="text-xs text-[#059669] font-medium">{member.role}</p>
@@ -676,7 +689,7 @@ export default function HomePageClient({
                 <motion.div key={member.id} variants={staggerItem}>
                   <div className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center">
                     <div className="flex justify-center mb-3">
-                      <TeamAvatar name={member.name} size="sm" />
+                      <TeamAvatar name={member.name} size="sm" imageUrl={member.image} />
                     </div>
                     <h3
                       className="text-sm font-semibold text-[#0f172a] mb-1"

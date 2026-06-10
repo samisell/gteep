@@ -266,10 +266,16 @@ export async function getSiteSettings(): Promise<WPSiteSettings> {
   // Try to fetch the site logo from WP
   const logoUrl = await getSiteLogo();
 
+  // Determine the site description: use WP description if it's a real custom one,
+  // not the default WordPress tagline. Fall back to mock data otherwise.
+  const wpDescription = generalSettings.description;
+  const isDefaultWpTagline = !wpDescription || wpDescription === 'Just another WordPress site';
+  const siteDescription = isDefaultWpTagline ? mockSiteSettings.siteDescription : wpDescription;
+
   // Merge WP general settings with mock data for ACF fields
   return {
     siteTitle: generalSettings.title || mockSiteSettings.siteTitle,
-    siteDescription: generalSettings.description || mockSiteSettings.siteDescription,
+    siteDescription,
     siteUrl: generalSettings.url || mockSiteSettings.siteUrl,
     siteLogo: logoUrl
       ? {
@@ -364,7 +370,8 @@ export async function getPhilosophy() {
  *   Featured Image = Profile picture
  *   First Tag      = Position/Role (e.g. "Executive Director")
  *
- * Falls back to mock data if WP has no team member posts.
+ * Uses per-category fallback: for each category, WP data takes priority when
+ * available; mock data fills in categories where WP has no posts yet.
  */
 export async function getTeamMembers() {
   try {
@@ -391,23 +398,23 @@ export async function getTeamMembers() {
 
     const { executives, directors, advisoryBoard, boardOfTrustees } = response.data;
 
-    // Check if any team data was returned from WP
-    const hasWpData =
-      (executives?.nodes?.length > 0) ||
-      (directors?.nodes?.length > 0) ||
-      (advisoryBoard?.nodes?.length > 0) ||
-      (boardOfTrustees?.nodes?.length > 0);
+    // Per-category merge: use WP data when available, fall back to mock data per category
+    const wpExecutives = (executives?.nodes || []).map((p: any) => mapPostToMember(p, 'executive'));
+    const wpDirectors = (directors?.nodes || []).map((p: any) => mapPostToMember(p, 'director'));
+    const wpAdvisoryBoard = (advisoryBoard?.nodes || []).map((p: any) => mapPostToMember(p, 'advisory-board'));
+    const wpBoardOfTrustees = (boardOfTrustees?.nodes || []).map((p: any) => mapPostToMember(p, 'board-of-trustees'));
 
-    if (!hasWpData) {
-      return mockTeamMembers;
-    }
+    // Mock data per category
+    const mockExecutives = mockTeamMembers.filter(m => m.category === 'executive');
+    const mockDirectors = mockTeamMembers.filter(m => m.category === 'director');
+    const mockAdvisoryBoard = mockTeamMembers.filter(m => m.category === 'advisory-board');
+    const mockBoardOfTrustees = mockTeamMembers.filter(m => m.category === 'board-of-trustees');
 
-    // Map all WP posts to GTEEPTeamMember
     const teamMembers: GTEEPTeamMember[] = [
-      ...(executives?.nodes || []).map((p: any) => mapPostToMember(p, 'executive')),
-      ...(directors?.nodes || []).map((p: any) => mapPostToMember(p, 'director')),
-      ...(advisoryBoard?.nodes || []).map((p: any) => mapPostToMember(p, 'advisory-board')),
-      ...(boardOfTrustees?.nodes || []).map((p: any) => mapPostToMember(p, 'board-of-trustees')),
+      ...(wpExecutives.length > 0 ? wpExecutives : mockExecutives),
+      ...(wpDirectors.length > 0 ? wpDirectors : mockDirectors),
+      ...(wpAdvisoryBoard.length > 0 ? wpAdvisoryBoard : mockAdvisoryBoard),
+      ...(wpBoardOfTrustees.length > 0 ? wpBoardOfTrustees : mockBoardOfTrustees),
     ];
 
     return teamMembers.length > 0 ? teamMembers : mockTeamMembers;
@@ -452,23 +459,42 @@ export async function getPartners() {
 
 /**
  * Get blog posts data.
- * Tries WP posts first, falls back to mock data.
+ * Tries WP posts first, filters out team member categories and default WP posts,
+ * then falls back to mock data.
  */
 export async function getBlogPosts() {
-  const { posts } = await getPosts(12);
+  const { posts } = await getPosts(50);
 
-  // If WP has real blog posts, map them to GTEEPBlogPost format
-  if (posts.length > 0) {
-    return posts.map((post): import('@/types').GTEEPBlogPost => ({
+  // Categories used for team members — these should NOT appear in blog posts
+  const teamCategorySlugs = ['executive', 'director', 'advisory-board', 'board-of-trustees', 'team'];
+
+  // Filter out team member posts and the default "Hello world!" WP post
+  const blogPosts = posts.filter((post) => {
+    // Skip default WP post
+    if (post.slug === 'hello-world') return false;
+
+    // Skip posts in team member categories
+    const postCategories = (post.categories as any)?.nodes || [];
+    const hasTeamCategory = postCategories.some((cat: any) =>
+      teamCategorySlugs.includes(cat.slug)
+    );
+    if (hasTeamCategory) return false;
+
+    return true;
+  });
+
+  // If WP has real blog posts after filtering, map them to GTEEPBlogPost format
+  if (blogPosts.length > 0) {
+    return blogPosts.map((post): import('@/types').GTEEPBlogPost => ({
       id: post.id,
       title: post.title,
       slug: post.slug,
       excerpt: post.excerpt || '',
       content: post.content || '',
       date: post.date,
-      author: post.author?.name || 'GTEEP Team',
+      author: (post.author as any)?.node?.name || 'GTEEP Team',
       image: post.featuredImage?.node?.sourceUrl || undefined,
-      categories: post.categories?.nodes?.map(c => c.name) || [],
+      categories: (post.categories as any)?.nodes?.map((c: any) => c.name) || [],
     }));
   }
 
