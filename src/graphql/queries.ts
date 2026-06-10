@@ -257,6 +257,88 @@ export const GET_MENUS = `
 `;
 
 // -----------------------------------------------------------------------------
+// Team Members Query
+// Fetches posts in the team-member categories:
+//   - "Executive" category → Executive Director
+//   - "Director" category → Directors
+//   - "Board of Trustees" category → Trustees
+//   - "Advisory Board" category → Advisory Board
+//
+// Convention:
+//   Post Title     = Person's Name (e.g. "Bola Akanji")
+//   Post Excerpt   = Short brief / one-liner
+//   Post Content   = Full bio
+//   Featured Image = Profile picture
+//   Category       = Which group they belong to
+//   First Tag      = Their Position/Role (e.g. "Executive Director")
+// -----------------------------------------------------------------------------
+
+export const GET_TEAM_MEMBERS = `
+  query GetTeamMembers($first: Int = 50) {
+    executives: posts(
+      first: $first
+      where: { status: PUBLISH, categoryName: "executive" }
+    ) {
+      nodes {
+        id
+        databaseId
+        title
+        slug
+        excerpt
+        content
+        ${FEATURED_IMAGE_FRAGMENT}
+        ${TAGS_FRAGMENT}
+      }
+    }
+    directors: posts(
+      first: $first
+      where: { status: PUBLISH, categoryName: "director" }
+    ) {
+      nodes {
+        id
+        databaseId
+        title
+        slug
+        excerpt
+        content
+        ${FEATURED_IMAGE_FRAGMENT}
+        ${TAGS_FRAGMENT}
+      }
+    }
+    advisoryBoard: posts(
+      first: $first
+      where: { status: PUBLISH, categoryName: "advisory-board" }
+    ) {
+      nodes {
+        id
+        databaseId
+        title
+        slug
+        excerpt
+        content
+        ${FEATURED_IMAGE_FRAGMENT}
+        ${TAGS_FRAGMENT}
+      }
+    }
+    boardOfTrustees: posts(
+      first: $first
+      where: { status: PUBLISH, categoryName: "board-of-trustees" }
+    ) {
+      nodes {
+        id
+        databaseId
+        title
+        slug
+        excerpt
+        content
+        ${FEATURED_IMAGE_FRAGMENT}
+        ${TAGS_FRAGMENT}
+      }
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
 // Search Query
 // -----------------------------------------------------------------------------
 

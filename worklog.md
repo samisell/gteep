@@ -433,3 +433,21 @@ Stage Summary:
 - Fallback to "G" letter gradient if WP is unreachable
 - Logo renders in: Navbar (desktop), Navbar mobile Sheet, Footer
 - Site settings (getSiteSettings) also now includes the real WP logo URL
+
+---
+Task ID: 9
+Agent: main
+Task: Set up team members fetching from WordPress backend
+
+Work Log:
+- Added GET_TEAM_MEMBERS GraphQL query with 4 aliased post queries by category (executive, director, advisory-board, board-of-trustees)
+- Updated getTeamMembers() fetcher to fetch WP posts by team categories and map them to GTEEPTeamMember type
+- Convention: Post Title=Name, Post Excerpt=Short brief, Post Content=Full bio, Featured Image=Profile picture, First Tag=Position/Role
+- Falls back to mock data when WP has no team member posts (currently the case)
+- Zero lint errors, all pages render correctly
+- Verified GraphQL query works against live WP backend (returns empty arrays, triggers mock fallback)
+
+Stage Summary:
+- Frontend is ready to consume team members from WordPress
+- When user creates WP categories + posts, the site will automatically display them
+- Clear mapping convention documented in code comments

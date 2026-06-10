@@ -16,6 +16,7 @@ import {
   GET_MEDIA_ITEMS,
   GET_SITE_SETTINGS,
   GET_MENUS,
+  GET_TEAM_MEMBERS,
   SEARCH_QUERY,
 } from './queries';
 
@@ -34,6 +35,7 @@ import type {
   WPMediaData,
   WPSiteSettingsData,
   WPMenusData,
+  GTEEPTeamMember,
 } from '@/types';
 
 // Import mock data as fallback
@@ -349,19 +351,69 @@ export async function getPhilosophy() {
 
 /**
  * Get team members data.
- * Currently returns mock data.
+ * Fetches team members from WordPress posts with specific categories:
+ *   - "executive" category → Executive Director
+ *   - "director" category → Directors
+ *   - "advisory-board" category → Advisory Board
+ *   - "board-of-trustees" category → Board of Trustees
+ *
+ * WP Convention:
+ *   Post Title     = Person's Name
+ *   Post Excerpt   = Short brief
+ *   Post Content   = Full bio
+ *   Featured Image = Profile picture
+ *   First Tag      = Position/Role (e.g. "Executive Director")
+ *
+ * Falls back to mock data if WP has no team member posts.
  */
 export async function getTeamMembers() {
   try {
-    const page = await getPageBySlug('about-us');
-    if (page?.content) {
-      // Could parse WP content in the future
-    }
-  } catch {
-    // Fall through to mock data
-  }
+    const response = await fetchGraphQL<any>(GET_TEAM_MEMBERS);
 
-  return mockTeamMembers;
+    if (response.errors || !response.data) {
+      return mockTeamMembers;
+    }
+
+    // Helper to map WP post nodes to GTEEPTeamMember
+    const mapPostToMember = (
+      post: any,
+      category: GTEEPTeamMember['category']
+    ): GTEEPTeamMember => ({
+      id: post.id,
+      name: post.title || '',
+      role: post.tags?.nodes?.[0]?.name || category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' '),
+      category,
+      bio: post.content
+        ? post.content.replace(/<[^>]*>/g, '').trim() // Strip HTML for plain text bio
+        : post.excerpt?.replace(/<[^>]*>/g, '').trim() || '',
+      image: post.featuredImage?.node?.sourceUrl || '',
+    });
+
+    const { executives, directors, advisoryBoard, boardOfTrustees } = response.data;
+
+    // Check if any team data was returned from WP
+    const hasWpData =
+      (executives?.nodes?.length > 0) ||
+      (directors?.nodes?.length > 0) ||
+      (advisoryBoard?.nodes?.length > 0) ||
+      (boardOfTrustees?.nodes?.length > 0);
+
+    if (!hasWpData) {
+      return mockTeamMembers;
+    }
+
+    // Map all WP posts to GTEEPTeamMember
+    const teamMembers: GTEEPTeamMember[] = [
+      ...(executives?.nodes || []).map((p: any) => mapPostToMember(p, 'executive')),
+      ...(directors?.nodes || []).map((p: any) => mapPostToMember(p, 'director')),
+      ...(advisoryBoard?.nodes || []).map((p: any) => mapPostToMember(p, 'advisory-board')),
+      ...(boardOfTrustees?.nodes || []).map((p: any) => mapPostToMember(p, 'board-of-trustees')),
+    ];
+
+    return teamMembers.length > 0 ? teamMembers : mockTeamMembers;
+  } catch {
+    return mockTeamMembers;
+  }
 }
 
 /**
