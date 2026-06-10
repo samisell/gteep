@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
   Linkedin,
@@ -81,7 +82,11 @@ const itemVariants = {
   },
 };
 
-export default function Footer() {
+interface FooterProps {
+  logoUrl?: string | null;
+}
+
+export default function Footer({ logoUrl }: FooterProps) {
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
 
@@ -126,9 +131,21 @@ export default function Footer() {
           {/* Column 1: About */}
           <motion.div variants={itemVariants} className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="inline-flex items-center gap-3 group mb-5">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-700 to-emerald-600 flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-105">
-                <span className="text-white font-bold text-base heading-font">G</span>
-              </div>
+              {logoUrl ? (
+                <div className="relative w-9 h-9 rounded-lg overflow-hidden shadow-md transition-transform duration-300 group-hover:scale-105 bg-white">
+                  <Image
+                    src={logoUrl}
+                    alt="GTEEP Logo"
+                    fill
+                    className="object-contain p-0.5"
+                    sizes="36px"
+                  />
+                </div>
+              ) : (
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-700 to-emerald-600 flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-105">
+                  <span className="text-white font-bold text-base heading-font">G</span>
+                </div>
+              )}
               <div className="flex flex-col">
                 <span className="text-lg font-bold heading-font bg-gradient-to-r from-emerald-400 to-amber-400 bg-clip-text text-transparent leading-tight">
                   GTEEP

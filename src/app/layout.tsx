@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import ContentProtection from '@/components/security/ContentProtection';
 import { Toaster } from '@/components/ui/sonner';
+import { getSiteLogo } from '@/graphql/fetchers';
 import './globals.css';
 
 const inter = Inter({
@@ -89,11 +90,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Fetch the site logo from WordPress backend
+  const logoUrl = await getSiteLogo();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -102,9 +106,9 @@ export default function RootLayout({
         <AppProviders>
           <ContentProtection>
             <div className="min-h-screen flex flex-col">
-              <Navbar />
+              <Navbar logoUrl={logoUrl} />
               <main className="flex-1">{children}</main>
-              <Footer />
+              <Footer logoUrl={logoUrl} />
             </div>
             <ScrollToTop />
           </ContentProtection>

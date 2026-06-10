@@ -194,8 +194,59 @@ export async function getMediaItems(
 }
 
 // -----------------------------------------------------------------------------
-// Site Settings
+// Site Settings & Logo
 // -----------------------------------------------------------------------------
+
+/**
+ * Fetch the site logo URL from WordPress.
+ * WP stores the site icon in the REST API root as `site_icon` (media item ID).
+ * We fetch it via GraphQL mediaItems, looking for the "cropped-refined_logo" file
+ * which is the site icon set in WP Customizer.
+ * Falls back to null if not found.
+ */
+export async function getSiteLogo(): Promise<string | null> {
+  try {
+    const response = await fetchGraphQL<any>(`
+      query GetSiteLogo {
+        mediaItems(first: 10, where: { search: "cropped-refined_logo" }) {
+          nodes {
+            id
+            sourceUrl
+            altText
+            title
+          }
+        }
+      }
+    `);
+
+    if (response.errors || !response.data?.mediaItems?.nodes?.length) {
+      // Fallback: try fetching the known site icon by databaseId
+      const fallbackResponse = await fetchGraphQL<any>(`
+        query GetSiteIcon {
+          mediaItem(id: "8", idType: DATABASE_ID) {
+            sourceUrl
+            altText
+          }
+        }
+      `);
+
+      if (fallbackResponse.errors || !fallbackResponse.data?.mediaItem?.sourceUrl) {
+        return null;
+      }
+
+      return fallbackResponse.data.mediaItem.sourceUrl;
+    }
+
+    // Find the cropped logo
+    const logo = response.data.mediaItems.nodes.find(
+      (node: any) => node.title?.includes('cropped-refined_logo') || node.sourceUrl?.includes('cropped-refined_logo')
+    );
+
+    return logo?.sourceUrl || response.data.mediaItems.nodes[0]?.sourceUrl || null;
+  } catch {
+    return null;
+  }
+}
 
 export async function getSiteSettings(): Promise<WPSiteSettings> {
   const response = await fetchGraphQL<WPSiteSettingsData>(GET_SITE_SETTINGS);
@@ -210,13 +261,32 @@ export async function getSiteSettings(): Promise<WPSiteSettings> {
     return mockSiteSettings;
   }
 
+  // Try to fetch the site logo from WP
+  const logoUrl = await getSiteLogo();
+
   // Merge WP general settings with mock data for ACF fields
   return {
     siteTitle: generalSettings.title || mockSiteSettings.siteTitle,
     siteDescription: generalSettings.description || mockSiteSettings.siteDescription,
     siteUrl: generalSettings.url || mockSiteSettings.siteUrl,
-    siteLogo: mockSiteSettings.siteLogo,
-    favicon: mockSiteSettings.favicon,
+    siteLogo: logoUrl
+      ? {
+          sourceUrl: logoUrl,
+          altText: 'GTEEP Logo',
+          mediaItemId: 8,
+          width: 512,
+          height: 512,
+        }
+      : mockSiteSettings.siteLogo,
+    favicon: logoUrl
+      ? {
+          sourceUrl: logoUrl,
+          altText: 'GTEEP Favicon',
+          mediaItemId: 8,
+          width: 512,
+          height: 512,
+        }
+      : mockSiteSettings.favicon,
     acfOptions: mockSiteSettings.acfOptions,
   };
 }

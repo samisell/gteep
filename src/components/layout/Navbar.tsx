@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Menu, X, ChevronRight } from 'lucide-react';
+import { Menu, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -25,7 +26,11 @@ const navLinks = [
   { href: '/contact', label: 'Contact Us' },
 ];
 
-export default function Navbar() {
+interface NavbarProps {
+  logoUrl?: string | null;
+}
+
+export default function Navbar({ logoUrl }: NavbarProps) {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -72,17 +77,26 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo / Brand */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative">
+              {logoUrl ? (
+                <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-md transition-transform duration-300 group-hover:scale-105 bg-white">
+                  <Image
+                    src={logoUrl}
+                    alt="GTEEP Logo"
+                    fill
+                    className="object-contain p-0.5"
+                    sizes="40px"
+                    priority
+                  />
+                </div>
+              ) : (
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-700 to-emerald-600 flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-105">
                   <span className="text-white font-bold text-lg heading-font">G</span>
                 </div>
-              </div>
+              )}
               <div className="flex flex-col">
                 <span className={cn(
                   'text-lg lg:text-xl font-bold heading-font leading-tight transition-colors duration-300',
-                  isScrolled
-                    ? 'bg-gradient-to-r from-emerald-800 to-emerald-600 bg-clip-text text-transparent'
-                    : 'bg-gradient-to-r from-emerald-800 to-emerald-600 bg-clip-text text-transparent'
+                  'bg-gradient-to-r from-emerald-800 to-emerald-600 bg-clip-text text-transparent'
                 )}>
                   GTEEP
                 </span>
@@ -169,9 +183,21 @@ export default function Navbar() {
         <SheetContent side="right" className="w-[300px] sm:w-[360px] p-0">
           <SheetHeader className="p-6 pb-4 border-b border-emerald-100 dark:border-emerald-900/30 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950 dark:to-slate-900">
             <SheetTitle className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-700 to-emerald-600 flex items-center justify-center shadow-md">
-                <span className="text-white font-bold text-base heading-font">G</span>
-              </div>
+              {logoUrl ? (
+                <div className="relative w-9 h-9 rounded-lg overflow-hidden shadow-md bg-white">
+                  <Image
+                    src={logoUrl}
+                    alt="GTEEP Logo"
+                    fill
+                    className="object-contain p-0.5"
+                    sizes="36px"
+                  />
+                </div>
+              ) : (
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-700 to-emerald-600 flex items-center justify-center shadow-md">
+                  <span className="text-white font-bold text-base heading-font">G</span>
+                </div>
+              )}
               <div className="flex flex-col items-start">
                 <span className="text-xl font-bold heading-font bg-gradient-to-r from-emerald-800 to-emerald-600 bg-clip-text text-transparent">
                   GTEEP

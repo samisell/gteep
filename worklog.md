@@ -410,3 +410,26 @@ Stage Summary:
 - Site title "GTEEP" now comes from WordPress generalSettings
 - Mock data serves as fallback for activities, philosophy, team, outputs, partners, blog posts
 - When WP content becomes available, fetchers will automatically use it
+
+---
+Task ID: 8
+Agent: main
+Task: Make the logo load from WordPress backend
+
+Work Log:
+- Investigated WordPress backend for logo: found site_icon=8 (cropped-refined_logo.png, 512x512) via REST API root
+- WP GraphQL doesn't have customLogo/siteIcon fields, so fetched logo via mediaItem by databaseId=8
+- Added getSiteLogo() fetcher that tries GraphQL mediaItems search first, falls back to direct databaseId lookup
+- Updated getSiteSettings() to call getSiteLogo() and populate siteLogo/favicon with the real WP URL
+- Updated src/app/layout.tsx: made RootLayout async, fetches logoUrl via getSiteLogo(), passes to Navbar and Footer
+- Updated src/components/layout/Navbar.tsx: added logoUrl prop, renders WP logo image via next/image with object-contain, falls back to "G" letter gradient when no logo
+- Updated src/components/layout/Footer.tsx: added logoUrl prop + Image import, renders WP logo image in footer brand section
+- Both desktop navbar, mobile Sheet menu, and footer all display the WP logo
+- Zero lint errors, zero browser errors, clean compilation
+- Agent Browser verified: "GTEEP Logo" appears in accessibility tree for both Navbar and Footer
+
+Stage Summary:
+- Logo now loads dynamically from WordPress backend (https://gteep.jileadtrust.com/wp-content/uploads/2026/06/cropped-refined_logo.png)
+- Fallback to "G" letter gradient if WP is unreachable
+- Logo renders in: Navbar (desktop), Navbar mobile Sheet, Footer
+- Site settings (getSiteSettings) also now includes the real WP logo URL
