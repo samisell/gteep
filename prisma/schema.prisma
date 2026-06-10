@@ -32,10 +32,10 @@ model ContactSubmission {
   id             String   @id @default(cuid())
   name           String
   email          String
-  phone          String?
+  organization   String?
   subject        String
   message        String
-  honeypot       String?
+  consent        Boolean  @default(false)
   adminNotified  Boolean  @default(false)
   senderNotified Boolean  @default(false)
   ipAddress      String?

@@ -4,20 +4,31 @@ import { db } from '@/lib/db';
 import { contactFormLimiter } from '@/lib/rate-limiter';
 import { sanitizeInput } from '@/utils';
 
+// ---------------------------------------------------------------------------
+// Validation schema — matches the frontend ContactPageClient form exactly
+// ---------------------------------------------------------------------------
+
 const contactSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   email: z.string().email('Invalid email address'),
-  phone: z.string().max(30).optional(),
+  organization: z.string().max(200).optional(),
   subject: z.string().min(3, 'Subject must be at least 3 characters').max(200),
   message: z.string().min(10, 'Message must be at least 10 characters').max(5000),
-  honeypot: z.string().max(0).optional(),
+  consent: z.boolean().refine((v) => v === true, 'Consent is required'),
 });
+
+// ---------------------------------------------------------------------------
+// POST /api/contact
+// ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-               request.headers.get('x-real-ip') || 'unknown';
+    // 1. Rate limiting
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
     if (!contactFormLimiter.check(ip)) {
       return NextResponse.json(
         { success: false, error: 'Too many requests. Please try again later.' },
@@ -25,19 +36,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 2. Parse & validate body
     const body = await request.json();
-
-    // Honeypot check - bots fill this field
-    if (body.honeypot && body.honeypot.length > 0) {
-      // Silently accept but don't save
-      return NextResponse.json({
-        success: true,
-        message: 'Your message has been received. We will get back to you shortly.',
-      });
-    }
-
-    // Validate with Zod
     const result = contactSchema.safeParse(body);
+
     if (!result.success) {
       const errors = result.error.errors.map((e) => e.message).join(', ');
       return NextResponse.json(
@@ -46,36 +48,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, email, phone, subject, message } = result.data;
+    const { name, email, organization, subject, message, consent } = result.data;
 
-    // Save to database
+    // 3. Save to database
     const submission = await db.contactSubmission.create({
       data: {
         name: sanitizeInput(name),
         email: sanitizeInput(email),
-        phone: phone ? sanitizeInput(phone) : null,
+        organization: organization ? sanitizeInput(organization) : null,
         subject: sanitizeInput(subject),
         message: sanitizeInput(message),
+        consent,
         ipAddress: ip,
         userAgent: request.headers.get('user-agent') || null,
       },
     });
 
-    // Fire-and-forget: Send notification emails
-    // In production, these would use the email service
+    // 4. Send notification emails (fire-and-forget, never block the response)
     try {
       const { sendContactNotification, sendContactConfirmation } = await import('@/lib/email');
       await Promise.allSettled([
         sendContactNotification({
           name: submission.name,
           email: submission.email,
-          phone: submission.phone || undefined,
+          organization: submission.organization || undefined,
           subject: submission.subject,
           message: submission.message,
         }),
         sendContactConfirmation({
           name: submission.name,
           email: submission.email,
+          subject: submission.subject,
         }),
       ]);
 
@@ -85,8 +88,8 @@ export async function POST(request: NextRequest) {
         data: { adminNotified: true, senderNotified: true },
       });
     } catch (emailError) {
-      console.error('Email notification error (non-blocking):', emailError);
-      // Don't fail the request if email fails
+      console.error('[Contact] Email notification error (non-blocking):', emailError);
+      // Don't fail the request if email fails — the submission is already saved
     }
 
     return NextResponse.json({
@@ -94,7 +97,7 @@ export async function POST(request: NextRequest) {
       message: 'Your message has been received. We will get back to you shortly.',
     });
   } catch (error) {
-    console.error('Contact form error:', error);
+    console.error('[Contact] Form submission error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to process your request. Please try again.' },
       { status: 500 }
