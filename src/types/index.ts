@@ -126,6 +126,25 @@ export interface GTEEPPartner {
 }
 
 // -----------------------------------------------------------------------------
+// YouTube Video Types
+// -----------------------------------------------------------------------------
+
+export interface YouTubeVideo {
+  videoId: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  publishedAt: string;
+  channelTitle: string;
+  channelUrl: string;
+  videoUrl: string;
+  embedUrl: string;
+  viewCount?: number;
+  /** Whether this video is from the "Other Videos" .env config */
+  isOtherVideo?: boolean;
+}
+
+// -----------------------------------------------------------------------------
 // WordPress Content Types (kept for future WP backend integration)
 // -----------------------------------------------------------------------------
 

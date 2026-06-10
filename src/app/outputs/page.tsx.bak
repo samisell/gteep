@@ -14,6 +14,10 @@ export default async function OutputsPage() {
   return (
     <OutputsPageClient
       outputs={outputs}
+      channelVideos={[]}
+      otherVideos={[]}
+      channelTitle={null}
+      channelUrl={null}
     />
   );
 }
