@@ -339,6 +339,182 @@ export const GET_TEAM_MEMBERS = `
 `;
 
 // -----------------------------------------------------------------------------
+// Publications Queries
+// Custom post type "publication" in WPGraphQL
+// -----------------------------------------------------------------------------
+
+export const GET_PUBLICATIONS = `
+  query GetPublications($first: Int = 50, $after: String) {
+    publications(first: $first, after: $after, where: { status: PUBLISH }) {
+      nodes {
+        id
+        databaseId
+        title
+        slug
+        content
+        excerpt
+        date
+        modified
+        status
+        uri
+        ${FEATURED_IMAGE_FRAGMENT}
+      }
+      ${PAGE_INFO_FRAGMENT}
+    }
+  }
+`;
+
+export const GET_PUBLICATION_BY_SLUG = `
+  query GetPublicationBySlug($slug: ID!) {
+    publication(id: $slug, idType: URI) {
+      id
+      databaseId
+      title
+      slug
+      content
+      excerpt
+      date
+      modified
+      status
+      uri
+      ${FEATURED_IMAGE_FRAGMENT}
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
+// Projects Queries
+// Custom post type "project" in WPGraphQL
+// -----------------------------------------------------------------------------
+
+export const GET_PROJECTS = `
+  query GetProjects($first: Int = 50, $after: String) {
+    projects(first: $first, after: $after, where: { status: PUBLISH }) {
+      nodes {
+        id
+        databaseId
+        title
+        slug
+        content
+        excerpt
+        date
+        modified
+        status
+        uri
+        ${FEATURED_IMAGE_FRAGMENT}
+      }
+      ${PAGE_INFO_FRAGMENT}
+    }
+  }
+`;
+
+export const GET_PROJECT_BY_SLUG = `
+  query GetProjectBySlug($slug: ID!) {
+    project(id: $slug, idType: URI) {
+      id
+      databaseId
+      title
+      slug
+      content
+      excerpt
+      date
+      modified
+      status
+      uri
+      ${FEATURED_IMAGE_FRAGMENT}
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
+// Events Queries
+// Custom post type "event" in WPGraphQL
+// -----------------------------------------------------------------------------
+
+export const GET_EVENTS = `
+  query GetEvents($first: Int = 50, $after: String) {
+    events(first: $first, after: $after, where: { status: PUBLISH }) {
+      nodes {
+        id
+        databaseId
+        title
+        slug
+        content
+        excerpt
+        date
+        modified
+        status
+        uri
+        ${FEATURED_IMAGE_FRAGMENT}
+      }
+      ${PAGE_INFO_FRAGMENT}
+    }
+  }
+`;
+
+export const GET_EVENT_BY_SLUG = `
+  query GetEventBySlug($slug: ID!) {
+    event(id: $slug, idType: URI) {
+      id
+      databaseId
+      title
+      slug
+      content
+      excerpt
+      date
+      modified
+      status
+      uri
+      ${FEATURED_IMAGE_FRAGMENT}
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
+// Resources Queries
+// Custom post type "resource" in WPGraphQL
+// -----------------------------------------------------------------------------
+
+export const GET_RESOURCES = `
+  query GetResources($first: Int = 50, $after: String) {
+    resources(first: $first, after: $after, where: { status: PUBLISH }) {
+      nodes {
+        id
+        databaseId
+        title
+        slug
+        content
+        excerpt
+        date
+        modified
+        status
+        uri
+        ${FEATURED_IMAGE_FRAGMENT}
+      }
+      ${PAGE_INFO_FRAGMENT}
+    }
+  }
+`;
+
+export const GET_RESOURCE_BY_SLUG = `
+  query GetResourceBySlug($slug: ID!) {
+    resource(id: $slug, idType: URI) {
+      id
+      databaseId
+      title
+      slug
+      content
+      excerpt
+      date
+      modified
+      status
+      uri
+      ${FEATURED_IMAGE_FRAGMENT}
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
 // Search Query
 // -----------------------------------------------------------------------------
 

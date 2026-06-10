@@ -18,6 +18,14 @@ import {
   GET_MENUS,
   GET_TEAM_MEMBERS,
   SEARCH_QUERY,
+  GET_PUBLICATIONS,
+  GET_PUBLICATION_BY_SLUG,
+  GET_PROJECTS,
+  GET_PROJECT_BY_SLUG,
+  GET_EVENTS,
+  GET_EVENT_BY_SLUG,
+  GET_RESOURCES,
+  GET_RESOURCE_BY_SLUG,
 } from './queries';
 
 import type {
@@ -36,6 +44,18 @@ import type {
   WPSiteSettingsData,
   WPMenusData,
   GTEEPTeamMember,
+  WPPublication,
+  WPProject,
+  WPEvent,
+  WPResource,
+  WPPublicationsData,
+  WPProjectsData,
+  WPEventsData,
+  WPResourcesData,
+  WPPublicationData,
+  WPProjectData,
+  WPEventData,
+  WPResourceData,
 } from '@/types';
 
 // Import mock data as fallback
@@ -49,6 +69,10 @@ import {
   mockBlogPosts,
   mockMenus,
   mockSocialLinks,
+  mockPublications,
+  mockProjects,
+  mockEvents,
+  mockResources,
 } from './mock-data';
 
 // Re-export mock data for direct use by pages
@@ -61,6 +85,10 @@ export {
   mockPartners,
   mockBlogPosts,
   mockSocialLinks,
+  mockPublications,
+  mockProjects,
+  mockEvents,
+  mockResources,
 };
 
 // -----------------------------------------------------------------------------
@@ -500,6 +528,138 @@ export async function getBlogPosts() {
 
   // Fall back to mock data
   return mockBlogPosts;
+}
+
+// -----------------------------------------------------------------------------
+// Publications
+// -----------------------------------------------------------------------------
+
+export async function getPublications(
+  first: number = 50,
+  after?: string
+): Promise<{ publications: WPPublication[] }> {
+  try {
+    const response = await fetchGraphQL<WPPublicationsData>(GET_PUBLICATIONS, {
+      first,
+      after,
+    });
+
+    const publications = extractNodes<WPPublication>(response, 'publications', mockPublications);
+
+    return { publications };
+  } catch {
+    return { publications: mockPublications };
+  }
+}
+
+export async function getPublicationBySlug(slug: string): Promise<WPPublication | null> {
+  try {
+    const response = await fetchGraphQL<WPPublicationData>(GET_PUBLICATION_BY_SLUG, { slug });
+
+    const publication = extractSingleNode<WPPublication>(response, 'publication', null);
+    return publication;
+  } catch {
+    return mockPublications.find((p) => p.slug === slug) || null;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Projects
+// -----------------------------------------------------------------------------
+
+export async function getProjects(
+  first: number = 50,
+  after?: string
+): Promise<{ projects: WPProject[] }> {
+  try {
+    const response = await fetchGraphQL<WPProjectsData>(GET_PROJECTS, {
+      first,
+      after,
+    });
+
+    const projects = extractNodes<WPProject>(response, 'projects', mockProjects);
+
+    return { projects };
+  } catch {
+    return { projects: mockProjects };
+  }
+}
+
+export async function getProjectBySlug(slug: string): Promise<WPProject | null> {
+  try {
+    const response = await fetchGraphQL<WPProjectData>(GET_PROJECT_BY_SLUG, { slug });
+
+    const project = extractSingleNode<WPProject>(response, 'project', null);
+    return project;
+  } catch {
+    return mockProjects.find((p) => p.slug === slug) || null;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Events
+// -----------------------------------------------------------------------------
+
+export async function getEvents(
+  first: number = 50,
+  after?: string
+): Promise<{ events: WPEvent[] }> {
+  try {
+    const response = await fetchGraphQL<WPEventsData>(GET_EVENTS, {
+      first,
+      after,
+    });
+
+    const events = extractNodes<WPEvent>(response, 'events', mockEvents);
+
+    return { events };
+  } catch {
+    return { events: mockEvents };
+  }
+}
+
+export async function getEventBySlug(slug: string): Promise<WPEvent | null> {
+  try {
+    const response = await fetchGraphQL<WPEventData>(GET_EVENT_BY_SLUG, { slug });
+
+    const event = extractSingleNode<WPEvent>(response, 'event', null);
+    return event;
+  } catch {
+    return mockEvents.find((e) => e.slug === slug) || null;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Resources
+// -----------------------------------------------------------------------------
+
+export async function getResources(
+  first: number = 50,
+  after?: string
+): Promise<{ resources: WPResource[] }> {
+  try {
+    const response = await fetchGraphQL<WPResourcesData>(GET_RESOURCES, {
+      first,
+      after,
+    });
+
+    const resources = extractNodes<WPResource>(response, 'resources', mockResources);
+
+    return { resources };
+  } catch {
+    return { resources: mockResources };
+  }
+}
+
+export async function getResourceBySlug(slug: string): Promise<WPResource | null> {
+  try {
+    const response = await fetchGraphQL<WPResourceData>(GET_RESOURCE_BY_SLUG, { slug });
+
+    const resource = extractSingleNode<WPResource>(response, 'resource', null);
+    return resource;
+  } catch {
+    return mockResources.find((r) => r.slug === slug) || null;
+  }
 }
 
 // -----------------------------------------------------------------------------
