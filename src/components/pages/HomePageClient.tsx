@@ -271,7 +271,7 @@ export default function HomePageClient({
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero">
         {/* Background image */}
         <Image
-          src="/images/gteep-banner.png"
+          src="/images/hero-banner-new.png"
           alt="GTEEP - Gilead Trust Economic Empowerment Project - Building Knowledge, Transforming Lives, Empowering Communities"
           fill
           className="object-cover"
@@ -279,7 +279,7 @@ export default function HomePageClient({
           sizes="100vw"
         />
         {/* Background gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#065f46]/90 via-[#047857]/85 to-[#0f172a]/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#065f46]/80 via-[#047857]/70 to-[#0f172a]/85" />
 
         {/* Animated floating shapes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
