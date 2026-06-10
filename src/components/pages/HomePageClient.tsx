@@ -220,6 +220,7 @@ function TeamAvatar({ name, size = 'md', imageUrl }: { name: string; size?: 'sm'
           alt={name}
           fill
           className="object-cover object-center"
+          sizes="96px"
         />
       </div>
     );
@@ -270,11 +271,12 @@ export default function HomePageClient({
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero">
         {/* Background image */}
         <Image
-          src="/images/hero-banner.png"
-          alt="GTEEP - Gilead Trust Economic Empowerment Project hero banner"
+          src="/images/gteep-banner.png"
+          alt="GTEEP - Gilead Trust Economic Empowerment Project - Building Knowledge, Transforming Lives, Empowering Communities"
           fill
           className="object-cover"
           priority
+          sizes="100vw"
         />
         {/* Background gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#065f46]/90 via-[#047857]/85 to-[#0f172a]/90" />
@@ -751,6 +753,7 @@ export default function HomePageClient({
                         alt={output.title}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/80 to-transparent" />
                       <Badge className="absolute top-3 left-3 bg-[#d97706]/80 text-[#f59e0b] border-[#d97706]/30 text-xs backdrop-blur-sm hover:bg-[#d97706]/90">
@@ -920,6 +923,7 @@ export default function HomePageClient({
                             alt={post.title}
                             fill
                             className="object-cover group-hover:scale-105 transition-transform duration-500"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-[#065f46]/40 to-transparent" />
                         </>

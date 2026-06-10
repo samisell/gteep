@@ -530,3 +530,35 @@ Stage Summary:
 - Example: OTHER_YOUTUBE_VIDEO_URLS=https://www.youtube.com/watch?v=abc,https://youtu.be/def
 - Video player dialog opens correctly for both channel and other videos
 - All features verified working on desktop and mobile
+
+---
+Task ID: 2
+Agent: Main Orchestrator
+Task: Use uploaded images (ChatGPT and Gemini generated) across the GTEEP website
+
+Work Log:
+- Analyzed both uploaded images using VLM:
+  - ChatGPT image: GTEEP promotional banner with logo, 4 pillars (Research, Outreach, Enlightenment, Empowerment), rural/urban landscape
+  - Gemini image: GTEEP community outreach gathering showing people at a pavilion with GTEEP branding
+- Copied images to /public/images/ with clean names:
+  - gteep-banner.png (ChatGPT image - promotional banner)
+  - gteep-community-outreach.png (Gemini image - community outreach)
+- Updated HomePageClient.tsx: hero background image → gteep-banner.png
+- Updated AboutPageClient.tsx: mission section image → gteep-community-outreach.png
+- Updated mock-data.ts:
+  - Site logo: hero-banner.png → gteep-banner.png
+  - Activity images (Policy Engagement, Citizen Enlightenment): community-empowerment.png → gteep-community-outreach.png
+  - Output images (policy brief, photo gallery): community-empowerment.png → gteep-community-outreach.png
+  - Blog images: hero-banner.png → gteep-banner.png
+- Added `sizes` props to all next/image fill components for optimization
+- Added `sizes="100vw"` to hero image
+- Added `sizes="(max-width: 768px) 100vw, 50vw"` to About page image
+- Added responsive sizes to output and blog card images
+- All lint checks pass, all pages return HTTP 200
+- Agent Browser verified all images load correctly on Homepage, About, and What We Do pages
+
+Stage Summary:
+- ChatGPT image (gteep-banner.png): Used as hero background and blog post thumbnail
+- Gemini image (gteep-community-outreach.png): Used for About page mission section, Policy Engagement/Citizen Enlightenment activities, and output/blog thumbnails
+- Next.js Image optimization warnings fixed with `sizes` props
+- Zero lint errors, all pages render successfully with new images

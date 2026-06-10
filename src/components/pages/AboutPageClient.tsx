@@ -184,10 +184,11 @@ export default function AboutPageClient({
               <div className="relative">
                 <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl relative">
                   <Image
-                    src="/images/about-team.png"
-                    alt="GTEEP team working together for community empowerment"
+                    src="/images/gteep-community-outreach.png"
+                    alt="GTEEP community outreach - Connecting communities and creating impact"
                     fill
                     className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
                   />
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-br from-[#065f46]/60 via-[#047857]/40 to-[#0f172a]/60" />

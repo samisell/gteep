@@ -27,7 +27,7 @@ export const mockSiteSettings: WPSiteSettings = {
     'Gilead Trust Economic Empowerment Project — Evidence-driven policy analysis for socially inclusive development in Africa.',
   siteUrl: 'https://gteep.com',
   siteLogo: {
-    sourceUrl: '/images/hero-banner.png',
+    sourceUrl: '/images/gteep-banner.png',
     altText: 'GTEEP Logo',
     mediaItemId: 1,
     width: 200,
@@ -72,7 +72,7 @@ export const mockActivities: GTEEPActivity[] = [
     description:
       'Bridging the gap between research and policy by engaging governments, regional organizations, civil society, and the private sector. We facilitate policy dialogues, convene stakeholder forums, and provide advisory services to ensure research findings translate into actionable policy.',
     icon: 'Users',
-    image: '/images/community-empowerment.png',
+    image: '/images/gteep-community-outreach.png',
   },
   {
     id: 'act-3',
@@ -80,7 +80,7 @@ export const mockActivities: GTEEPActivity[] = [
     description:
       'Empowering citizens with accessible information about policies that affect their lives and livelihoods. Through community outreach, media engagement, and plain-language publications, we demystify complex policy issues and promote informed public participation in governance.',
     icon: 'Lightbulb',
-    image: '/images/community-empowerment.png',
+    image: '/images/gteep-community-outreach.png',
   },
   {
     id: 'act-4',
@@ -299,7 +299,7 @@ export const mockOutputs: GTEEPOutput[] = [
     excerpt: 'Practical guidance for West African SMEs on leveraging the AfCFTA.',
     date: '2025-02-10',
     downloadUrl: '#',
-    image: '/images/community-empowerment.png',
+    image: '/images/gteep-community-outreach.png',
     authors: 'Akanji, B.O.',
     tags: ['AfCFTA', 'SMEs', 'Policy Brief'],
   },
@@ -377,7 +377,7 @@ export const mockOutputs: GTEEPOutput[] = [
     description: 'Photo highlights from GTEEP\'s Policy Dialogue on AfCFTA Implementation, held in Abuja, Nigeria, in January 2025. The forum brought together trade ministers, private sector leaders, and civil society representatives.',
     excerpt: 'Photos from GTEEP\'s AfCFTA Implementation Policy Dialogue in Abuja.',
     date: '2025-01-25',
-    image: '/images/community-empowerment.png',
+    image: '/images/gteep-community-outreach.png',
     tags: ['Event', 'AfCFTA', 'Policy Dialogue'],
   },
   {
@@ -513,7 +513,7 @@ export const mockBlogPosts: GTEEPBlogPost[] = [
     content: '<p>The African Continental Free Trade Area (AfCFTA) has now been operational for over two years, and the initial trade flows under the agreement are beginning to reveal both promises and challenges.</p>',
     date: '2025-02-15',
     author: 'Bola Akanji',
-    image: '/images/hero-banner.png',
+    image: '/images/gteep-banner.png',
     categories: ['Trade Policy', 'AfCFTA'],
   },
   {
