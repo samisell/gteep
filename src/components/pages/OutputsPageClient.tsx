@@ -356,7 +356,7 @@ function VideoGallerySection() {
                 {channelTitle ? `${channelTitle} Channel` : 'Channel Videos'}
               </h3>
               <p className="text-sm text-[#64748b] mt-1">
-                Latest videos from our YouTube channel
+                Latest videos from our YouTube channel · {channelVideos.length} video{channelVideos.length !== 1 ? 's' : ''}
               </p>
             </div>
             {channelUrl && (
@@ -385,21 +385,22 @@ function VideoGallerySection() {
       )}
 
       {/* Other Videos */}
-      {hasOtherVideos && (
-        <div className="mb-8">
-          <div className="mb-6">
-            <h3
-              className="text-xl font-bold text-[#0f172a] flex items-center gap-2"
-              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-            >
-              <FileText className="w-5 h-5 text-amber-500" />
-              Other Videos
-            </h3>
-            <p className="text-sm text-[#64748b] mt-1">
-              Featured videos from other channels and sources
-            </p>
-          </div>
+      <div className="mb-8">
+        <div className="mb-6">
+          <h3
+            className="text-xl font-bold text-[#0f172a] flex items-center gap-2"
+            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+          >
+            <FileText className="w-5 h-5 text-amber-500" />
+            Other Videos
+          </h3>
+          <p className="text-sm text-[#64748b] mt-1">
+            Featured videos from other channels and sources
+            {hasOtherVideos && ` · ${otherVideos.length} video${otherVideos.length !== 1 ? 's' : ''}`}
+          </p>
+        </div>
 
+        {hasOtherVideos ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {otherVideos.map((video) => (
               <YouTubeVideoCard
@@ -409,8 +410,18 @@ function VideoGallerySection() {
               />
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="text-center py-10 bg-[#f8fafc] rounded-xl border border-dashed border-[#e2e8f0]">
+            <FileText className="w-10 h-10 mx-auto text-[#cbd5e1] mb-3" />
+            <p className="text-sm text-[#94a3b8]">
+              No additional videos added yet.
+            </p>
+            <p className="text-xs text-[#cbd5e1] mt-1">
+              Add YouTube video URLs to the <code className="bg-[#f1f5f9] px-1.5 py-0.5 rounded text-[#64748b] font-mono">OTHER_YOUTUBE_VIDEO_URLS</code> environment variable to display them here.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* No videos */}
       {!hasAnyVideos && (
@@ -526,9 +537,15 @@ export default function OutputsPageClient({
                     className="text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
                   >
                     {tab.label}
-                    <span className="ml-1.5 text-[10px] opacity-60">
-                      ({tabCounts[tab.value] ?? 0})
-                    </span>
+                    {tab.value === 'video' ? (
+                      <svg className="ml-1.5 w-3.5 h-3.5 text-red-500 opacity-70" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                      </svg>
+                    ) : (
+                      <span className="ml-1.5 text-[10px] opacity-60">
+                        ({tabCounts[tab.value] ?? 0})
+                      </span>
+                    )}
                   </TabsTrigger>
                 ))}
               </TabsList>

@@ -504,3 +504,29 @@ Stage Summary:
 - Blog posts fetcher excludes team member posts (Executive, Director, Advisory Board, Board of Trustees, Team categories) and the default "Hello world!" post
 - Site description uses WordPress "Research, Outreach, Enlightenment, Empowerment" when available, filters out default WP tagline
 - Zero lint errors, all pages render successfully
+
+---
+Task ID: 1
+Agent: Main Orchestrator
+Task: Verify and enhance YouTube video gallery for @bolaakanji0423 channel + Other Videos from .env
+
+Work Log:
+- Verified YouTube channel ID UCP2ZVQnqnR9bXjKyBoEDPlA correctly maps to @bolaakanji0423 (Bola Akanji channel)
+- Confirmed YouTube RSS feed returns channel videos (currently 1 video: "The Policy Fireside Chat-Africa: The Gender Backlash")
+- Confirmed /api/videos API endpoint returns channel videos and other videos correctly
+- Fixed Video Gallery tab count display: replaced misleading CMS-based count with YouTube icon
+- Enhanced VideoGallerySection: added video count to channel section subtitle
+- Enhanced "Other Videos" section: now always visible with helpful placeholder when no URLs configured
+- Placeholder shows message about adding URLs to OTHER_YOUTUBE_VIDEO_URLS env variable
+- Tested Other Videos feature with sample URL (Rick Astley video) - works correctly
+- Verified oEmbed integration fetches video title, thumbnail, channel name for other videos
+- Tested de-duplication: other videos that are also in channel videos are filtered out
+- Final Agent Browser verification passed on both desktop and mobile viewports
+
+Stage Summary:
+- YouTube channel @bolaakanji0423 is correctly configured and videos are loading
+- "Other Videos" section is functional and displays helpful placeholder when empty
+- To add other videos: set OTHER_YOUTUBE_VIDEO_URLS in .env with comma-separated YouTube URLs
+- Example: OTHER_YOUTUBE_VIDEO_URLS=https://www.youtube.com/watch?v=abc,https://youtu.be/def
+- Video player dialog opens correctly for both channel and other videos
+- All features verified working on desktop and mobile
