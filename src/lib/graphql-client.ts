@@ -25,7 +25,7 @@ let authTokenExpiry = 0;
 // - false = WordPress is unreachable
 let wpAvailable: boolean | null = null;
 let wpAvailableCheckTime = 0;
-const WP_AVAILABILITY_CACHE_TTL = 5 * 60 * 1000; // Re-check every 5 minutes
+const WP_AVAILABILITY_CACHE_TTL = 30 * 1000; // Re-check every 30 seconds (quick recovery when WP comes back)
 
 /**
  * Check if WordPress backend is available, using a cached result
@@ -134,7 +134,7 @@ export async function fetchGraphQL<T = any>(
   }
 ): Promise<GraphQLResponse<T>> {
   const {
-    revalidate = 60,
+    revalidate = 0, // Always fetch fresh data from WP on every page load
     tags = [],
     auth = false,
   } = options || {};
