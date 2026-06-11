@@ -2,6 +2,8 @@ import { getPublicationBySlug, getPublications } from '@/graphql/fetchers';
 import PublicationDetailClient from '@/components/pages/PublicationDetailClient';
 import type { Metadata } from 'next';
 
+export const revalidate = 300;
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const publication = await getPublicationBySlug(slug);

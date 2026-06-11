@@ -6,6 +6,8 @@ import {
   getTeamMembers,
 } from '@/graphql/fetchers';
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'About Us - GTEEP',
   description:

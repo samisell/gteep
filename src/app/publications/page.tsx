@@ -2,6 +2,8 @@ import { getPublications } from '@/graphql/fetchers';
 import PublicationsPageClient from '@/components/pages/PublicationsPageClient';
 import type { Metadata } from 'next';
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'Publications - Prof. Bola Akanji',
   description:

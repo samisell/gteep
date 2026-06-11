@@ -2,6 +2,8 @@ import { getPosts } from '@/graphql/fetchers';
 import MediaPageClient from '@/components/pages/MediaPageClient';
 import type { Metadata } from 'next';
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'Media & Press - Prof. Bola Akanji',
   description:

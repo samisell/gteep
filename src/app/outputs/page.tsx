@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import OutputsPageClient from '@/components/pages/OutputsPageClient';
 import { getOutputs } from '@/graphql/fetchers';
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'Our Outputs - GTEEP',
   description:

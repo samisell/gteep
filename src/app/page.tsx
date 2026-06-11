@@ -9,6 +9,9 @@ import {
   getBlogPosts,
 } from '@/graphql/fetchers';
 
+// Revalidate every 5 minutes so WordPress content stays fresh on Vercel
+export const revalidate = 300;
+
 export default async function HomePage() {
   // Fetch all data in parallel - each fetcher tries WP GraphQL first,
   // then falls back to mock data if WP is unavailable or returns empty results

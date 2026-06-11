@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import ContactPageClient from '@/components/pages/ContactPageClient';
 import { getSiteSettings } from '@/graphql/fetchers';
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'Contact Us - GTEEP',
   description:

@@ -2,6 +2,8 @@ import { getProjectBySlug, getProjects } from '@/graphql/fetchers';
 import ProjectDetailClient from '@/components/pages/ProjectDetailClient';
 import type { Metadata } from 'next';
 
+export const revalidate = 300;
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const project = await getProjectBySlug(slug);

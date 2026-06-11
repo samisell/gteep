@@ -2,6 +2,8 @@ import { getResourceBySlug, getResources } from '@/graphql/fetchers';
 import ResourceDetailClient from '@/components/pages/ResourceDetailClient';
 import type { Metadata } from 'next';
 
+export const revalidate = 300;
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const resource = await getResourceBySlug(slug);

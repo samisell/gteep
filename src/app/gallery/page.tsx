@@ -2,6 +2,8 @@ import { getMediaItems } from '@/graphql/fetchers';
 import GalleryPageClient from '@/components/pages/GalleryPageClient';
 import type { Metadata } from 'next';
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'Gallery - Prof. Bola Akanji',
   description: 'Photos from conferences, fieldwork, research activities, and events featuring Professor Bola Akanji.',

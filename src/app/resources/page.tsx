@@ -2,6 +2,8 @@ import { getResources } from '@/graphql/fetchers';
 import ResourcesPageClient from '@/components/pages/ResourcesPageClient';
 import type { Metadata } from 'next';
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'Resources - Prof. Bola Akanji',
   description:

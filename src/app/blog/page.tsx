@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import BlogPageClient from '@/components/pages/BlogPageClient';
 import { getBlogPosts } from '@/graphql/fetchers';
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'Our Blog - GTEEP',
   description:

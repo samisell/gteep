@@ -2,6 +2,8 @@ import { getProjects } from '@/graphql/fetchers';
 import ProjectsPageClient from '@/components/pages/ProjectsPageClient';
 import type { Metadata } from 'next';
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'Research Projects - Prof. Bola Akanji',
   description:

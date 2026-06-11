@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import PartnersPageClient from '@/components/pages/PartnersPageClient';
 import { getPartners } from '@/graphql/fetchers';
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'Our Partners - GTEEP',
   description:
