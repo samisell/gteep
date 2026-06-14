@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
 import {
   ArrowRight,
@@ -271,7 +272,7 @@ export default function HomePageClient({
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero">
         {/* Background image */}
         <Image
-          src="/images/hero-banner-new.png"
+          src="/images/policy-engagement.jpg"
           alt="GTEEP - Gilead Trust Economic Empowerment Project - Building Knowledge, Transforming Lives, Empowering Communities"
           fill
           className="object-cover"
@@ -429,15 +430,22 @@ export default function HomePageClient({
                 const IconComponent = getActivityIcon(activity.icon);
                 return (
                   <motion.div key={activity.id} variants={staggerItem}>
-                    <div className="group p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white">
+                    <Link
+                      href={`/what-we-do#activity-${activity.id}`}
+                      className="group block p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white cursor-pointer"
+                    >
                       <div className="w-12 h-12 rounded-xl bg-[#f0fdf4] flex items-center justify-center mb-4 group-hover:bg-[#065f46] transition-colors">
                         <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-white transition-colors" />
                       </div>
-                      <h3 className="text-lg font-semibold text-[#0f172a] mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                      <h3 className="text-lg font-semibold text-[#0f172a] mb-2 group-hover:text-[#065f46] transition-colors" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
                         {activity.title}
                       </h3>
                       <p className="text-sm text-[#64748b] leading-relaxed">{activity.description}</p>
-                    </div>
+                      <span className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-[#065f46] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        Learn more
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
+                    </Link>
                   </motion.div>
                 );
               })}

@@ -24,6 +24,7 @@ const quickLinks = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About Us' },
   { href: '/what-we-do', label: 'What We Do' },
+  { href: '/fireside-chats', label: 'Fireside Chats' },
   { href: '/partners', label: 'Our Partners' },
   { href: '/outputs', label: 'Our Outputs' },
   { href: '/blog', label: 'Blog' },
@@ -31,12 +32,12 @@ const quickLinks = [
 ];
 
 const focusAreas = [
-  'Policy Research',
-  'Policy Engagement',
-  'Data Speaks',
-  'Youth Mentoring',
-  "Women's Economic Livelihood",
-  'Citizen Enlightenment',
+  { label: 'Policy Research', href: '/what-we-do' },
+  { label: 'Policy Engagement', href: '/fireside-chats' },
+  { label: 'Data Speaks', href: '/what-we-do' },
+  { label: 'Youth Mentoring', href: '/what-we-do' },
+  { label: "Women's Economic Livelihood", href: '/what-we-do' },
+  { label: 'Citizen Enlightenment', href: '/what-we-do' },
 ];
 
 const socialLinks = [
@@ -207,13 +208,13 @@ export default function Footer({ logoUrl }: FooterProps) {
             </h3>
             <ul className="space-y-2.5">
               {focusAreas.map((area) => (
-                <li key={area}>
+                <li key={area.label}>
                   <Link
-                    href="/what-we-do"
+                    href={area.href}
                     className="text-slate-400 hover:text-amber-400 text-sm transition-colors duration-200 flex items-center gap-1.5 group"
                   >
                     <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-amber-500 transition-colors duration-200" />
-                    {area}
+                    {area.label}
                   </Link>
                 </li>
               ))}

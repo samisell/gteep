@@ -64,12 +64,20 @@ export interface WPSEO {
 // GTEEP-Specific Types
 // -----------------------------------------------------------------------------
 
+export interface GTEEPActivityResource {
+  title: string;
+  type: 'document' | 'video' | 'link' | 'presentation';
+  url: string;
+  description?: string;
+}
+
 export interface GTEEPActivity {
   id: string;
   title: string;
   description: string;
   icon: string;
   image?: string;
+  resources?: GTEEPActivityResource[];
 }
 
 export interface GTEEPPhilosophy {
@@ -451,8 +459,7 @@ export interface DownloadLeadData {
   name: string;
   email: string;
   organization?: string;
-  purpose?: string;
-  resourceId: string;
+  resourceName: string;
   resourceTitle: string;
 }
 

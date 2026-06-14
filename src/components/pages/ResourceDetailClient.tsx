@@ -206,6 +206,7 @@ export default function ResourceDetailClient({
         onOpenChange={setModalOpen}
         resourceId={resource.id}
         resourceTitle={resource.title}
+        resourceSlug={resource.slug}
         downloadUrl={fields?.downloadUrl}
       />
     </main>

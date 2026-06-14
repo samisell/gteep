@@ -12,7 +12,7 @@ const downloadLeadSchema = z.object({
   resourceName: z.string().min(1, 'Resource name is required'),
   resourceSlug: z.string().min(1, 'Resource slug is required'),
   resourceUrl: z.string().optional(),
-  honeypot: z.string().max(0).optional(),
+  website: z.string().max(0).optional(), // honeypot — must be empty
 });
 
 export async function POST(request: NextRequest) {
@@ -29,8 +29,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Honeypot check
-    if (body.honeypot && body.honeypot.length > 0) {
+    // Honeypot check — if the hidden "website" field is filled, it's a bot
+    if (body.website && body.website.length > 0) {
+      // Silently return success so bots don't know they were caught
       return NextResponse.json({
         success: true,
         message: 'Thank you! Check your email for the download link.',
@@ -67,21 +68,29 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Fire-and-forget: Send download link email
+    // Send download link email (non-blocking)
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://gteep.com';
     try {
       const { sendDownloadLink, sendDownloadNotification } = await import('@/lib/email');
+      const downloadLinkUrl = `${siteUrl}/api/download/${lead.downloadToken}`;
+
       await Promise.allSettled([
         sendDownloadLink(
-          { name: lead.name, email: lead.email },
-          `${siteUrl}/api/download/${lead.downloadToken}`,
-          lead.resourceName
+          {
+            name: lead.name,
+            email: lead.email,
+            organization: lead.organization || undefined,
+            resourceName: lead.resourceName,
+            resourceTitle: lead.resourceName,
+          },
+          downloadLinkUrl
         ),
         sendDownloadNotification({
           name: lead.name,
           email: lead.email,
           organization: lead.organization || undefined,
           resourceName: lead.resourceName,
+          resourceTitle: lead.resourceName,
         }),
       ]);
 

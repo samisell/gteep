@@ -9,24 +9,22 @@ export async function GET(
   try {
     const { token } = await params;
 
-    // Verify token
-    const isValid = verifyDownloadToken(token);
-    if (!isValid) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid or expired download link' },
-        { status: 400 }
+    // Verify token cryptographic signature and expiration
+    const leadId = verifyDownloadToken(token);
+    if (!leadId) {
+      return NextResponse.redirect(
+        new URL('/resources?error=expired', request.url)
       );
     }
 
-    // Find lead by token
+    // Find lead by token in database
     const lead = await db.downloadLead.findUnique({
       where: { downloadToken: token },
     });
 
     if (!lead) {
-      return NextResponse.json(
-        { success: false, error: 'Download link not found' },
-        { status: 404 }
+      return NextResponse.redirect(
+        new URL('/resources?error=not_found', request.url)
       );
     }
 
@@ -36,25 +34,19 @@ export async function GET(
       data: { downloaded: true, downloadedAt: new Date() },
     });
 
-    // If there's a resource URL, redirect to it
+    // If there's a resource URL (e.g., WordPress media file), redirect to it
     if (lead.resourceUrl) {
-      return NextResponse.redirect(new URL(lead.resourceUrl, request.url));
+      return NextResponse.redirect(lead.resourceUrl);
     }
 
-    // Otherwise return success
-    return NextResponse.json({
-      success: true,
-      message: 'Download verified',
-      data: {
-        resourceName: lead.resourceName,
-        resourceSlug: lead.resourceSlug,
-      },
-    });
+    // If no resource URL, redirect back to the resource page
+    return NextResponse.redirect(
+      new URL(`/resources/${lead.resourceSlug}`, request.url)
+    );
   } catch (error) {
     console.error('Download verification error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to verify download link' },
-      { status: 500 }
+    return NextResponse.redirect(
+      new URL('/resources?error=download_failed', request.url)
     );
   }
 }

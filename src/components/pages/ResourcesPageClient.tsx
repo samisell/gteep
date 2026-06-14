@@ -203,6 +203,7 @@ export default function ResourcesPageClient({ resources }: ResourcesPageClientPr
           onOpenChange={setModalOpen}
           resourceId={selectedResource.id}
           resourceTitle={selectedResource.title}
+          resourceSlug={selectedResource.slug}
           downloadUrl={selectedResource.acfResourceFields?.downloadUrl}
         />
       )}

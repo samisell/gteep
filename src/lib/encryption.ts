@@ -1,18 +1,15 @@
 // =============================================================================
 // Encryption Utility - Token generation and verification for download links
+// Uses Node.js crypto HMAC-SHA256 for secure, tamper-proof tokens
 // =============================================================================
+
+import * as crypto from 'crypto';
 
 const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET || 'bolaoakanji-download-secret-key-2025';
 
 /**
- * Simple base64 encoding with a signature for tamper detection.
- * Not cryptographically secure, but sufficient for download token purposes.
- * For production, consider using jose or jsonwebtoken libraries.
- */
-
-/**
- * Generate a download token for a lead ID
- * Token format: base64(payload).hmacSignature
+ * Generate a download token
+ * Token format: base64url(payload).hmacSha256Signature
  */
 export function generateDownloadToken(leadId: string): string {
   const payload = {
@@ -23,7 +20,7 @@ export function generateDownloadToken(leadId: string): string {
 
   const payloadStr = JSON.stringify(payload);
   const payloadB64 = Buffer.from(payloadStr, 'utf-8').toString('base64url');
-  const signature = createSignature(payloadB64);
+  const signature = createHmacSignature(payloadB64);
 
   return `${payloadB64}.${signature}`;
 }
@@ -39,9 +36,12 @@ export function verifyDownloadToken(token: string): string | null {
 
     const [payloadB64, providedSignature] = parts;
 
-    // Verify signature
-    const expectedSignature = createSignature(payloadB64);
-    if (providedSignature !== expectedSignature) {
+    // Verify signature using constant-time comparison (prevents timing attacks)
+    const expectedSignature = createHmacSignature(payloadB64);
+    if (!crypto.timingSafeEqual(
+      Buffer.from(providedSignature, 'utf-8'),
+      Buffer.from(expectedSignature, 'utf-8')
+    )) {
       return null;
     }
 
@@ -66,21 +66,13 @@ export function verifyDownloadToken(token: string): string | null {
 }
 
 /**
- * Create a simple HMAC-like signature using the encryption secret
+ * Create an HMAC-SHA256 signature — cryptographically secure
  */
-function createSignature(data: string): string {
-  // Simple signature using repeated XOR and substitution
-  // For production, use Node.js crypto.createHmac
-  let hash = '';
-  const secretChars = ENCRYPTION_SECRET.split('');
-
-  for (let i = 0; i < data.length; i++) {
-    const charCode = data.charCodeAt(i) ^ secretChars[i % secretChars.length].charCodeAt(0);
-    hash += charCode.toString(16).padStart(2, '0');
-  }
-
-  // Take first 64 characters for a consistent length
-  return hash.substring(0, 64);
+function createHmacSignature(data: string): string {
+  return crypto
+    .createHmac('sha256', ENCRYPTION_SECRET)
+    .update(data)
+    .digest('hex');
 }
 
 /**
@@ -89,19 +81,10 @@ function createSignature(data: string): string {
 export function generateVerificationCode(length: number = 6): string {
   const digits = '0123456789';
   let code = '';
-
-  // Use crypto if available
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    const array = new Uint8Array(length);
-    crypto.getRandomValues(array);
-    for (let i = 0; i < length; i++) {
-      code += digits[array[i] % digits.length];
-    }
-  } else {
-    for (let i = 0; i < length; i++) {
-      code += digits[Math.floor(Math.random() * digits.length)];
-    }
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  for (let i = 0; i < length; i++) {
+    code += digits[array[i] % digits.length];
   }
-
   return code;
 }

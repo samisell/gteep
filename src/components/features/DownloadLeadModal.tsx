@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod/v4';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { motion } from 'framer-motion';
 import {
   Dialog,
   DialogContent,
@@ -14,13 +15,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Download, CheckCircle2 } from 'lucide-react';
+import { Loader2, Download, CheckCircle2, Mail } from 'lucide-react';
 
 const leadSchema = z.object({
   name: z.string().min(2, 'Full name is required'),
   email: z.email('Please enter a valid email address'),
   organization: z.string().optional(),
-  website: z.string().optional(), // honeypot
+  website: z.string().optional(), // honeypot — hidden from real users
 });
 
 type LeadFormData = z.infer<typeof leadSchema>;
@@ -30,25 +31,33 @@ interface DownloadLeadModalProps {
   onOpenChange: (open: boolean) => void;
   resourceId: string;
   resourceTitle: string;
+  resourceSlug: string;
   downloadUrl?: string;
 }
 
 /**
  * Download Lead Capture Modal
- * 
- * IMPORTANT: This modal captures lead information before allowing resource downloads.
- * The modal will be integrated with the lead capture system later.
- * Currently it simulates the submission and shows a success state.
+ *
+ * Flow:
+ * 1. Visitor clicks "Get Access" on a gated resource
+ * 2. This modal opens — visitor fills name, email, organization
+ * 3. On submit, POST /api/leads creates a download lead record
+ * 4. The API sends the visitor an email with a secure download link
+ * 5. The download link (GET /api/download/{token}) verifies the token
+ *    and redirects to the actual file on WordPress media
  */
 export default function DownloadLeadModal({
   open,
   onOpenChange,
   resourceId,
   resourceTitle,
+  resourceSlug,
   downloadUrl,
 }: DownloadLeadModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submittedName, setSubmittedName] = useState('');
 
   const {
     register,
@@ -61,18 +70,20 @@ export default function DownloadLeadModal({
       name: '',
       email: '',
       organization: '',
-      website: '', // honeypot
+      website: '',
     },
   });
 
   const onSubmit = async (data: LeadFormData) => {
-    // Honeypot check - if website is filled, it's likely a bot
+    // Honeypot check — if website is filled, it's a bot
     if (data.website) {
       setIsSuccess(true);
+      setSubmittedName(data.name);
       return;
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
     try {
       const response = await fetch('/api/leads', {
@@ -81,21 +92,27 @@ export default function DownloadLeadModal({
         body: JSON.stringify({
           name: data.name,
           email: data.email,
-          organization: data.organization,
-          resourceId,
-          resourceTitle,
+          organization: data.organization || undefined,
+          resourceName: resourceTitle,
+          resourceSlug: resourceSlug,
+          resourceUrl: downloadUrl || undefined,
+          website: '', // honeypot field for server-side check
         }),
       });
 
       if (response.ok) {
+        setSubmittedName(data.name);
         setIsSuccess(true);
       } else {
-        // Still show success for now as this is demo mode
-        setIsSuccess(true);
+        const result = await response.json().catch(() => null);
+        setSubmitError(
+          result?.error || 'Something went wrong. Please try again.'
+        );
       }
     } catch {
-      // In demo mode, show success anyway
-      setIsSuccess(true);
+      setSubmitError(
+        'Network error. Please check your connection and try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -107,6 +124,8 @@ export default function DownloadLeadModal({
     setTimeout(() => {
       reset();
       setIsSuccess(false);
+      setSubmitError(null);
+      setSubmittedName('');
     }, 300);
   };
 
@@ -123,26 +142,18 @@ export default function DownloadLeadModal({
               <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" />
             </motion.div>
             <h3 className="mt-4 text-xl font-semibold text-foreground">
-              Thank you, {register('name') ? '' : ''}!
+              Thank you, {submittedName}!
             </h3>
-            <p className="mt-2 text-muted-foreground">
-              Check your email for the download link. You can also download
-              directly below.
+            <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
+              <Mail className="h-4 w-4" />
+              <p>Check your email for the download link.</p>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              The link will expire in 24 hours.
             </p>
-            {downloadUrl && (
-              <Button
-                asChild
-                className="mt-6 bg-emerald-700 hover:bg-emerald-800"
-              >
-                <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Now
-                </a>
-              </Button>
-            )}
             <Button
               variant="outline"
-              className="mt-3 ml-2"
+              className="mt-6"
               onClick={handleClose}
             >
               Close
@@ -162,7 +173,7 @@ export default function DownloadLeadModal({
             </DialogHeader>
 
             <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
-              {/* Honeypot field - hidden from real users */}
+              {/* Honeypot field — hidden from real users, bots will fill it */}
               <div className="absolute -left-[9999px]" aria-hidden="true">
                 <Input
                   type="text"
@@ -212,6 +223,10 @@ export default function DownloadLeadModal({
                 />
               </div>
 
+              {submitError && (
+                <p className="text-sm text-red-500 text-center">{submitError}</p>
+              )}
+
               <div className="flex gap-3 pt-2">
                 <Button
                   type="submit"
@@ -251,6 +266,3 @@ export default function DownloadLeadModal({
     </Dialog>
   );
 }
-
-// Need framer-motion import for the success animation
-import { motion } from 'framer-motion';

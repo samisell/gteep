@@ -20,6 +20,7 @@ const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About Us' },
   { href: '/what-we-do', label: 'What We Do' },
+  { href: '/fireside-chats', label: 'Fireside Chats' },
   { href: '/partners', label: 'Our Partners' },
   { href: '/outputs', label: 'Our Outputs' },
   { href: '/blog', label: 'Blog' },

@@ -72,7 +72,33 @@ export const mockActivities: GTEEPActivity[] = [
     description:
       'Bridging the gap between research and policy by engaging governments, regional organizations, civil society, and the private sector. We facilitate policy dialogues, convene stakeholder forums, and provide advisory services to ensure research findings translate into actionable policy.',
     icon: 'Users',
-    image: '/images/gteep-community-outreach.png',
+    image: '/images/policy-engagement.jpg',
+    resources: [
+      {
+        title: 'Gender Backlash Architecture',
+        type: 'presentation',
+        url: '/downloads/gender-backlash-architecture.pptx',
+        description: 'Presentation on the architecture of gender backlash — structures, drivers, and policy implications.',
+      },
+      {
+        title: 'Graphics on Book Talk',
+        type: 'presentation',
+        url: '/downloads/graphics-on-book-talk.pptx',
+        description: 'Visual presentation from the GTEEP Book Talk session on policy engagement and inclusive development.',
+      },
+      {
+        title: 'Fireside Chat Presentation',
+        type: 'presentation',
+        url: '/downloads/fireside.pptx',
+        description: 'Slide deck from the GTEEP Fireside Chat on evidence-driven policy engagement.',
+      },
+      {
+        title: 'Fireside Chat — Full Video',
+        type: 'video',
+        url: 'https://www.youtube.com/watch?v=PN-kqs9AZ8g',
+        description: 'Watch the full recording of the GTEEP Fireside Chat on policy engagement.',
+      },
+    ],
   },
   {
     id: 'act-3',

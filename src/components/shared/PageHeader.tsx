@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +11,7 @@ interface PageHeaderProps {
   breadcrumb?: { label: string; href?: string }[];
   className?: string;
   variant?: 'default' | 'compact' | 'large';
+  backgroundImage?: string;
 }
 
 export default function PageHeader({
@@ -19,6 +21,7 @@ export default function PageHeader({
   breadcrumb,
   className,
   variant = 'default',
+  backgroundImage,
 }: PageHeaderProps) {
   return (
     <section
@@ -29,10 +32,24 @@ export default function PageHeader({
           : variant === 'compact'
             ? 'py-10 md:py-14'
             : 'py-14 md:py-20',
-        'bg-gradient-to-r from-[#065f46] to-[#0f172a]',
+        backgroundImage ? 'bg-[#0f172a]' : 'bg-gradient-to-r from-[#065f46] to-[#0f172a]',
         className
       )}
     >
+      {/* Background image */}
+      {backgroundImage && (
+        <Image
+          src={backgroundImage}
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+        />
+      )}
+      {/* Dark overlay for text readability */}
+      {backgroundImage && (
+        <div className="absolute inset-0 bg-gradient-to-r from-[#065f46]/80 via-[#0f172a]/70 to-[#0f172a]/80" />
+      )}
       {/* Decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-emerald-800/20 blur-3xl" />

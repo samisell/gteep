@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import PageHeader from '@/components/shared/PageHeader';
@@ -16,9 +17,14 @@ import {
   ArrowRight,
   BookOpen,
   Mail,
+  Download,
+  Presentation,
+  PlayCircle,
+  ExternalLink,
+  FileText,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { GTEEPActivity } from '@/types';
+import type { GTEEPActivity, GTEEPActivityResource } from '@/types';
 
 // =============================================================================
 // Props
@@ -45,6 +51,20 @@ function getActivityIcon(iconName: string) {
 }
 
 // =============================================================================
+// Resource icon mapping
+// =============================================================================
+
+function getResourceIcon(type: GTEEPActivityResource['type']) {
+  const iconMap: Record<string, React.ElementType> = {
+    presentation: Presentation,
+    document: FileText,
+    video: PlayCircle,
+    link: ExternalLink,
+  };
+  return iconMap[type] || FileText;
+}
+
+// =============================================================================
 // Color Cycle for Activity Sections
 // =============================================================================
 
@@ -66,18 +86,141 @@ const activityColors = [
 ];
 
 // =============================================================================
+// YouTube helpers
+// =============================================================================
+
+function getYouTubeId(url: string): string | null {
+  const match = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([a-zA-Z0-9_-]{11})/
+  );
+  return match ? match[1] : null;
+}
+
+function isYouTubeUrl(url: string): boolean {
+  return getYouTubeId(url) !== null;
+}
+
+// =============================================================================
+// Resource Card Component
+// =============================================================================
+
+function ResourceCard({ resource }: { resource: GTEEPActivityResource }) {
+  const isVideo = resource.type === 'video';
+  const isExternal = resource.url.startsWith('http');
+  const ytId = isVideo ? getYouTubeId(resource.url) : null;
+
+  const iconMap: Record<string, React.ElementType> = {
+    presentation: Presentation,
+    document: FileText,
+    video: PlayCircle,
+    link: ExternalLink,
+  };
+  const IconComponent = iconMap[resource.type] || FileText;
+
+  return (
+    <div className="group rounded-xl border border-[#e2e8f0] hover:border-[#059669]/30 bg-white overflow-hidden hover:shadow-lg transition-all duration-300">
+      {/* Video thumbnail for YouTube */}
+      {ytId && (
+        <div className="relative aspect-video bg-[#0f172a]">
+          <Image
+            src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
+            alt={resource.title}
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <PlayCircle className="w-8 h-8 text-[#065f46]" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isVideo ? 'bg-red-50 text-red-600' : 'bg-[#f0fdf4] text-[#059669]'}`}>
+            <IconComponent className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-semibold text-[#0f172a] leading-tight mb-1">
+              {resource.title}
+            </h4>
+            {resource.description && (
+              <p className="text-xs text-[#64748b] leading-relaxed line-clamp-2">
+                {resource.description}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-3">
+          {isVideo ? (
+            <a
+              href={resource.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#065f46] hover:text-[#047857] transition-colors"
+            >
+              <PlayCircle className="w-4 h-4" />
+              Watch on YouTube
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          ) : (
+            <a
+              href={resource.url}
+              download
+              target={isExternal ? '_blank' : undefined}
+              rel={isExternal ? 'noopener noreferrer' : undefined}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#065f46] hover:text-[#047857] transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download
+              {resource.type === 'presentation' && (
+                <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0 border-[#d97706]/30 text-[#d97706]">
+                  PPTX
+                </Badge>
+              )}
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
 // Main Component
 // =============================================================================
 
 export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientProps) {
+  // Smooth scroll to hash anchor on page load & highlight the section
+  useEffect(() => {
+    if (window.location.hash) {
+      const id = window.location.hash.replace('#', '');
+      const el = document.getElementById(id);
+      if (el) {
+        // Small delay to ensure page is fully rendered
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Add a brief highlight animation
+          el.classList.add('ring-2', 'ring-[#059669]/40', 'ring-inset');
+          setTimeout(() => {
+            el.classList.remove('ring-2', 'ring-[#059669]/40', 'ring-inset');
+          }, 2000);
+        }, 300);
+      }
+    }
+  }, []);
+
   return (
-    <main className="pt-20">
+    <main className="pt-20 scroll-smooth">
       {/* Page Header */}
       <PageHeader
         title="What We Do"
         subtitle="Our Activities"
         description="Driving evidence-based policy change through research, engagement, and empowerment across Africa."
         breadcrumb={[{ label: 'What We Do' }]}
+        backgroundImage="/images/policy-engagement.jpg"
       />
 
       {/* ================================================================== */}
@@ -91,7 +234,8 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
         return (
           <section
             key={activity.id}
-            className={`py-16 md:py-24 ${isEven ? 'bg-white' : 'bg-[#f8fafc]'}`}
+            id={`activity-${activity.id}`}
+            className={`py-16 md:py-24 transition-all duration-500 ${isEven ? 'bg-white' : 'bg-[#f8fafc]'}`}
             aria-label={activity.title}
           >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -155,6 +299,35 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
                   </div>
                 </div>
               </AnimatedSection>
+
+              {/* Related Resources / Outputs */}
+              {activity.resources && activity.resources.length > 0 && (
+                <AnimatedSection>
+                  <div className="mt-12 pt-10 border-t border-[#e2e8f0]">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 rounded-lg bg-[#f0fdf4] flex items-center justify-center">
+                        <BookOpen className="w-5 h-5 text-[#059669]" />
+                      </div>
+                      <div>
+                        <h3
+                          className="text-xl font-bold text-[#0f172a]"
+                          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                        >
+                          Related Outputs &amp; Resources
+                        </h3>
+                        <p className="text-sm text-[#64748b]">
+                          Download presentations, documents, and watch event recordings from our {activity.title.toLowerCase()} work.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {activity.resources.map((resource, rIdx) => (
+                        <ResourceCard key={rIdx} resource={resource} />
+                      ))}
+                    </div>
+                  </div>
+                </AnimatedSection>
+              )}
             </div>
           </section>
         );
