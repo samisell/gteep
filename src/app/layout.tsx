@@ -95,8 +95,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Fetch the site logo from WordPress backend
-  const logoUrl = await getSiteLogo();
+  // Check maintenance mode — skip navbar/footer if active
+  const isMaintenanceMode = process.env.MAINTENANCE_MODE === 'true';
+
+  // Fetch the site logo from WordPress backend (skip if maintenance mode)
+  const logoUrl = isMaintenanceMode ? null : await getSiteLogo();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -105,11 +108,15 @@ export default async function RootLayout({
       >
         <AppProviders>
           <ContentProtection>
-            <div className="min-h-screen flex flex-col">
-              <Navbar logoUrl={logoUrl} />
-              <main className="flex-1">{children}</main>
-              <Footer logoUrl={logoUrl} />
-            </div>
+            {isMaintenanceMode ? (
+              <>{children}</>
+            ) : (
+              <div className="min-h-screen flex flex-col">
+                <Navbar logoUrl={logoUrl} />
+                <main className="flex-1">{children}</main>
+                <Footer logoUrl={logoUrl} />
+              </div>
+            )}
             <ScrollToTop />
           </ContentProtection>
           <Toaster

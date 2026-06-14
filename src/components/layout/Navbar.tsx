@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Menu, ChevronRight } from 'lucide-react';
+import { Menu, ChevronRight, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -16,16 +16,36 @@ import {
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
-const navLinks = [
+// =============================================================================
+// Navigation structure with optional children for dropdowns
+// =============================================================================
+
+interface NavLink {
+  href: string;
+  label: string;
+  children?: NavLink[];
+}
+
+const navLinks: NavLink[] = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About Us' },
   { href: '/what-we-do', label: 'What We Do' },
-  { href: '/fireside-chats', label: 'Fireside Chats' },
   { href: '/partners', label: 'Our Partners' },
-  { href: '/outputs', label: 'Our Outputs' },
+  {
+    href: '/outputs',
+    label: 'Our Outputs',
+    children: [
+      { href: '/outputs', label: 'All Outputs' },
+      { href: '/fireside-chats', label: 'Fireside Chats' },
+    ],
+  },
   { href: '/blog', label: 'Blog' },
   { href: '/contact', label: 'Contact Us' },
 ];
+
+// =============================================================================
+// Navbar Component
+// =============================================================================
 
 interface NavbarProps {
   logoUrl?: string | null;
@@ -35,6 +55,8 @@ export default function Navbar({ logoUrl }: NavbarProps) {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -54,11 +76,31 @@ export default function Navbar({ logoUrl }: NavbarProps) {
   if (prevPathname !== pathname) {
     setPrevPathname(pathname);
     setIsMobileMenuOpen(false);
+    setOpenDropdown(null);
   }
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
+  };
+
+  const isParentActive = (link: NavLink) => {
+    if (isActive(link.href)) return true;
+    return link.children?.some((child) => isActive(child.href)) ?? false;
+  };
+
+  const handleDropdownEnter = (label: string) => {
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+      dropdownTimeoutRef.current = null;
+    }
+    setOpenDropdown(label);
+  };
+
+  const handleDropdownLeave = () => {
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setOpenDropdown(null);
+    }, 150);
   };
 
   return (
@@ -97,7 +139,9 @@ export default function Navbar({ logoUrl }: NavbarProps) {
               <div className="flex flex-col">
                 <span className={cn(
                   'text-lg lg:text-xl font-bold heading-font leading-tight transition-colors duration-300',
-                  'bg-gradient-to-r from-emerald-800 to-emerald-600 bg-clip-text text-transparent'
+                  isScrolled
+                    ? 'bg-gradient-to-r from-emerald-800 to-emerald-600 bg-clip-text text-transparent'
+                    : 'text-white'
                 )}>
                   GTEEP
                 </span>
@@ -105,7 +149,7 @@ export default function Navbar({ logoUrl }: NavbarProps) {
                   'text-[10px] lg:text-xs tracking-widest uppercase transition-colors duration-300',
                   isScrolled
                     ? 'text-amber-700/70 dark:text-amber-400/70'
-                    : 'text-amber-700/60 dark:text-amber-300/60'
+                    : 'text-amber-300/80'
                 )}>
                   Economic Empowerment
                 </span>
@@ -114,42 +158,150 @@ export default function Navbar({ logoUrl }: NavbarProps) {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300',
-                    isActive(link.href)
-                      ? 'text-emerald-800 dark:text-emerald-300'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20'
-                  )}
-                >
-                  {link.label}
-                  {isActive(link.href) && (
-                    <motion.div
-                      layoutId="navbar-active"
-                      className="absolute inset-0 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg -z-10"
-                      transition={{
-                        type: 'spring',
-                        stiffness: 380,
-                        damping: 30,
-                      }}
-                    />
-                  )}
-                  {isActive(link.href) && (
-                    <motion.div
-                      layoutId="navbar-underline"
-                      className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-emerald-600 to-amber-500 rounded-full"
-                      transition={{
-                        type: 'spring',
-                        stiffness: 380,
-                        damping: 30,
-                      }}
-                    />
-                  )}
-                </Link>
-              ))}
+              {navLinks.map((link) =>
+                link.children ? (
+                  /* Dropdown nav item */
+                  <div
+                    key={link.href}
+                    className="relative"
+                    onMouseEnter={() => handleDropdownEnter(link.label)}
+                    onMouseLeave={handleDropdownLeave}
+                  >
+                    <Link
+                      href={link.href}
+                      className={cn(
+                        'relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 flex items-center gap-1',
+                        isParentActive(link)
+                          ? isScrolled
+                            ? 'text-emerald-800 dark:text-emerald-300'
+                            : 'text-white'
+                          : isScrolled
+                            ? 'text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20'
+                            : 'text-white/80 hover:text-white hover:bg-white/10'
+                      )}
+                    >
+                      {link.label}
+                      <ChevronDown
+                        className={cn(
+                          'w-3.5 h-3.5 transition-transform duration-200',
+                          openDropdown === link.label && 'rotate-180'
+                        )}
+                      />
+                      {isParentActive(link) && (
+                        <motion.div
+                          layoutId="navbar-active"
+                          className={cn(
+                            'absolute inset-0 rounded-lg -z-10',
+                            isScrolled
+                              ? 'bg-emerald-50 dark:bg-emerald-900/30'
+                              : 'bg-white/20'
+                          )}
+                          transition={{
+                            type: 'spring',
+                            stiffness: 380,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                      {isParentActive(link) && (
+                        <motion.div
+                          layoutId="navbar-underline"
+                          className={cn(
+                            'absolute bottom-0 left-3 right-3 h-0.5 rounded-full',
+                            isScrolled
+                              ? 'bg-gradient-to-r from-emerald-600 to-amber-500'
+                              : 'bg-gradient-to-r from-amber-400 to-amber-500'
+                          )}
+                          transition={{
+                            type: 'spring',
+                            stiffness: 380,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                    </Link>
+
+                    {/* Dropdown menu */}
+                    {openDropdown === link.label && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        className="absolute top-full left-0 mt-1 w-52 py-2 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-emerald-100/50 dark:border-emerald-900/30 overflow-hidden z-50"
+                      >
+                        {link.children.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className={cn(
+                              'flex items-center px-4 py-2.5 text-sm font-medium transition-all duration-200',
+                              isActive(child.href)
+                                ? 'text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20'
+                                : 'text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10'
+                            )}
+                          >
+                            {child.label}
+                            {isActive(child.href) && (
+                              <ChevronRight className="ml-auto h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                            )}
+                          </Link>
+                        ))}
+                      </motion.div>
+                    )}
+                  </div>
+                ) : (
+                  /* Regular nav item */
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      'relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300',
+                      isActive(link.href)
+                        ? isScrolled
+                          ? 'text-emerald-800 dark:text-emerald-300'
+                          : 'text-white'
+                        : isScrolled
+                          ? 'text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20'
+                          : 'text-white/80 hover:text-white hover:bg-white/10'
+                    )}
+                  >
+                    {link.label}
+                    {isActive(link.href) && (
+                      <motion.div
+                        layoutId="navbar-active"
+                        className={cn(
+                          'absolute inset-0 rounded-lg -z-10',
+                          isScrolled
+                            ? 'bg-emerald-50 dark:bg-emerald-900/30'
+                            : 'bg-white/20'
+                        )}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 380,
+                          damping: 30,
+                        }}
+                      />
+                    )}
+                    {isActive(link.href) && (
+                      <motion.div
+                        layoutId="navbar-underline"
+                        className={cn(
+                          'absolute bottom-0 left-3 right-3 h-0.5 rounded-full',
+                          isScrolled
+                            ? 'bg-gradient-to-r from-emerald-600 to-amber-500'
+                            : 'bg-gradient-to-r from-amber-400 to-amber-500'
+                        )}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 380,
+                          damping: 30,
+                        }}
+                      />
+                    )}
+                  </Link>
+                )
+              )}
             </div>
 
             {/* Desktop CTA + Mobile Menu Button */}
@@ -172,7 +324,12 @@ export default function Navbar({ logoUrl }: NavbarProps) {
                 onClick={() => setIsMobileMenuOpen(true)}
                 aria-label="Open navigation menu"
               >
-                <Menu className="h-6 w-6 text-slate-700 dark:text-slate-200" />
+                <Menu className={cn(
+                  'h-6 w-6 transition-colors duration-300',
+                  isScrolled
+                    ? 'text-slate-700 dark:text-slate-200'
+                    : 'text-white'
+                )} />
               </Button>
             </div>
           </div>
@@ -210,32 +367,85 @@ export default function Navbar({ logoUrl }: NavbarProps) {
             </SheetTitle>
           </SheetHeader>
 
-          <div className="flex flex-col py-4">
-            {navLinks.map((link, index) => (
-              <motion.div
-                key={link.href}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05, duration: 0.3 }}
-              >
-                <SheetClose asChild>
-                  <Link
-                    href={link.href}
-                    className={cn(
-                      'flex items-center px-6 py-3.5 text-sm font-medium transition-all duration-200 border-l-2',
-                      isActive(link.href)
-                        ? 'text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-600 dark:border-emerald-400'
-                        : 'text-slate-600 dark:text-slate-300 border-transparent hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 hover:border-emerald-300 dark:hover:border-emerald-700'
-                    )}
+          <div className="flex flex-col py-4 overflow-y-auto max-h-[calc(100vh-200px)]">
+            {navLinks.map((link, index) =>
+              link.children ? (
+                <div key={link.href}>
+                  {/* Parent item in mobile */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.3 }}
                   >
-                    {link.label}
-                    {isActive(link.href) && (
-                      <ChevronRight className="ml-auto h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    )}
-                  </Link>
-                </SheetClose>
-              </motion.div>
-            ))}
+                    <SheetClose asChild>
+                      <Link
+                        href={link.href}
+                        className={cn(
+                          'flex items-center px-6 py-3.5 text-sm font-medium transition-all duration-200 border-l-2',
+                          isParentActive(link)
+                            ? 'text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-600 dark:border-emerald-400'
+                            : 'text-slate-600 dark:text-slate-300 border-transparent hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 hover:border-emerald-300 dark:hover:border-emerald-700'
+                        )}
+                      >
+                        {link.label}
+                        {isParentActive(link) && (
+                          <ChevronRight className="ml-auto h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        )}
+                      </Link>
+                    </SheetClose>
+                  </motion.div>
+
+                  {/* Children items in mobile - indented */}
+                  {link.children.map((child, childIdx) => (
+                    <motion.div
+                      key={child.href}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: (index * 0.05) + (childIdx + 1) * 0.03, duration: 0.3 }}
+                    >
+                      <SheetClose asChild>
+                        <Link
+                          href={child.href}
+                          className={cn(
+                            'flex items-center pl-10 pr-6 py-2.5 text-sm transition-all duration-200 border-l-2',
+                            isActive(child.href)
+                              ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50/70 dark:bg-emerald-900/15 border-emerald-500 dark:border-emerald-500 font-medium'
+                              : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10'
+                          )}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 mr-3 shrink-0" />
+                          {child.label}
+                        </Link>
+                      </SheetClose>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <motion.div
+                  key={link.href}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                >
+                  <SheetClose asChild>
+                    <Link
+                      href={link.href}
+                      className={cn(
+                        'flex items-center px-6 py-3.5 text-sm font-medium transition-all duration-200 border-l-2',
+                        isActive(link.href)
+                          ? 'text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-600 dark:border-emerald-400'
+                          : 'text-slate-600 dark:text-slate-300 border-transparent hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 hover:border-emerald-300 dark:hover:border-emerald-700'
+                      )}
+                    >
+                      {link.label}
+                      {isActive(link.href) && (
+                        <ChevronRight className="ml-auto h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      )}
+                    </Link>
+                  </SheetClose>
+                </motion.div>
+              )
+            )}
           </div>
 
           <div className="mt-auto px-6 py-6 border-t border-emerald-100 dark:border-emerald-900/30">
