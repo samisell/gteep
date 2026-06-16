@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import WhatWeDoPageClient from '@/components/pages/WhatWeDoPageClient';
-import { getActivities } from '@/graphql/fetchers';
+import OfflinePage from '@/components/shared/OfflinePage';
+import { getActivities, isWordPressConnected } from '@/graphql/fetchers';
 
 export const revalidate = 300;
 
@@ -11,6 +12,12 @@ export const metadata: Metadata = {
 };
 
 export default async function WhatWeDoPage() {
+  const wpConnected = await isWordPressConnected();
+
+  if (!wpConnected) {
+    return <OfflinePage pageTitle="What We Do" />;
+  }
+
   const activities = await getActivities();
   return <WhatWeDoPageClient activities={activities} />;
 }

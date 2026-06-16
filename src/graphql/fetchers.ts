@@ -2,21 +2,27 @@
 // GraphQL Data Fetchers - WordPress Headless CMS
 // GTEEP - Gilead Trust Economic Empowerment Project
 //
-// These fetchers use the GraphQL client and fall back to mock data when
-// WordPress is unreachable or returns empty data. This ensures the site
-// always renders content.
+// These fetchers use the GraphQL client to fetch data from WordPress.
+// When WordPress is unreachable, they return empty/null data and pages
+// show a "Check your internet" OfflinePage component.
+//
+// No mock data fallback — all content comes from WordPress.
 // =============================================================================
 
-import { fetchGraphQL } from '@/lib/graphql-client';
+import { fetchGraphQL, isWordPressConnected } from '@/lib/graphql-client';
 import {
   GET_PAGES,
   GET_PAGE_BY_SLUG,
+  GET_WHAT_WE_DO_PAGE,
+  GET_ACTIVITY_PAGE,
   GET_POSTS,
   GET_POST_BY_SLUG,
   GET_MEDIA_ITEMS,
   GET_SITE_SETTINGS,
+  GET_ADMIN_EMAIL,
   GET_MENUS,
   GET_TEAM_MEMBERS,
+  GET_TEAM_MEMBERS_ACF,
   SEARCH_QUERY,
   GET_PUBLICATIONS,
   GET_PUBLICATION_BY_SLUG,
@@ -26,6 +32,8 @@ import {
   GET_EVENT_BY_SLUG,
   GET_RESOURCES,
   GET_RESOURCE_BY_SLUG,
+  GET_VIDEO_GALLERY,
+  GET_OUTPUT_DOWNLOADABLES,
 } from './queries';
 
 import type {
@@ -44,6 +52,8 @@ import type {
   WPSiteSettingsData,
   WPMenusData,
   GTEEPTeamMember,
+  GTEEPOutput,
+  YouTubeVideo,
   WPPublication,
   WPProject,
   WPEvent,
@@ -58,56 +68,25 @@ import type {
   WPResourceData,
 } from '@/types';
 
-// Import mock data as fallback
-import {
-  mockSiteSettings,
-  mockActivities,
-  mockPhilosophy,
-  mockTeamMembers,
-  mockOutputs,
-  mockPartners,
-  mockBlogPosts,
-  mockMenus,
-  mockSocialLinks,
-  mockPublications,
-  mockProjects,
-  mockEvents,
-  mockResources,
-} from './mock-data';
-
-// Re-export mock data for direct use by pages
-export {
-  mockSiteSettings,
-  mockActivities,
-  mockPhilosophy,
-  mockTeamMembers,
-  mockOutputs,
-  mockPartners,
-  mockBlogPosts,
-  mockSocialLinks,
-  mockPublications,
-  mockProjects,
-  mockEvents,
-  mockResources,
-};
+// Re-export WordPress connectivity check for pages to use
+export { isWordPressConnected };
 
 // -----------------------------------------------------------------------------
-// Helper: Extract nodes from a GraphQL response, falling back to mock data
+// Helper: Extract nodes from a GraphQL response
 // -----------------------------------------------------------------------------
 
 function extractNodes<T>(
   response: { data?: any; errors?: any[] },
-  path: string,
-  mockFallback: T[]
+  path: string
 ): T[] {
   if (response.errors || !response.data) {
-    return mockFallback;
+    return [];
   }
 
   const parts = path.split('.');
   let result: any = response.data;
   for (const part of parts) {
-    if (result?.[part] === undefined) return mockFallback;
+    if (result?.[part] === undefined) return [];
     result = result[part];
   }
 
@@ -115,21 +94,19 @@ function extractNodes<T>(
     return result.nodes as T[];
   }
 
-  // If WP returned empty nodes, use mock data
-  return mockFallback;
+  return [];
 }
 
 function extractSingleNode<T>(
   response: { data?: any; errors?: any[] },
-  key: string,
-  mockFallback: T | null
+  key: string
 ): T | null {
   if (response.errors || !response.data) {
-    return mockFallback;
+    return null;
   }
 
   const node = response.data[key];
-  if (!node) return mockFallback;
+  if (!node) return null;
 
   return node as T;
 }
@@ -151,6 +128,33 @@ function extractPageInfo(
 }
 
 // -----------------------------------------------------------------------------
+// Default site settings (minimal, used when WP is unreachable)
+// -----------------------------------------------------------------------------
+
+const defaultSiteSettings: WPSiteSettings = {
+  siteTitle: 'GTEEP',
+  siteDescription: 'Gender, Trade, Economics and Empowerment Programme',
+  siteUrl: 'https://gteep.jileadtrust.com',
+  siteLogo: null,
+  favicon: null,
+  acfOptions: {
+    heroTitle: 'GTEEP',
+    heroSubtitle: 'Gender, Trade, Economics and Empowerment Programme',
+    heroCtaText: 'Learn More',
+    heroCtaUrl: '/about',
+    contactEmail: 'info@gteep.gileadtrust.com',
+    contactPhone: '',
+    contactAddress: '',
+    socialLinks: {
+      twitter: '',
+      linkedin: '',
+      facebook: '',
+      instagram: '',
+    },
+  },
+};
+
+// -----------------------------------------------------------------------------
 // Pages
 // -----------------------------------------------------------------------------
 
@@ -164,7 +168,7 @@ export async function getPages(
   });
 
   return {
-    pages: extractNodes<WPPage>(response, 'pages', []),
+    pages: extractNodes<WPPage>(response, 'pages'),
     pageInfo: extractPageInfo(response, 'pages'),
   };
 }
@@ -172,9 +176,118 @@ export async function getPages(
 export async function getPageBySlug(slug: string): Promise<WPPage | null> {
   const response = await fetchGraphQL<WPPageData>(GET_PAGE_BY_SLUG, { slug });
 
-  const page = extractSingleNode<WPPage>(response, 'page', null);
+  const page = extractSingleNode<WPPage>(response, 'page');
 
   return page;
+}
+
+// -----------------------------------------------------------------------------
+// About Page (fetches ACF aboutContent fields from WP)
+// -----------------------------------------------------------------------------
+
+export interface AboutPageData {
+  aboutSummary: string;
+  aboutVision: string;
+  aboutMission: string;
+  aboutGoal: string;
+}
+
+export async function getAboutPage(): Promise<AboutPageData> {
+  const defaults: AboutPageData = {
+    aboutSummary: "Africa's economic transformation and the challenges and opportunities lie in the ability to learn, relearn and unlearn. This process is both integrative and intentional and be socially inclusive. GTEEP aims to curate and supply the required evidence and knowledge to support this process. Gender, Trade, Economics and Empowerment Programme (GTEEP) is an initiative of the Gilead Trust for Economic Empowerment. It is a knowledge, research and policy advocacy initiative that places people at the centre of economic policy and development. GTEEP's activities and one small successful bite at a time, contribute to creating spaces that promote more participatory and equitable access to resources and opportunities.",
+    aboutVision: 'A socially and culturally inclusive economy where everyone is heard.',
+    aboutMission: 'To continually knowledge spaces and inform policies with data-driven evidence and empower the citizens with requisite tools to reshape their individual and collective economic choices.',
+    aboutGoal: 'To promote spaces that create more participatory and equitable access to resources and opportunities.',
+  };
+
+  try {
+    const page = await getPageBySlug('about-us');
+
+    if (page?.aboutContent) {
+      return {
+        aboutSummary: page.aboutContent.aboutSummary || defaults.aboutSummary,
+        aboutVision: page.aboutContent.aboutVision || defaults.aboutVision,
+        aboutMission: page.aboutContent.aboutMission || defaults.aboutMission,
+        aboutGoal: page.aboutContent.aboutGoal || defaults.aboutGoal,
+      };
+    }
+  } catch {
+    // Fall through to defaults
+  }
+
+  return defaults;
+}
+
+// -----------------------------------------------------------------------------
+// Contact Details (fetches ACF contactdetails fields from WP)
+// -----------------------------------------------------------------------------
+
+export interface ContactDetailsData {
+  email: string;
+  phone: string;
+  address: string;
+}
+
+export async function getContactDetails(): Promise<ContactDetailsData> {
+  const defaults: ContactDetailsData = {
+    email: 'info@gteep.gileadtrust.com',
+    phone: '+234 801 234 5678',
+    address: 'Ikeja Lagos, Nigeria',
+  };
+
+  try {
+    const page = await getPageBySlug('contact-us');
+
+    if (page?.contactdetails) {
+      const cd = page.contactdetails;
+      return {
+        email: cd.email || defaults.email,
+        phone: cd.phoneNumber ? `+${cd.phoneNumber}` : defaults.phone,
+        address: cd.address || defaults.address,
+      };
+    }
+  } catch {
+    // Fall through to defaults
+  }
+
+  return defaults;
+}
+
+// -----------------------------------------------------------------------------
+// Admin Email (fetches ACF adminemail field from WP)
+// The adminemail ACF field group is on the Post type, with a single field:
+//   adminEmailForNotification — the email that receives contact/newsletter notifications
+// -----------------------------------------------------------------------------
+
+const DEFAULT_ADMIN_EMAIL = 'info@gteep.gileadtrust.com';
+
+// Cache admin email for 5 minutes to avoid repeated WP queries
+let adminEmailCache: { email: string; timestamp: number } | null = null;
+const ADMIN_EMAIL_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+export async function getAdminEmail(): Promise<string> {
+  // Return cached value if still valid
+  if (adminEmailCache && Date.now() - adminEmailCache.timestamp < ADMIN_EMAIL_CACHE_TTL) {
+    return adminEmailCache.email;
+  }
+
+  try {
+    const response = await fetchGraphQL<any>(GET_ADMIN_EMAIL);
+
+    if (!response.errors && response.data?.posts?.nodes?.length) {
+      const email = response.data.posts.nodes[0]?.adminemail?.adminEmailForNotification;
+      if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        adminEmailCache = { email, timestamp: Date.now() };
+        return email;
+      }
+    }
+  } catch {
+    // Fall through to default
+  }
+
+  // Fall back to env var or default
+  const fallback = process.env.CONTACT_RECEIVER_EMAIL || process.env.SITE_EMAIL || DEFAULT_ADMIN_EMAIL;
+  return fallback;
 }
 
 // -----------------------------------------------------------------------------
@@ -191,7 +304,7 @@ export async function getPosts(
   });
 
   return {
-    posts: extractNodes<WPPost>(response, 'posts', []),
+    posts: extractNodes<WPPost>(response, 'posts'),
     pageInfo: extractPageInfo(response, 'posts'),
   };
 }
@@ -199,7 +312,7 @@ export async function getPosts(
 export async function getPostBySlug(slug: string): Promise<WPPost | null> {
   const response = await fetchGraphQL<WPPostData>(GET_POST_BY_SLUG, { slug });
 
-  const post = extractSingleNode<WPPost>(response, 'post', null);
+  const post = extractSingleNode<WPPost>(response, 'post');
 
   return post;
 }
@@ -218,7 +331,7 @@ export async function getMediaItems(
   });
 
   return {
-    mediaItems: extractNodes<WPMedia>(response, 'mediaItems', []),
+    mediaItems: extractNodes<WPMedia>(response, 'mediaItems'),
     pageInfo: extractPageInfo(response, 'mediaItems'),
   };
 }
@@ -229,10 +342,6 @@ export async function getMediaItems(
 
 /**
  * Fetch the site logo URL from WordPress.
- * WP stores the site icon in the REST API root as `site_icon` (media item ID).
- * We fetch it via GraphQL mediaItems, looking for the "cropped-refined_logo" file
- * which is the site icon set in WP Customizer.
- * Falls back to null if not found.
  */
 export async function getSiteLogo(): Promise<string | null> {
   try {
@@ -250,7 +359,6 @@ export async function getSiteLogo(): Promise<string | null> {
     `);
 
     if (response.errors || !response.data?.mediaItems?.nodes?.length) {
-      // Fallback: try fetching the known site icon by databaseId
       const fallbackResponse = await fetchGraphQL<any>(`
         query GetSiteIcon {
           mediaItem(id: "8", idType: DATABASE_ID) {
@@ -267,7 +375,6 @@ export async function getSiteLogo(): Promise<string | null> {
       return fallbackResponse.data.mediaItem.sourceUrl;
     }
 
-    // Find the cropped logo
     const logo = response.data.mediaItems.nodes.find(
       (node: any) => node.title?.includes('cropped-refined_logo') || node.sourceUrl?.includes('cropped-refined_logo')
     );
@@ -282,29 +389,27 @@ export async function getSiteSettings(): Promise<WPSiteSettings> {
   const response = await fetchGraphQL<WPSiteSettingsData>(GET_SITE_SETTINGS);
 
   if (response.errors || !response.data) {
-    return mockSiteSettings;
+    return defaultSiteSettings;
   }
 
   const { generalSettings } = response.data;
 
   if (!generalSettings) {
-    return mockSiteSettings;
+    return defaultSiteSettings;
   }
 
   // Try to fetch the site logo from WP
   const logoUrl = await getSiteLogo();
 
-  // Determine the site description: use WP description if it's a real custom one,
-  // not the default WordPress tagline. Fall back to mock data otherwise.
+  // Determine the site description
   const wpDescription = generalSettings.description;
   const isDefaultWpTagline = !wpDescription || wpDescription === 'Just another WordPress site';
-  const siteDescription = isDefaultWpTagline ? mockSiteSettings.siteDescription : wpDescription;
+  const siteDescription = isDefaultWpTagline ? defaultSiteSettings.siteDescription : wpDescription;
 
-  // Merge WP general settings with mock data for ACF fields
   return {
-    siteTitle: generalSettings.title || mockSiteSettings.siteTitle,
+    siteTitle: generalSettings.title || defaultSiteSettings.siteTitle,
     siteDescription,
-    siteUrl: generalSettings.url || mockSiteSettings.siteUrl,
+    siteUrl: generalSettings.url || defaultSiteSettings.siteUrl,
     siteLogo: logoUrl
       ? {
           sourceUrl: logoUrl,
@@ -313,7 +418,7 @@ export async function getSiteSettings(): Promise<WPSiteSettings> {
           width: 512,
           height: 512,
         }
-      : mockSiteSettings.siteLogo,
+      : null,
     favicon: logoUrl
       ? {
           sourceUrl: logoUrl,
@@ -322,8 +427,8 @@ export async function getSiteSettings(): Promise<WPSiteSettings> {
           width: 512,
           height: 512,
         }
-      : mockSiteSettings.favicon,
-    acfOptions: mockSiteSettings.acfOptions,
+      : null,
+    acfOptions: defaultSiteSettings.acfOptions,
   };
 }
 
@@ -335,7 +440,7 @@ export async function getMenus(): Promise<WPMenu[]> {
   const response = await fetchGraphQL<WPMenusData>(GET_MENUS);
 
   if (response.errors || !response.data?.menus?.nodes?.length) {
-    return mockMenus;
+    return [];
   }
 
   return response.data.menus.nodes;
@@ -343,73 +448,229 @@ export async function getMenus(): Promise<WPMenu[]> {
 
 // -----------------------------------------------------------------------------
 // GTEEP-Specific Data Fetchers
-// These use WP pages to populate GTEEP-specific data types, with mock fallbacks
+// These use WP pages/posts to populate GTEEP-specific data types
 // -----------------------------------------------------------------------------
 
 /**
- * Get activities (What We Do) data.
- * Currently returns mock data as WP doesn't have custom post types for activities.
- * When WP content becomes available, this will map WP pages to GTEEPActivity types.
+ * Get activities (What We Do) data from WordPress.
+ * Fetches the "what-we-do" page and its child pages from WP.
+ * Each child page becomes an activity section.
+ * Nested children (e.g., Policy Firechat under Policy Engagement) are included.
+ * New pages added under "What We Do" in WP will appear automatically.
  */
-export async function getActivities() {
-  // Try to get "What We Do" page content from WP
+export async function getActivities(): Promise<import('@/types').GTEEPActivity[]> {
   try {
-    const page = await getPageBySlug('what-we-do');
-    if (page?.content) {
-      // If WP has content, we could parse it. For now, use mock data.
-      // In the future, this could parse Gutenberg blocks or HTML content.
-    }
-  } catch {
-    // Fall through to mock data
-  }
+    const response = await fetchGraphQL<any>(GET_WHAT_WE_DO_PAGE);
 
-  return mockActivities;
+    if (response.errors || !response.data?.page) {
+      return [];
+    }
+
+    const page = response.data.page;
+    const childNodes = page.children?.nodes || [];
+
+    if (childNodes.length === 0) {
+      return [];
+    }
+
+    // Map of known icons for specific activities (by slug)
+    const iconMap: Record<string, string> = {
+      'policy-research': 'FileSearch',
+      'policy-engagement': 'Users',
+      'citizen-enlightenment': 'Lightbulb',
+      'data-speaks': 'BarChart3',
+      'youth-mentoring': 'GraduationCap',
+      'womens-economic-livelihood': 'Heart',
+    };
+
+    return childNodes.map((child: any, index: number) => {
+      // Parse nested children (e.g., Policy Firechat under Policy Engagement)
+      const nestedChildren: import('@/types').GTEEPActivityChild[] = (child.children?.nodes || []).map(
+        (nested: any) => ({
+          id: nested.id,
+          databaseId: nested.databaseId,
+          title: nested.title,
+          slug: nested.slug,
+          uri: nested.uri,
+          content: nested.content || '',
+          image: nested.featuredImage?.node?.sourceUrl || undefined,
+          policyFirechat: nested.policyFirechat?.policyFirechat || undefined,
+        })
+      );
+
+      return {
+        id: child.id,
+        databaseId: child.databaseId,
+        title: child.title,
+        slug: child.slug,
+        uri: child.uri,
+        description: '', // Will use content or description from WP
+        content: child.content || '',
+        icon: iconMap[child.slug] || 'FileSearch',
+        image: child.featuredImage?.node?.sourceUrl || undefined,
+        children: nestedChildren.length > 0 ? nestedChildren : undefined,
+        policyFirechat: child.policyFirechat?.policyFirechat || undefined,
+      };
+    });
+  } catch {
+    return [];
+  }
 }
 
 /**
- * Get philosophy data.
- * Currently returns mock data.
+ * Get a single activity page by its URI slug.
+ * Used for individual activity detail pages at /what-we-do/[slug].
  */
-export async function getPhilosophy() {
+export async function getActivityPage(slug: string): Promise<{
+  activity: import('@/types').GTEEPActivity;
+  parentPage?: { id: string; title: string; slug: string; uri: string };
+} | null> {
+  try {
+    const response = await fetchGraphQL<any>(GET_ACTIVITY_PAGE, {
+      slug: `/what-we-do/${slug}/`,
+    });
+
+    if (response.errors || !response.data?.page) {
+      return null;
+    }
+
+    const page = response.data.page;
+
+    const iconMap: Record<string, string> = {
+      'policy-research': 'FileSearch',
+      'policy-engagement': 'Users',
+      'citizen-enlightenment': 'Lightbulb',
+      'data-speaks': 'BarChart3',
+      'youth-mentoring': 'GraduationCap',
+      'womens-economic-livelihood': 'Heart',
+    };
+
+    // Parse nested children
+    const nestedChildren: import('@/types').GTEEPActivityChild[] = (page.children?.nodes || []).map(
+      (nested: any) => ({
+        id: nested.id,
+        databaseId: nested.databaseId,
+        title: nested.title,
+        slug: nested.slug,
+        uri: nested.uri,
+        content: nested.content || '',
+        image: nested.featuredImage?.node?.sourceUrl || undefined,
+        policyFirechat: nested.policyFirechat?.policyFirechat || undefined,
+      })
+    );
+
+    const activity: import('@/types').GTEEPActivity = {
+      id: page.id,
+      databaseId: page.databaseId,
+      title: page.title,
+      slug: page.slug,
+      uri: page.uri,
+      description: '',
+      content: page.content || '',
+      icon: iconMap[page.slug] || 'FileSearch',
+      image: page.featuredImage?.node?.sourceUrl || undefined,
+      children: nestedChildren.length > 0 ? nestedChildren : undefined,
+      policyFirechat: page.policyFirechat?.policyFirechat || undefined,
+    };
+
+    const parent = page.parent?.node;
+    const parentPage = parent
+      ? { id: parent.id, title: parent.title, slug: parent.slug, uri: parent.uri }
+      : undefined;
+
+    return { activity, parentPage };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get philosophy data from WordPress.
+ */
+export async function getPhilosophy(): Promise<import('@/types').GTEEPPhilosophy[]> {
   try {
     const page = await getPageBySlug('our-philosophy');
     if (page?.content) {
       // Could parse WP content in the future
     }
   } catch {
-    // Fall through to mock data
+    // Fall through to empty array
   }
 
-  return mockPhilosophy;
+  return [];
 }
 
 /**
- * Get team members data.
- * Fetches team members from WordPress posts with specific categories:
- *   - "executive" category → Executive Director
- *   - "director" category → Directors
- *   - "advisory-board" category → Advisory Board
- *   - "board-of-trustees" category → Board of Trustees
- *
- * WP Convention:
- *   Post Title     = Person's Name
- *   Post Excerpt   = Short brief
- *   Post Content   = Full bio
- *   Featured Image = Profile picture
- *   First Tag      = Position/Role (e.g. "Executive Director")
- *
- * Uses per-category fallback: for each category, WP data takes priority when
- * available; mock data fills in categories where WP has no posts yet.
+ * Valid team member categories for ACF teamCategory select field
  */
-export async function getTeamMembers() {
+const VALID_TEAM_CATEGORIES = ['executive', 'director', 'advisory-board', 'board-of-trustees'] as const;
+
+/**
+ * Get team members data from WordPress.
+ *
+ * Strategy: Try ACF first, then fall back to category-based approach.
+ *
+ * 1. ACF approach (preferred): Fetches posts with ACF "teamMember" field group.
+ *    - Requires ACF field group "Team Member" with GraphQL type "TeamMember"
+ *    - Uses a "team" category to scope the query
+ *    - Each post has ACF fields: teamName, teamRole, teamCategory, teamBio, teamImage
+ *
+ * 2. Category-based fallback (legacy): Fetches posts from 4 separate categories.
+ *    - Post Title = Person's Name
+ *    - First Tag = Role/Position
+ *    - Post Content/Excerpt = Bio
+ *    - Featured Image = Profile picture
+ *    - Category = Which group they belong to
+ */
+export async function getTeamMembers(): Promise<GTEEPTeamMember[]> {
+  // --- Try ACF approach first ---
+  try {
+    const acfResponse = await fetchGraphQL<any>(GET_TEAM_MEMBERS_ACF);
+
+    if (!acfResponse.errors && acfResponse.data?.posts?.nodes?.length) {
+      const posts = acfResponse.data.posts.nodes;
+
+      // Check if any posts actually have ACF teamMember data
+      const hasAcfData = posts.some(
+        (p: any) => p.teamMember && (p.teamMember.teamName || p.teamMember.teamRole)
+      );
+
+      if (hasAcfData) {
+        const teamMembers: GTEEPTeamMember[] = posts
+          .filter((p: any) => p.teamMember?.teamName || p.title)
+          .map((p: any) => {
+            const acf = p.teamMember || {};
+            const category = VALID_TEAM_CATEGORIES.includes(acf.teamCategory)
+              ? acf.teamCategory
+              : 'director'; // default fallback
+
+            return {
+              id: p.id,
+              name: acf.teamName || p.title || '',
+              role: acf.teamRole || (p.tags?.nodes?.[0]?.name || category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' ')),
+              category,
+              bio: acf.teamBio || (p.content
+                ? p.content.replace(/<[^>]*>/g, '').trim()
+                : p.excerpt?.replace(/<[^>]*>/g, '').trim() || ''),
+              image: acf.teamImage?.sourceUrl || p.featuredImage?.node?.sourceUrl || '',
+            };
+          });
+
+        return teamMembers;
+      }
+    }
+  } catch {
+    // ACF query failed — likely not set up yet. Fall through to category-based.
+  }
+
+  // --- Category-based fallback (original approach) ---
   try {
     const response = await fetchGraphQL<any>(GET_TEAM_MEMBERS);
 
     if (response.errors || !response.data) {
-      return mockTeamMembers;
+      return [];
     }
 
-    // Helper to map WP post nodes to GTEEPTeamMember
     const mapPostToMember = (
       post: any,
       category: GTEEPTeamMember['category']
@@ -419,78 +680,62 @@ export async function getTeamMembers() {
       role: post.tags?.nodes?.[0]?.name || category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' '),
       category,
       bio: post.content
-        ? post.content.replace(/<[^>]*>/g, '').trim() // Strip HTML for plain text bio
+        ? post.content.replace(/<[^>]*>/g, '').trim()
         : post.excerpt?.replace(/<[^>]*>/g, '').trim() || '',
       image: post.featuredImage?.node?.sourceUrl || '',
     });
 
     const { executives, directors, advisoryBoard, boardOfTrustees } = response.data;
 
-    // Per-category merge: use WP data when available, fall back to mock data per category
-    const wpExecutives = (executives?.nodes || []).map((p: any) => mapPostToMember(p, 'executive'));
-    const wpDirectors = (directors?.nodes || []).map((p: any) => mapPostToMember(p, 'director'));
-    const wpAdvisoryBoard = (advisoryBoard?.nodes || []).map((p: any) => mapPostToMember(p, 'advisory-board'));
-    const wpBoardOfTrustees = (boardOfTrustees?.nodes || []).map((p: any) => mapPostToMember(p, 'board-of-trustees'));
-
-    // Mock data per category
-    const mockExecutives = mockTeamMembers.filter(m => m.category === 'executive');
-    const mockDirectors = mockTeamMembers.filter(m => m.category === 'director');
-    const mockAdvisoryBoard = mockTeamMembers.filter(m => m.category === 'advisory-board');
-    const mockBoardOfTrustees = mockTeamMembers.filter(m => m.category === 'board-of-trustees');
-
     const teamMembers: GTEEPTeamMember[] = [
-      ...(wpExecutives.length > 0 ? wpExecutives : mockExecutives),
-      ...(wpDirectors.length > 0 ? wpDirectors : mockDirectors),
-      ...(wpAdvisoryBoard.length > 0 ? wpAdvisoryBoard : mockAdvisoryBoard),
-      ...(wpBoardOfTrustees.length > 0 ? wpBoardOfTrustees : mockBoardOfTrustees),
+      ...(executives?.nodes || []).map((p: any) => mapPostToMember(p, 'executive')),
+      ...(directors?.nodes || []).map((p: any) => mapPostToMember(p, 'director')),
+      ...(advisoryBoard?.nodes || []).map((p: any) => mapPostToMember(p, 'advisory-board')),
+      ...(boardOfTrustees?.nodes || []).map((p: any) => mapPostToMember(p, 'board-of-trustees')),
     ];
 
-    return teamMembers.length > 0 ? teamMembers : mockTeamMembers;
+    return teamMembers;
   } catch {
-    return mockTeamMembers;
+    return [];
   }
 }
 
 /**
- * Get outputs data.
- * Currently returns mock data.
+ * Get outputs data from WordPress.
  */
-export async function getOutputs() {
+export async function getOutputs(): Promise<import('@/types').GTEEPOutput[]> {
   try {
     const page = await getPageBySlug('our-outputs');
     if (page?.content) {
       // Could parse WP content in the future
     }
   } catch {
-    // Fall through to mock data
+    // Fall through to empty array
   }
 
-  return mockOutputs;
+  return [];
 }
 
 /**
- * Get partners data.
- * Currently returns mock data.
+ * Get partners data from WordPress.
  */
-export async function getPartners() {
+export async function getPartners(): Promise<import('@/types').GTEEPPartner[]> {
   try {
     const page = await getPageBySlug('our-partners');
     if (page?.content) {
       // Could parse WP content in the future
     }
   } catch {
-    // Fall through to mock data
+    // Fall through to empty array
   }
 
-  return mockPartners;
+  return [];
 }
 
 /**
- * Get blog posts data.
- * Tries WP posts first, filters out team member categories and default WP posts,
- * then falls back to mock data.
+ * Get blog posts data from WordPress.
  */
-export async function getBlogPosts() {
+export async function getBlogPosts(): Promise<import('@/types').GTEEPBlogPost[]> {
   const { posts } = await getPosts(50);
 
   // Categories used for team members — these should NOT appear in blog posts
@@ -498,10 +743,8 @@ export async function getBlogPosts() {
 
   // Filter out team member posts and the default "Hello world!" WP post
   const blogPosts = posts.filter((post) => {
-    // Skip default WP post
     if (post.slug === 'hello-world') return false;
 
-    // Skip posts in team member categories
     const postCategories = (post.categories as any)?.nodes || [];
     const hasTeamCategory = postCategories.some((cat: any) =>
       teamCategorySlugs.includes(cat.slug)
@@ -511,7 +754,6 @@ export async function getBlogPosts() {
     return true;
   });
 
-  // If WP has real blog posts after filtering, map them to GTEEPBlogPost format
   if (blogPosts.length > 0) {
     return blogPosts.map((post): import('@/types').GTEEPBlogPost => ({
       id: post.id,
@@ -526,8 +768,7 @@ export async function getBlogPosts() {
     }));
   }
 
-  // Fall back to mock data
-  return mockBlogPosts;
+  return [];
 }
 
 // -----------------------------------------------------------------------------
@@ -544,11 +785,11 @@ export async function getPublications(
       after,
     });
 
-    const publications = extractNodes<WPPublication>(response, 'publications', mockPublications);
+    const publications = extractNodes<WPPublication>(response, 'publications');
 
     return { publications };
   } catch {
-    return { publications: mockPublications };
+    return { publications: [] };
   }
 }
 
@@ -556,10 +797,10 @@ export async function getPublicationBySlug(slug: string): Promise<WPPublication 
   try {
     const response = await fetchGraphQL<WPPublicationData>(GET_PUBLICATION_BY_SLUG, { slug });
 
-    const publication = extractSingleNode<WPPublication>(response, 'publication', null);
+    const publication = extractSingleNode<WPPublication>(response, 'publication');
     return publication;
   } catch {
-    return mockPublications.find((p) => p.slug === slug) || null;
+    return null;
   }
 }
 
@@ -577,11 +818,11 @@ export async function getProjects(
       after,
     });
 
-    const projects = extractNodes<WPProject>(response, 'projects', mockProjects);
+    const projects = extractNodes<WPProject>(response, 'projects');
 
     return { projects };
   } catch {
-    return { projects: mockProjects };
+    return { projects: [] };
   }
 }
 
@@ -589,10 +830,10 @@ export async function getProjectBySlug(slug: string): Promise<WPProject | null> 
   try {
     const response = await fetchGraphQL<WPProjectData>(GET_PROJECT_BY_SLUG, { slug });
 
-    const project = extractSingleNode<WPProject>(response, 'project', null);
+    const project = extractSingleNode<WPProject>(response, 'project');
     return project;
   } catch {
-    return mockProjects.find((p) => p.slug === slug) || null;
+    return null;
   }
 }
 
@@ -610,11 +851,11 @@ export async function getEvents(
       after,
     });
 
-    const events = extractNodes<WPEvent>(response, 'events', mockEvents);
+    const events = extractNodes<WPEvent>(response, 'events');
 
     return { events };
   } catch {
-    return { events: mockEvents };
+    return { events: [] };
   }
 }
 
@@ -622,10 +863,10 @@ export async function getEventBySlug(slug: string): Promise<WPEvent | null> {
   try {
     const response = await fetchGraphQL<WPEventData>(GET_EVENT_BY_SLUG, { slug });
 
-    const event = extractSingleNode<WPEvent>(response, 'event', null);
+    const event = extractSingleNode<WPEvent>(response, 'event');
     return event;
   } catch {
-    return mockEvents.find((e) => e.slug === slug) || null;
+    return null;
   }
 }
 
@@ -643,11 +884,11 @@ export async function getResources(
       after,
     });
 
-    const resources = extractNodes<WPResource>(response, 'resources', mockResources);
+    const resources = extractNodes<WPResource>(response, 'resources');
 
     return { resources };
   } catch {
-    return { resources: mockResources };
+    return { resources: [] };
   }
 }
 
@@ -655,10 +896,234 @@ export async function getResourceBySlug(slug: string): Promise<WPResource | null
   try {
     const response = await fetchGraphQL<WPResourceData>(GET_RESOURCE_BY_SLUG, { slug });
 
-    const resource = extractSingleNode<WPResource>(response, 'resource', null);
+    const resource = extractSingleNode<WPResource>(response, 'resource');
     return resource;
   } catch {
-    return mockResources.find((r) => r.slug === slug) || null;
+    return null;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Video Gallery (ACF-based)
+// Fetches the Video Gallery page from WordPress with ACF videoGallery data,
+// extracts YouTube URLs, and enriches each with oEmbed metadata.
+// -----------------------------------------------------------------------------
+
+interface VideoGalleryPageData {
+  page: {
+    id: string;
+    databaseId: number;
+    title: string;
+    slug: string;
+    uri: string;
+    content: string | null;
+    videoGallery: {
+      firechatEvent: string | null;
+    } | null;
+    featuredImage: {
+      node: {
+        sourceUrl: string;
+        altText: string;
+        mediaItemId: number;
+      } | null;
+    } | null;
+  } | null;
+}
+
+export async function getVideoGallery(): Promise<YouTubeVideo[]> {
+  try {
+    const response = await fetchGraphQL<VideoGalleryPageData>(GET_VIDEO_GALLERY);
+
+    if (response.errors || !response.data?.page) {
+      return [];
+    }
+
+    const page = response.data.page;
+    const videoGallery = page.videoGallery;
+    if (!videoGallery) return [];
+
+    // Collect all YouTube URLs from ACF fields
+    const videoUrls: string[] = [];
+
+    // Single URL fields
+    if (videoGallery.firechatEvent && videoGallery.firechatEvent.trim()) {
+      videoUrls.push(videoGallery.firechatEvent.trim());
+    }
+
+    // Repeater field support (when user adds 'videos' repeater in ACF):
+    // if (videoGallery.videos && Array.isArray(videoGallery.videos)) {
+    //   for (const row of videoGallery.videos) {
+    //     if (row.videoUrl && row.videoUrl.trim()) {
+    //       videoUrls.push(row.videoUrl.trim());
+    //     }
+    //   }
+    // }
+
+    if (videoUrls.length === 0) return [];
+
+    // Extract video IDs and enrich with oEmbed data
+    const { extractVideoId, fetchVideoByOembed } = await import('@/lib/youtube');
+
+    const videoPromises = videoUrls.map(async (url) => {
+      const videoId = extractVideoId(url);
+      if (!videoId) return null;
+      return fetchVideoByOembed(videoId);
+    });
+
+    const results = await Promise.all(videoPromises);
+
+    // Filter out null results and de-duplicate by videoId
+    const seen = new Set<string>();
+    const videos: YouTubeVideo[] = [];
+
+    for (const video of results) {
+      if (video && !seen.has(video.videoId)) {
+        seen.add(video.videoId);
+        // Mark as ACF-managed video (not "other video")
+        videos.push({
+          ...video,
+          isOtherVideo: false,
+        });
+      }
+    }
+
+    return videos;
+  } catch (error) {
+    console.error('Failed to fetch video gallery from ACF:', error);
+    return [];
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Output Downloadables (ACF-based)
+// Fetches downloadable file URLs from the ourOutputDownloadables ACF on posts,
+// maps them to GTEEPOutput objects with correct output tab categories.
+// -----------------------------------------------------------------------------
+
+/**
+ * Mapping from ACF field names to output metadata:
+ *   - outputType: which tab on the Outputs page
+ *   - title: human-readable title
+ *   - relatedActivity: which activity page this relates to
+ *   - relatedSubActivity: which sub-activity (child page)
+ *
+ * Files without a specific output tab mapping will appear under "All" only.
+ */
+const DOWNLOADABLE_FIELD_MAP: Record<string, {
+  outputType: GTEEPOutput['type'];
+  title: string;
+  relatedActivity?: string;
+  relatedSubActivity?: string;
+}> = {
+  firechatDevelopmentConversationsWebsite: {
+    outputType: 'concept-note',
+    title: 'Development Conversations Website',
+    relatedActivity: 'policy-engagement',
+    relatedSubActivity: 'policy-firechat',
+  },
+  genderBacklashArchitecture: {
+    outputType: 'concept-note',
+    title: 'Gender Backlash Architecture',
+    relatedActivity: 'policy-engagement',
+    relatedSubActivity: 'policy-firechat',
+  },
+  oluponnaGenderBacklashResponse60: {
+    outputType: 'concept-note',
+    title: 'Oluponna Gender Backlash Response',
+    relatedActivity: 'policy-engagement',
+    relatedSubActivity: 'policy-firechat',
+  },
+  thePolicyFiresideChatOutcomesAndNextSteps0323: {
+    outputType: 'concept-note',
+    title: 'Policy Fireside Chat Outcomes & Next Steps',
+    relatedActivity: 'policy-engagement',
+    relatedSubActivity: 'policy-firechat',
+  },
+  graphicsOnBookTalk: {
+    outputType: 'knowledge-product',
+    title: 'Graphics on Book Talk',
+    // No specific activity relationship
+  },
+};
+
+function getFileExtension(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const ext = pathname.split('.').pop()?.toLowerCase() || '';
+    return ext;
+  } catch {
+    return '';
+  }
+}
+
+function getFileTypeIcon(ext: string): string {
+  switch (ext) {
+    case 'pptx': case 'ppt': return 'presentation';
+    case 'docx': case 'doc': return 'document';
+    case 'pdf': return 'pdf';
+    case 'xlsx': case 'xls': return 'spreadsheet';
+    default: return 'file';
+  }
+}
+
+interface DownloadablesData {
+  posts: {
+    nodes: Array<{
+      id: string;
+      ourOutputDownloadables: {
+        firechatDevelopmentConversationsWebsite: string | null;
+        genderBacklashArchitecture: string | null;
+        graphicsOnBookTalk: string | null;
+        oluponnaGenderBacklashResponse60: string | null;
+        thePolicyFiresideChatOutcomesAndNextSteps0323: string | null;
+      } | null;
+    }>;
+  };
+}
+
+export async function getOutputDownloadables(): Promise<GTEEPOutput[]> {
+  try {
+    const response = await fetchGraphQL<DownloadablesData>(GET_OUTPUT_DOWNLOADABLES, { first: 1 });
+
+    if (response.errors || !response.data?.posts?.nodes?.length) {
+      return [];
+    }
+
+    // Get the first post that has downloadables data (they're all the same due to ACF global location)
+    const post = response.data.posts.nodes[0];
+    const downloadables = post.ourOutputDownloadables;
+    if (!downloadables) return [];
+
+    const outputs: GTEEPOutput[] = [];
+    let counter = 0;
+
+    // Map each ACF field to a GTEEPOutput
+    for (const [fieldName, metadata] of Object.entries(DOWNLOADABLE_FIELD_MAP)) {
+      const url = (downloadables as any)[fieldName];
+      if (!url || typeof url !== 'string' || !url.trim()) continue;
+
+      const ext = getFileExtension(url);
+      const fileIcon = getFileTypeIcon(ext);
+
+      outputs.push({
+        id: `download-${counter++}`,
+        title: metadata.title,
+        slug: fieldName,
+        type: metadata.outputType,
+        description: `${fileIcon.charAt(0).toUpperCase() + fileIcon.slice(1)} file (${ext.toUpperCase()}) from GTEEP research outputs`,
+        excerpt: `${metadata.title} — ${ext.toUpperCase()} download`,
+        date: new Date().toISOString().split('T')[0],
+        downloadUrl: url,
+        relatedActivity: metadata.relatedActivity,
+        relatedSubActivity: metadata.relatedSubActivity,
+        fileType: ext,
+      });
+    }
+
+    return outputs;
+  } catch (error) {
+    console.error('Failed to fetch output downloadables from ACF:', error);
+    return [];
   }
 }
 

@@ -17,14 +17,11 @@ import {
   ArrowRight,
   BookOpen,
   Mail,
-  Download,
-  Presentation,
-  PlayCircle,
-  ExternalLink,
-  FileText,
+  ChevronRight,
+  Flame,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { GTEEPActivity, GTEEPActivityResource } from '@/types';
+import type { GTEEPActivity, GTEEPActivityChild } from '@/types';
 
 // =============================================================================
 // Props
@@ -35,33 +32,25 @@ interface WhatWeDoPageClientProps {
 }
 
 // =============================================================================
-// Icon Map
+// Icon Map - Direct mapping object (avoids creating components during render)
 // =============================================================================
 
-function getActivityIcon(iconName: string) {
-  const iconMap: Record<string, React.ElementType> = {
-    FileSearch,
-    Users,
-    Lightbulb,
-    BarChart3,
-    GraduationCap,
-    Heart,
-  };
-  return iconMap[iconName] || FileSearch;
-}
+const activityIcons: Record<string, React.ElementType> = {
+  FileSearch,
+  Users,
+  Lightbulb,
+  BarChart3,
+  GraduationCap,
+  Heart,
+};
 
 // =============================================================================
-// Resource icon mapping
+// ActivityIcon Component - Renders the correct icon by name
 // =============================================================================
 
-function getResourceIcon(type: GTEEPActivityResource['type']) {
-  const iconMap: Record<string, React.ElementType> = {
-    presentation: Presentation,
-    document: FileText,
-    video: PlayCircle,
-    link: ExternalLink,
-  };
-  return iconMap[type] || FileText;
+function ActivityIcon({ name, className }: { name: string; className?: string }) {
+  const Icon = activityIcons[name] || FileSearch;
+  return <Icon className={className} />;
 }
 
 // =============================================================================
@@ -72,119 +61,320 @@ const activityColors = [
   {
     iconBg: 'bg-[#f0fdf4]',
     iconText: 'text-[#059669]',
-    iconHoverBg: 'group-hover:bg-[#065f46]',
-    iconHoverText: 'group-hover:text-white',
     accent: 'bg-[#065f46]',
+    gradient: 'from-[#065f46] to-[#047857]',
+    lightBg: 'bg-[#f0fdf4]',
+    border: 'border-[#065f46]/20',
   },
   {
     iconBg: 'bg-[#fef3c7]',
     iconText: 'text-[#d97706]',
-    iconHoverBg: 'group-hover:bg-[#d97706]',
-    iconHoverText: 'group-hover:text-white',
     accent: 'bg-[#d97706]',
+    gradient: 'from-[#d97706] to-[#b45309]',
+    lightBg: 'bg-[#fef3c7]',
+    border: 'border-[#d97706]/20',
+  },
+  {
+    iconBg: 'bg-[#f0fdf4]',
+    iconText: 'text-[#059669]',
+    accent: 'bg-[#059669]',
+    gradient: 'from-[#059669] to-[#047857]',
+    lightBg: 'bg-[#f0fdf4]',
+    border: 'border-[#059669]/20',
   },
 ];
 
 // =============================================================================
-// YouTube helpers
+// HTML Content Renderer - Safely renders WordPress HTML content
 // =============================================================================
 
-function getYouTubeId(url: string): string | null {
-  const match = url.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([a-zA-Z0-9_-]{11})/
+function WpContent({ html, className }: { html: string; className?: string }) {
+  if (!html || html.trim() === '') return null;
+  return (
+    <div
+      className={`prose prose-slate max-w-none text-[#475569] leading-relaxed [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-[#0f172a] [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-[#0f172a] [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-[#0f172a] [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-1 [&_a]:text-[#059669] [&_a]:underline [&_a:hover]:text-[#047857] [&_strong]:text-[#0f172a] [&_blockquote]:border-l-4 [&_blockquote]:border-[#065f46] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-[#64748b] ${className || ''}`}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
-  return match ? match[1] : null;
-}
-
-function isYouTubeUrl(url: string): boolean {
-  return getYouTubeId(url) !== null;
 }
 
 // =============================================================================
-// Resource Card Component
+// Policy Firechat Sub-section
 // =============================================================================
 
-function ResourceCard({ resource }: { resource: GTEEPActivityResource }) {
-  const isVideo = resource.type === 'video';
-  const isExternal = resource.url.startsWith('http');
-  const ytId = isVideo ? getYouTubeId(resource.url) : null;
+function PolicyFirechatSection({ firechatContent, childPage }: { firechatContent: string; childPage?: GTEEPActivityChild }) {
+  if (!firechatContent && !childPage) return null;
 
-  const iconMap: Record<string, React.ElementType> = {
-    presentation: Presentation,
-    document: FileText,
-    video: PlayCircle,
-    link: ExternalLink,
-  };
-  const IconComponent = iconMap[resource.type] || FileText;
+  const content = firechatContent || childPage?.policyFirechat || childPage?.content || '';
+  if (!content) return null;
+
+  // Extract first paragraph as intro and the rest as details
+  const paragraphs = content.split(/\r\n\r\n|\n\n/).filter(Boolean);
+  const intro = paragraphs[0] || '';
+  const rest = paragraphs.slice(1).join('\n\n');
 
   return (
-    <div className="group rounded-xl border border-[#e2e8f0] hover:border-[#059669]/30 bg-white overflow-hidden hover:shadow-lg transition-all duration-300">
-      {/* Video thumbnail for YouTube */}
-      {ytId && (
-        <div className="relative aspect-video bg-[#0f172a]">
-          <Image
-            src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
-            alt={resource.title}
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-            <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <PlayCircle className="w-8 h-8 text-[#065f46]" />
+    <AnimatedSection>
+      <div className="mt-10 pt-8 border-t border-[#d97706]/30">
+        <div className="bg-gradient-to-br from-[#fef3c7]/50 to-[#f0fdf4]/30 rounded-2xl p-6 md:p-8 border border-[#d97706]/20">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d97706] to-[#b45309] flex items-center justify-center shadow-lg">
+              <Flame className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h4
+                className="text-xl font-bold text-[#0f172a]"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                {childPage?.title || 'Policy Firechat'}
+              </h4>
+              <p className="text-sm text-[#d97706] font-medium">
+                Development Conversations &bull; Under Policy Engagement
+              </p>
             </div>
           </div>
-        </div>
-      )}
 
-      <div className="p-4">
-        <div className="flex items-start gap-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isVideo ? 'bg-red-50 text-red-600' : 'bg-[#f0fdf4] text-[#059669]'}`}>
-            <IconComponent className="w-5 h-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h4 className="text-sm font-semibold text-[#0f172a] leading-tight mb-1">
-              {resource.title}
-            </h4>
-            {resource.description && (
-              <p className="text-xs text-[#64748b] leading-relaxed line-clamp-2">
-                {resource.description}
+          {intro && (
+            <div className="mb-4 p-4 bg-white/60 rounded-xl border border-[#d97706]/10">
+              <p className="text-[#475569] leading-relaxed text-sm md:text-base">
+                {intro.replace(/<[^>]*>/g, '').trim()}
               </p>
+            </div>
+          )}
+
+          {rest && (
+            <details className="group">
+              <summary className="cursor-pointer flex items-center gap-2 text-[#d97706] font-medium text-sm hover:text-[#b45309] transition-colors">
+                <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                Read more about Policy Firechats
+              </summary>
+              <div className="mt-4">
+                <WpContent html={rest} />
+              </div>
+            </details>
+          )}
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button
+              asChild
+              size="sm"
+              className="bg-gradient-to-r from-[#d97706] to-[#b45309] hover:from-[#b45309] hover:to-[#92400e] text-white rounded-lg"
+            >
+              <Link href="/fireside-chats">
+                <Flame className="w-4 h-4 mr-1.5" />
+                View Fireside Chats
+              </Link>
+            </Button>
+            {childPage && (
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="border-[#d97706]/40 text-[#d97706] hover:bg-[#d97706]/10 rounded-lg"
+              >
+                <Link href={`/what-we-do/policy-engagement/${childPage.slug}`}>
+                  Learn More
+                  <ArrowRight className="w-3 h-3 ml-1" />
+                </Link>
+              </Button>
             )}
           </div>
         </div>
-
-        <div className="mt-3">
-          {isVideo ? (
-            <a
-              href={resource.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#065f46] hover:text-[#047857] transition-colors"
-            >
-              <PlayCircle className="w-4 h-4" />
-              Watch on YouTube
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          ) : (
-            <a
-              href={resource.url}
-              download
-              target={isExternal ? '_blank' : undefined}
-              rel={isExternal ? 'noopener noreferrer' : undefined}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#065f46] hover:text-[#047857] transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Download
-              {resource.type === 'presentation' && (
-                <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0 border-[#d97706]/30 text-[#d97706]">
-                  PPTX
-                </Badge>
-              )}
-            </a>
-          )}
-        </div>
       </div>
-    </div>
+    </AnimatedSection>
+  );
+}
+
+// =============================================================================
+// Activity Section Component
+// =============================================================================
+
+function ActivitySection({
+  activity,
+  index,
+}: {
+  activity: GTEEPActivity;
+  index: number;
+}) {
+  const isEven = index % 2 === 0;
+  const color = activityColors[index % activityColors.length];
+
+  // Check if this activity has children (like Policy Engagement → Policy Firechat)
+  const hasChildren = activity.children && activity.children.length > 0;
+  const firechatChild = activity.children?.find(
+    (c) => c.slug === 'policy-firechat' || c.policyFirechat
+  );
+
+  return (
+    <section
+      key={activity.id}
+      id={`activity-${activity.slug}`}
+      className={`py-16 md:py-24 transition-all duration-500 scroll-mt-20 ${isEven ? 'bg-white' : 'bg-[#f8fafc]'}`}
+      aria-label={activity.title}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <AnimatedSection>
+          <div className={`grid gap-12 lg:grid-cols-2 items-start ${!isEven ? 'lg:grid-flow-dense' : ''}`}>
+            {/* Icon/Visual Side */}
+            <div className={`${!isEven ? 'lg:col-start-2 lg:row-span-2' : ''}`}>
+              <div className="relative">
+                <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-xl relative">
+                  {activity.image ? (
+                    <>
+                      <Image
+                        src={activity.image}
+                        alt={activity.title}
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#065f46]/50 via-transparent to-[#0f172a]/50" />
+                    </>
+                  ) : (
+                    <div className={`h-full bg-gradient-to-br ${color.gradient} to-[#0f172a]`} />
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-white/90 p-8">
+                      <div className={`w-20 h-20 rounded-2xl ${color.iconBg} flex items-center justify-center mx-auto mb-4`}>
+                        <ActivityIcon name={activity.icon} className={`w-10 h-10 ${color.iconText}`} />
+                      </div>
+                      <p
+                        className="text-xl font-bold"
+                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                      >
+                        {activity.title}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-[#d97706]/15 blur-xl" />
+                  <div className="absolute -bottom-4 -left-4 w-32 h-32 rounded-full bg-[#059669]/15 blur-xl" />
+                </div>
+              </div>
+            </div>
+
+            {/* Content Side */}
+            <div className={`${!isEven ? 'lg:col-start-1' : ''}`}>
+              <div className="space-y-5">
+                <Badge className={`${color.iconBg} ${color.iconText} border-0 text-sm px-3 py-1`}>
+                  Activity {index + 1}
+                </Badge>
+                <h2
+                  className="text-3xl sm:text-4xl font-bold text-[#0f172a]"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  {activity.title}
+                </h2>
+                <div className={`h-1 w-20 rounded-full ${color.accent}`} />
+
+                {/* Render content from WordPress */}
+                {activity.content ? (
+                  <WpContent html={activity.content} className="text-base md:text-lg" />
+                ) : (
+                  <p className="text-[#64748b] leading-relaxed text-base md:text-lg">
+                    Content for this activity is being developed. Check back soon for detailed information about our {activity.title.toLowerCase()} work.
+                  </p>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <Button
+                    asChild
+                    size="sm"
+                    className={`bg-gradient-to-r ${color.gradient} text-white rounded-xl shadow-md`}
+                  >
+                    <Link href={`/what-we-do/${activity.slug}`}>
+                      Learn More
+                      <ArrowRight className="w-4 h-4 ml-1.5" />
+                    </Link>
+                  </Button>
+                  {hasChildren && (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className={`border-[#065f46]/30 text-[#065f46] hover:bg-[#065f46] hover:text-white rounded-xl`}
+                    >
+                      <Link href={`/what-we-do/${activity.slug}`}>
+                        <BookOpen className="w-4 h-4 mr-1.5" />
+                        Sub-Programmes ({activity.children!.length})
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
+
+        {/* Render children/sub-programmes */}
+        {hasChildren && (
+          <AnimatedSection>
+            <div className="mt-10">
+              <h3
+                className="text-lg font-bold text-[#0f172a] mb-4 flex items-center gap-2"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                <div className={`w-1.5 h-1.5 rounded-full ${color.accent}`} />
+                Sub-Programmes under {activity.title}
+              </h3>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activity.children!.map((child) => (
+                  <Link
+                    key={child.id}
+                    href={`/what-we-do/${activity.slug}/${child.slug}`}
+                    className="group rounded-xl border border-[#e2e8f0] hover:border-[#065f46]/30 bg-white overflow-hidden hover:shadow-lg transition-all duration-300"
+                  >
+                    {child.image && (
+                      <div className="relative aspect-video bg-[#0f172a]">
+                        <Image
+                          src={child.image}
+                          alt={child.title}
+                          fill
+                          className="object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-lg ${color.iconBg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+                          {child.slug === 'policy-firechat' ? (
+                            <Flame className={`w-5 h-5 ${color.iconText}`} />
+                          ) : (
+                            <ActivityIcon name={activity.icon} className={`w-5 h-5 ${color.iconText}`} />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-semibold text-[#0f172a] leading-tight mb-1 group-hover:text-[#065f46] transition-colors">
+                            {child.title}
+                          </h4>
+                          {child.content && (
+                            <p className="text-xs text-[#64748b] leading-relaxed line-clamp-2">
+                              {child.content.replace(/<[^>]*>/g, '').trim().substring(0, 120)}...
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center text-xs font-medium text-[#059669] group-hover:text-[#047857]">
+                        View details
+                        <ChevronRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </AnimatedSection>
+        )}
+
+        {/* Policy Firechat Sub-section (only for Policy Engagement) */}
+        {activity.slug === 'policy-engagement' && (activity.policyFirechat || firechatChild) && (
+          <PolicyFirechatSection
+            firechatContent={activity.policyFirechat || ''}
+            childPage={firechatChild}
+          />
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -199,10 +389,8 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
       const id = window.location.hash.replace('#', '');
       const el = document.getElementById(id);
       if (el) {
-        // Small delay to ensure page is fully rendered
         setTimeout(() => {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          // Add a brief highlight animation
           el.classList.add('ring-2', 'ring-[#059669]/40', 'ring-inset');
           setTimeout(() => {
             el.classList.remove('ring-2', 'ring-[#059669]/40', 'ring-inset');
@@ -224,120 +412,108 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
       />
 
       {/* ================================================================== */}
-      {/* ACTIVITY SECTIONS */}
+      {/* ACTIVITIES OVERVIEW - Quick navigation cards */}
       {/* ================================================================== */}
-      {activities.map((activity, index) => {
-        const IconComponent = getActivityIcon(activity.icon);
-        const isEven = index % 2 === 0;
-        const color = activityColors[index % activityColors.length];
+      {activities.length > 0 && (
+        <section className="py-12 md:py-16 bg-white border-b border-[#e2e8f0]" aria-label="Activities Overview">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <AnimatedSection>
+              <div className="text-center mb-8">
+                <h2
+                  className="text-2xl md:text-3xl font-bold text-[#0f172a]"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  Our Programme Areas
+                </h2>
+                <p className="mt-2 text-[#64748b] max-w-2xl mx-auto">
+                  GTEEP operates across six interconnected programme areas, each contributing to evidence-driven policy analysis for socially inclusive development.
+                </p>
+              </div>
+            </AnimatedSection>
 
-        return (
-          <section
-            key={activity.id}
-            id={`activity-${activity.id}`}
-            className={`py-16 md:py-24 transition-all duration-500 ${isEven ? 'bg-white' : 'bg-[#f8fafc]'}`}
-            aria-label={activity.title}
-          >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <AnimatedSection>
-                <div className={`grid gap-12 lg:grid-cols-2 items-center ${!isEven ? 'lg:grid-flow-dense' : ''}`}>
-                  {/* Icon/Visual Side */}
-                  <div className={`${!isEven ? 'lg:col-start-2' : ''}`}>
-                    <div className="relative">
-                      <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-xl relative">
-                        {activity.image ? (
-                          <>
-                            <Image
-                              src={activity.image}
-                              alt={activity.title}
-                              fill
-                              className="object-cover"
-                            />
-                            {/* Gradient overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#065f46]/50 via-transparent to-[#0f172a]/50" />
-                          </>
-                        ) : (
-                          <div className="h-full bg-gradient-to-br from-[#065f46] via-[#047857] to-[#0f172a]" />
-                        )}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center text-white/90 p-8">
-                            <div className={`w-20 h-20 rounded-2xl ${color.iconBg} flex items-center justify-center mx-auto mb-4`}>
-                              <IconComponent className={`w-10 h-10 ${color.iconText}`} />
-                            </div>
-                            <p
-                              className="text-xl font-bold"
-                              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                            >
-                              {activity.title}
-                            </p>
-                          </div>
-                        </div>
-                        {/* Decorative circles */}
-                        <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-[#d97706]/15 blur-xl" />
-                        <div className="absolute -bottom-4 -left-4 w-32 h-32 rounded-full bg-[#059669]/15 blur-xl" />
-                      </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {activities.map((activity, index) => {
+                const color = activityColors[index % activityColors.length];
+                return (
+                  <Link
+                    key={activity.id}
+                    href={`#activity-${activity.slug}`}
+                    className="group text-center p-4 rounded-xl border border-[#e2e8f0] hover:border-[#065f46]/30 bg-white hover:bg-[#f0fdf4] transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                  >
+                    <div className={`w-12 h-12 rounded-xl ${color.iconBg} flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
+                      <ActivityIcon name={activity.icon} className={`w-6 h-6 ${color.iconText}`} />
                     </div>
-                  </div>
-
-                  {/* Content Side */}
-                  <div className={`${!isEven ? 'lg:col-start-1' : ''}`}>
-                    <div className="space-y-6">
-                      <Badge className={`${color.iconBg} ${color.iconText} border-0 text-sm px-3 py-1`}>
-                        Activity {index + 1}
+                    <h3 className="text-xs sm:text-sm font-semibold text-[#0f172a] group-hover:text-[#065f46] transition-colors leading-tight">
+                      {activity.title}
+                    </h3>
+                    {activity.children && activity.children.length > 0 && (
+                      <Badge variant="outline" className="mt-2 text-[10px] px-1.5 py-0 border-[#d97706]/30 text-[#d97706]">
+                        +{activity.children.length} sub
                       </Badge>
-                      <h2
-                        className="text-3xl sm:text-4xl font-bold text-[#0f172a]"
-                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                      >
-                        {activity.title}
-                      </h2>
-                      <div className={`h-1 w-20 rounded-full ${color.accent}`} />
-                      <p className="text-[#64748b] leading-relaxed text-base md:text-lg">
-                        {activity.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </AnimatedSection>
-
-              {/* Related Resources / Outputs */}
-              {activity.resources && activity.resources.length > 0 && (
-                <AnimatedSection>
-                  <div className="mt-12 pt-10 border-t border-[#e2e8f0]">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 rounded-lg bg-[#f0fdf4] flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-[#059669]" />
-                      </div>
-                      <div>
-                        <h3
-                          className="text-xl font-bold text-[#0f172a]"
-                          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                        >
-                          Related Outputs &amp; Resources
-                        </h3>
-                        <p className="text-sm text-[#64748b]">
-                          Download presentations, documents, and watch event recordings from our {activity.title.toLowerCase()} work.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {activity.resources.map((resource, rIdx) => (
-                        <ResourceCard key={rIdx} resource={resource} />
-                      ))}
-                    </div>
-                  </div>
-                </AnimatedSection>
-              )}
+                    )}
+                  </Link>
+                );
+              })}
             </div>
-          </section>
-        );
-      })}
+          </div>
+        </section>
+      )}
+
+      {/* ================================================================== */}
+      {/* ACTIVITY SECTIONS - Full detail for each activity */}
+      {/* ================================================================== */}
+      {activities.length === 0 && (
+        <section className="py-16 md:py-24 bg-white" aria-label="Activities Coming Soon">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <AnimatedSection>
+              <div className="text-center py-16">
+                <div className="w-20 h-20 rounded-2xl bg-[#f0fdf4] flex items-center justify-center mx-auto mb-6">
+                  <FileSearch className="w-10 h-10 text-[#059669]" />
+                </div>
+                <h2
+                  className="text-2xl md:text-3xl font-bold text-[#0f172a] mb-4"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  Activities Coming Soon
+                </h2>
+                <p className="text-[#64748b] max-w-xl mx-auto text-base md:text-lg leading-relaxed">
+                  Our programme activities are being updated. Check back soon to learn about our policy research, engagement, and empowerment initiatives across Africa.
+                </p>
+                <div className="mt-8 flex flex-wrap justify-center gap-4">
+                  <Button
+                    asChild
+                    className="bg-[#065f46] hover:bg-[#064e3b] text-white rounded-xl px-6"
+                  >
+                    <Link href="/about">
+                      Learn About GTEEP
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white rounded-xl px-6"
+                  >
+                    <Link href="/contact">
+                      <Mail className="w-4 h-4 mr-2" />
+                      Contact Us
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </AnimatedSection>
+          </div>
+        </section>
+      )}
+
+      {activities.map((activity, index) => (
+        <ActivitySection key={activity.id} activity={activity} index={index} />
+      ))}
 
       {/* ================================================================== */}
       {/* CTA SECTION */}
       {/* ================================================================== */}
       <section className="py-16 md:py-20 bg-[#0f172a] relative overflow-hidden" aria-label="Call to Action">
-        {/* Decorative elements */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-[#059669]/10 blur-3xl" />
           <div className="absolute bottom-0 right-1/4 w-72 h-72 rounded-full bg-[#d97706]/8 blur-3xl" />

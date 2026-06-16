@@ -22,7 +22,7 @@ const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@gteep.com';
 
 // The admin email that receives contact form notifications
 const ADMIN_NOTIFICATION_EMAIL =
-  process.env.CONTACT_RECEIVER_EMAIL || process.env.SITE_EMAIL || 'info@gteep.com';
+  process.env.CONTACT_RECEIVER_EMAIL || process.env.SITE_EMAIL || 'info@gteep.gileadtrust.com';
 
 // ---------------------------------------------------------------------------
 // Provider detection
@@ -147,7 +147,8 @@ export async function sendEmail(
 // Contact Form — Admin Notification
 // ---------------------------------------------------------------------------
 
-export async function sendContactNotification(data: ContactFormData): Promise<boolean> {
+export async function sendContactNotification(data: ContactFormData, overrideAdminEmail?: string): Promise<boolean> {
+  const recipientEmail = overrideAdminEmail || ADMIN_NOTIFICATION_EMAIL;
   const subject = `[GTEEP Contact] ${data.subject}`;
   const html = `
     <div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;">
@@ -164,6 +165,10 @@ export async function sendContactNotification(data: ContactFormData): Promise<bo
             <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;font-weight:bold;color:#0f172a;">Email</td>
             <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;color:#334155;"><a href="mailto:${data.email}" style="color:#059669;">${data.email}</a></td>
           </tr>
+          ${data.phone ? `<tr>
+            <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;font-weight:bold;color:#0f172a;">Phone</td>
+            <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;color:#334155;"><a href="tel:${data.phone}" style="color:#059669;">${data.phone}</a></td>
+          </tr>` : ''}
           ${data.organization ? `<tr>
             <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;font-weight:bold;color:#0f172a;">Organization</td>
             <td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;color:#334155;">${data.organization}</td>
@@ -180,6 +185,7 @@ export async function sendContactNotification(data: ContactFormData): Promise<bo
         <div style="margin-top:20px;padding:12px;background:#f0fdf4;border-radius:6px;border-left:4px solid #059669;">
           <p style="margin:0;font-size:13px;color:#065f46;">
             <strong>Reply to this person:</strong> <a href="mailto:${data.email}" style="color:#059669;">${data.email}</a>
+            ${data.phone ? ` | <a href="tel:${data.phone}" style="color:#059669;">${data.phone}</a>` : ''}
           </p>
         </div>
       </div>
@@ -193,6 +199,7 @@ New Contact Form Submission — GTEEP
 
 Name: ${data.name}
 Email: ${data.email}
+${data.phone ? `Phone: ${data.phone}` : ''}
 ${data.organization ? `Organization: ${data.organization}` : ''}
 Subject: ${data.subject}
 
@@ -200,11 +207,11 @@ Message:
 ${data.message}
 
 ---
-Reply to: ${data.email}
+Reply to: ${data.email}${data.phone ? ` | Call: ${data.phone}` : ''}
 This notification was sent from the GTEEP website contact form.
   `;
 
-  return sendEmail(ADMIN_NOTIFICATION_EMAIL, subject, html, text);
+  return sendEmail(recipientEmail, subject, html, text);
 }
 
 // ---------------------------------------------------------------------------
@@ -238,7 +245,7 @@ export async function sendContactConfirmation(data: ContactFormData): Promise<bo
       </div>
       <p style="margin-top:16px;color:#94a3b8;font-size:12px;text-align:center;">
         This is an automated confirmation. Please do not reply to this email.<br>
-        Contact us at info@gteep.com if you need further assistance.
+        Contact us at info@gteep.gileadtrust.com if you need further assistance.
       </p>
     </div>
   `;
@@ -259,7 +266,7 @@ Gilead Trust Economic Empowerment Project
 
 ---
 This is an automated confirmation. Please do not reply to this email.
-Contact us at info@gteep.com if you need further assistance.
+Contact us at info@gteep.gileadtrust.com if you need further assistance.
   `;
 
   return sendEmail(data.email, subject, html, text);

@@ -114,7 +114,120 @@ export const GET_PAGE_BY_SLUG = `
       modified
       uri
       isFrontPage
+      aboutContent {
+        aboutSummary
+        aboutVision
+        aboutMission
+        aboutGoal
+      }
+      contactdetails {
+        address
+        email
+        phoneNumber
+      }
+      videoGallery {
+        firechatEvent
+      }
       ${FEATURED_IMAGE_FRAGMENT}
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
+// What We Do Query - Fetches parent page with all child pages + nested children
+// Includes ACF policyFirechat fields for Policy Engagement sub-pages
+// -----------------------------------------------------------------------------
+
+export const GET_WHAT_WE_DO_PAGE = `
+  query GetWhatWeDoPage {
+    page(id: "/what-we-do/", idType: URI) {
+      id
+      databaseId
+      title
+      slug
+      uri
+      content
+      ${FEATURED_IMAGE_FRAGMENT}
+      children(first: 20) {
+        nodes {
+          ... on Page {
+            id
+            databaseId
+            title
+            slug
+            uri
+            content
+            ${FEATURED_IMAGE_FRAGMENT}
+            policyFirechat {
+              policyFirechat
+            }
+            children(first: 20) {
+              nodes {
+                ... on Page {
+                  id
+                  databaseId
+                  title
+                  slug
+                  uri
+                  content
+                  ${FEATURED_IMAGE_FRAGMENT}
+                  policyFirechat {
+                    policyFirechat
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
+// Single Activity Page Query - Fetches one What We Do child page with children
+// -----------------------------------------------------------------------------
+
+export const GET_ACTIVITY_PAGE = `
+  query GetActivityPage($slug: ID!) {
+    page(id: $slug, idType: URI) {
+      id
+      databaseId
+      title
+      slug
+      uri
+      content
+      ${FEATURED_IMAGE_FRAGMENT}
+      policyFirechat {
+        policyFirechat
+      }
+      children(first: 20) {
+        nodes {
+          ... on Page {
+            id
+            databaseId
+            title
+            slug
+            uri
+            content
+            ${FEATURED_IMAGE_FRAGMENT}
+            policyFirechat {
+              policyFirechat
+            }
+          }
+        }
+      }
+      parent {
+        node {
+          ... on Page {
+            id
+            databaseId
+            title
+            slug
+            uri
+          }
+        }
+      }
     }
   }
 `;
@@ -211,6 +324,23 @@ export const GET_SITE_SETTINGS = `
 `;
 
 // -----------------------------------------------------------------------------
+// Admin Email Query (ACF adminemail field group on Post type)
+// Fetches the admin notification email from any published post with ACF data
+// -----------------------------------------------------------------------------
+
+export const GET_ADMIN_EMAIL = `
+  query GetAdminEmail {
+    posts(first: 1, where: { status: PUBLISH }) {
+      nodes {
+        adminemail {
+          adminEmailForNotification
+        }
+      }
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
 // Menu Queries
 // -----------------------------------------------------------------------------
 
@@ -257,7 +387,7 @@ export const GET_MENUS = `
 `;
 
 // -----------------------------------------------------------------------------
-// Team Members Query
+// Team Members Query (Category-based fallback)
 // Fetches posts in the team-member categories:
 //   - "Executive" category → Executive Director
 //   - "Director" category → Directors
@@ -333,6 +463,94 @@ export const GET_TEAM_MEMBERS = `
         content
         ${FEATURED_IMAGE_FRAGMENT}
         ${TAGS_FRAGMENT}
+      }
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
+// Team Members Query (ACF-based)
+// Uses ACF field group "Team Member" on posts.
+//
+// ACF Field Group Setup in WordPress:
+//   Field Group Name:  "Team Member"
+//   GraphQL Type Name: "TeamMember"
+//   Location Rule:     Post Type = Post
+//
+// ACF Fields:
+//   Field Label       | Field Name    | Field Type | Notes
+//   ------------------|---------------|------------|---------------------------
+//   Name              | teamName      | Text       | Person's full name
+//   Role/Position     | teamRole      | Text       | e.g. "Executive Director"
+//   Category          | teamCategory  | Select     | Options: executive, director,
+//                     |               |            | advisory-board, board-of-trustees
+//   Short Bio         | teamBio       | Textarea   | Brief one-liner bio
+//   Profile Image     | teamImage     | Image      | Return format: Image Object
+//
+// With ACF, ALL team members are fetched in a SINGLE query.
+// The teamCategory select field determines which group they belong to.
+// -----------------------------------------------------------------------------
+
+export const GET_TEAM_MEMBERS_ACF = `
+  query GetTeamMembersACF($first: Int = 50) {
+    posts(
+      first: $first
+      where: { status: PUBLISH, categoryName: "team" }
+    ) {
+      nodes {
+        id
+        databaseId
+        title
+        slug
+        excerpt
+        content
+        ${FEATURED_IMAGE_FRAGMENT}
+        ${TAGS_FRAGMENT}
+        teamMember {
+          teamName
+          teamRole
+          teamCategory
+          teamBio
+          teamImage {
+            sourceUrl
+            altText
+          }
+        }
+      }
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
+// Output Downloadables Query (ACF-based)
+// Fetches the ourOutputDownloadables ACF field group on posts.
+//
+// ACF Field Group: "OurOutputDownloadables"
+// GraphQL Type: "OurOutputDownloadables"
+// Location Rule: Post Type = Post
+//
+// ACF Fields (all URL type, each pointing to a downloadable file):
+//   Field Name                              | Label                                       | Category
+//   ----------------------------------------|---------------------------------------------|------------------
+//   firechatDevelopmentConversationsWebsite | Firechat Development Conversations Website   | concept-note (Firechat)
+//   genderBacklashArchitecture              | Gender Backlash Architecture                | concept-note (Firechat)
+//   graphicsOnBookTalk                      | Graphics on Book Talk                       | (uncategorized → All)
+//   oluponnaGenderBacklashResponse60        | Oluponna Gender Backlash Response 60        | concept-note (Firechat)
+//   thePolicyFiresideChatOutcomes...0323    | The Policy Fireside Chat Outcomes...        | concept-note (Firechat)
+// -----------------------------------------------------------------------------
+
+export const GET_OUTPUT_DOWNLOADABLES = `
+  query GetOutputDownloadables($first: Int = 1) {
+    posts(first: $first, where: { status: PUBLISH }) {
+      nodes {
+        id
+        ourOutputDownloadables {
+          firechatDevelopmentConversationsWebsite
+          genderBacklashArchitecture
+          graphicsOnBookTalk
+          oluponnaGenderBacklashResponse60
+          thePolicyFiresideChatOutcomesAndNextSteps0323
+        }
       }
     }
   }
@@ -542,6 +760,49 @@ export const SEARCH_QUERY = `
         uri
         date
       }
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
+// Video Gallery Query (ACF-based)
+// Fetches the Video Gallery page under Our Outputs with ACF videoGallery data.
+//
+// ACF Field Group Setup in WordPress:
+//   Field Group Name:  "VideoGallery"
+//   GraphQL Type Name: "VideoGallery"
+//   Location Rule:     Page = Video Gallery (or Page Template)
+//
+// ACF Fields:
+//   Field Label       | Field Name    | Field Type | Notes
+//   ------------------|---------------|------------|---------------------------
+//   Firechat Event    | firechatEvent | URL        | Single YouTube video URL
+//
+// For MULTIPLE VIDEOS, add an ACF Repeater field:
+//   Field Label       | Field Name    | Field Type | Notes
+//   ------------------|---------------|------------|---------------------------
+//   Videos            | videos        | Repeater   | Add rows for each video
+//     Video URL       | videoUrl      | URL        | YouTube URL
+//     Video Title     | videoTitle    | Text       | Optional custom title
+//     Video Desc      | videoDescription | Textarea | Optional custom description
+//
+// When the repeater is added, update this query to include:
+//   videos { videoUrl videoTitle videoDescription }
+// -----------------------------------------------------------------------------
+
+export const GET_VIDEO_GALLERY = `
+  query GetVideoGallery {
+    page(id: "/our-outputs/video-gallery/", idType: URI) {
+      id
+      databaseId
+      title
+      slug
+      uri
+      content
+      videoGallery {
+        firechatEvent
+      }
+      ${FEATURED_IMAGE_FRAGMENT}
     }
   }
 `;

@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import PageHeader from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +24,11 @@ import {
   Calendar,
   Download,
   ExternalLink,
-  Loader2,
+  Plus,
+  Presentation,
+  Flame,
+  FileSpreadsheet,
+  FileIcon,
 } from 'lucide-react';
 import type { GTEEPOutput, YouTubeVideo } from '@/types';
 
@@ -32,6 +38,7 @@ import type { GTEEPOutput, YouTubeVideo } from '@/types';
 
 interface OutputsPageClientProps {
   outputs: GTEEPOutput[];
+  videos: YouTubeVideo[];
 }
 
 // =============================================================================
@@ -86,6 +93,26 @@ function getOutputTypeBgGradient(type: string) {
   }
 }
 
+function getFileTypeIcon(ext: string): React.ElementType {
+  switch (ext) {
+    case 'pptx': case 'ppt': return Presentation;
+    case 'docx': case 'doc': return FileText;
+    case 'pdf': return FileText;
+    case 'xlsx': case 'xls': return FileSpreadsheet;
+    default: return FileIcon;
+  }
+}
+
+function getFileTypeLabel(ext: string): string {
+  switch (ext) {
+    case 'pptx': case 'ppt': return 'PowerPoint';
+    case 'docx': case 'doc': return 'Word Document';
+    case 'pdf': return 'PDF Document';
+    case 'xlsx': case 'xls': return 'Excel Spreadsheet';
+    default: return ext.toUpperCase() || 'File';
+  }
+}
+
 const tabDefs = [
   { value: 'all', label: 'All' },
   { value: 'concept-note', label: 'Concept Notes' },
@@ -97,10 +124,109 @@ const tabDefs = [
 ];
 
 // =============================================================================
-// Output Card Component
+// Downloadable File Card Component
+// =============================================================================
+
+function DownloadableCard({ output }: { output: GTEEPOutput }) {
+  const ext = output.fileType || '';
+  const isFirechatRelated = output.relatedSubActivity === 'policy-firechat';
+
+  // Render file icon based on extension
+  const renderFileIcon = (className: string) => {
+    switch (ext) {
+      case 'pptx': case 'ppt': return <Presentation className={className} />;
+      case 'docx': case 'doc': return <FileText className={className} />;
+      case 'pdf': return <FileText className={className} />;
+      case 'xlsx': case 'xls': return <FileSpreadsheet className={className} />;
+      default: return <FileIcon className={className} />;
+    }
+  };
+
+  return (
+    <Card className="group h-full overflow-hidden border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+      {/* Gradient header with file icon */}
+      <div className={`h-36 bg-gradient-to-br ${getOutputTypeBgGradient(output.type)} relative flex items-center justify-center`}>
+        <div className="text-center text-white/80">
+          {renderFileIcon('w-12 h-12 mx-auto mb-2 opacity-70')}
+          <p className="text-sm font-medium">{getFileTypeLabel(ext)}</p>
+        </div>
+        {/* Type badge overlay */}
+        <Badge className={`absolute top-4 left-4 ${getOutputTypeBadgeColor(output.type)} text-xs`}>
+          {getOutputTypeLabel(output.type)}
+        </Badge>
+        {/* File type badge */}
+        {ext && (
+          <Badge className="absolute top-4 right-4 bg-white/90 text-[#0f172a] text-[10px] font-mono border-0">
+            .{ext}
+          </Badge>
+        )}
+        {/* Firechat related indicator */}
+        {isFirechatRelated && (
+          <Badge className="absolute bottom-4 left-4 bg-[#d97706]/90 text-white text-[10px] border-0">
+            <Flame className="w-3 h-3 mr-1" />
+            Firechat
+          </Badge>
+        )}
+      </div>
+
+      <CardContent className="p-6 flex flex-col flex-1">
+        {/* Title */}
+        <h3
+          className="text-base font-semibold text-[#0f172a] mb-2 leading-snug line-clamp-2 group-hover:text-[#065f46] transition-colors"
+          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+        >
+          {output.title}
+        </h3>
+
+        {/* Description */}
+        <p className="text-sm text-[#64748b] leading-relaxed mb-4 line-clamp-2 flex-grow">
+          {output.description}
+        </p>
+
+        {/* Related activity link */}
+        {output.relatedActivity && (
+          <div className="mb-3">
+            <Link
+              href={`/what-we-do/${output.relatedActivity}${output.relatedSubActivity ? `/${output.relatedSubActivity}` : ''}`}
+              className="text-xs text-[#059669] hover:text-[#047857] flex items-center gap-1 transition-colors"
+            >
+              <Flame className="w-3 h-3" />
+              Related: Policy Firechat
+            </Link>
+          </div>
+        )}
+
+        {/* Download button */}
+        <div className="pt-4 border-t border-[#f1f5f9]">
+          {output.downloadUrl ? (
+            <a
+              href={output.downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-medium text-[#059669] hover:text-[#047857] transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download {ext.toUpperCase()}
+            </a>
+          ) : (
+            <span className="text-sm text-[#94a3b8]">No download available</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// =============================================================================
+// Output Card Component (non-downloadable outputs)
 // =============================================================================
 
 function OutputCard({ output }: { output: GTEEPOutput }) {
+  // If this output has a downloadUrl and fileType, render as DownloadableCard
+  if (output.downloadUrl && output.fileType) {
+    return <DownloadableCard output={output} />;
+  }
+
   return (
     <Card className="group h-full overflow-hidden border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
       {/* Image / Gradient area */}
@@ -144,21 +270,25 @@ function OutputCard({ output }: { output: GTEEPOutput }) {
             )}
           </div>
           {output.downloadUrl ? (
-            <Button
-              variant="link"
-              className="text-[#059669] hover:text-[#047857] p-0 h-auto text-sm group/link"
+            <a
+              href={output.downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm font-medium text-[#059669] hover:text-[#047857] transition-colors"
             >
-              <Download className="w-3.5 h-3.5 mr-1" />
-              Read More
-            </Button>
+              <Download className="w-3.5 h-3.5" />
+              Download
+            </a>
           ) : output.externalUrl ? (
-            <Button
-              variant="link"
-              className="text-[#059669] hover:text-[#047857] p-0 h-auto text-sm group/link"
+            <a
+              href={output.externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm font-medium text-[#059669] hover:text-[#047857] transition-colors"
             >
-              <ExternalLink className="w-3.5 h-3.5 mr-1" />
-              Read More
-            </Button>
+              <ExternalLink className="w-3.5 h-3.5" />
+              View
+            </a>
           ) : (
             <Button
               variant="link"
@@ -186,10 +316,10 @@ function OutputCard({ output }: { output: GTEEPOutput }) {
 }
 
 // =============================================================================
-// YouTube Video Card Component
+// YouTube Video Card Component (ACF-based)
 // =============================================================================
 
-function YouTubeVideoCard({
+function ACFVideoCard({
   video,
   onPlay,
 }: {
@@ -216,18 +346,11 @@ function YouTubeVideoCard({
             </svg>
           </div>
         </div>
-        {/* Other video badge */}
-        {video.isOtherVideo && (
-          <Badge className="absolute top-3 left-3 bg-amber-500/90 text-white text-[10px] border-0">
-            Other Video
-          </Badge>
-        )}
-        {/* View count badge */}
-        {video.viewCount !== undefined && video.viewCount > 0 && (
-          <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/70 text-white text-[10px] px-2 py-1 rounded">
-            {video.viewCount.toLocaleString()} views
-          </div>
-        )}
+        {/* Video badge */}
+        <Badge className="absolute top-3 left-3 bg-[#065f46]/90 text-white text-[10px] border-0">
+          <Video className="w-3 h-3 mr-1" />
+          GTEEP Video
+        </Badge>
       </div>
 
       <CardContent className="p-4">
@@ -239,7 +362,7 @@ function YouTubeVideoCard({
           {video.title}
         </h3>
 
-        {/* Channel name & date */}
+        {/* Channel name */}
         <div className="flex items-center gap-2 text-xs text-[#94a3b8]">
           {video.channelTitle && (
             <span className="flex items-center gap-1">
@@ -248,12 +371,6 @@ function YouTubeVideoCard({
               </svg>
               {video.channelTitle}
             </span>
-          )}
-          {video.publishedAt && (
-            <>
-              <span>·</span>
-              <span>{new Date(video.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-            </>
           )}
         </div>
 
@@ -269,170 +386,66 @@ function YouTubeVideoCard({
 }
 
 // =============================================================================
-// Video Gallery Section
+// Video Gallery Section (ACF-driven)
 // =============================================================================
 
-function VideoGallerySection() {
-  const [channelVideos, setChannelVideos] = useState<YouTubeVideo[]>([]);
-  const [otherVideos, setOtherVideos] = useState<YouTubeVideo[]>([]);
-  const [channelTitle, setChannelTitle] = useState<string | null>(null);
-  const [channelUrl, setChannelUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+function VideoGallerySection({ videos }: { videos: YouTubeVideo[] }) {
   const [selectedVideo, setSelectedVideo] = useState<YouTubeVideo | null>(null);
 
-  const fetchVideos = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch('/api/videos');
-      if (!response.ok) {
-        throw new Error('Failed to fetch videos');
-      }
-      const data = await response.json();
-      setChannelVideos(data.channelVideos || []);
-      setOtherVideos(data.otherVideos || []);
-      setChannelTitle(data.channelTitle || null);
-      setChannelUrl(data.channelUrl || null);
-    } catch (err) {
-      console.error('Failed to fetch YouTube videos:', err);
-      setError('Unable to load videos. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const hasVideos = videos.length > 0;
 
-  useEffect(() => {
-    fetchVideos();
-  }, [fetchVideos]);
-
-  const hasChannelVideos = channelVideos.length > 0;
-  const hasOtherVideos = otherVideos.length > 0;
-  const hasAnyVideos = hasChannelVideos || hasOtherVideos;
-
-  // Loading state
-  if (loading) {
-    return (
-      <div className="text-center py-16">
-        <Loader2 className="w-12 h-12 mx-auto text-[#059669] mb-4 animate-spin" />
-        <h3 className="text-lg font-semibold text-[#0f172a] mb-2">Loading videos...</h3>
-        <p className="text-sm text-[#64748b]">
-          Fetching videos from YouTube channel
-        </p>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
+  if (!hasVideos) {
     return (
       <div className="text-center py-16">
         <Video className="w-16 h-16 mx-auto text-[#cbd5e1] mb-4" />
-        <h3 className="text-lg font-semibold text-[#0f172a] mb-2">Could not load videos</h3>
-        <p className="text-sm text-[#64748b] mb-4">{error}</p>
-        <Button
-          onClick={fetchVideos}
-          variant="outline"
-          className="text-[#059669] border-[#059669] hover:bg-[#059669] hover:text-white"
-        >
-          Try Again
-        </Button>
+        <h3 className="text-lg font-semibold text-[#0f172a] mb-2">No videos available yet</h3>
+        <p className="text-sm text-[#64748b] max-w-md mx-auto">
+          Videos will appear here once they are added through the WordPress ACF Video Gallery fields.
+        </p>
+        <div className="mt-6 p-4 bg-[#f0fdf4] rounded-lg border border-[#065f46]/10 max-w-lg mx-auto text-left">
+          <h4 className="text-sm font-semibold text-[#065f46] mb-2 flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            How to add videos:
+          </h4>
+          <ol className="text-xs text-[#64748b] space-y-1 list-decimal list-inside">
+            <li>Go to WordPress Admin → Pages → Video Gallery</li>
+            <li>Add a YouTube URL in the &quot;Firechat Event&quot; ACF field</li>
+            <li>For multiple videos, add a Repeater field called &quot;Videos&quot; with sub-fields</li>
+            <li>Update the page — videos will appear automatically</li>
+          </ol>
+        </div>
       </div>
     );
   }
 
   return (
     <div>
-      {/* Channel Videos */}
-      {hasChannelVideos && (
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3
-                className="text-xl font-bold text-[#0f172a] flex items-center gap-2"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-              >
-                <Video className="w-5 h-5 text-red-500" />
-                {channelTitle ? `${channelTitle} Channel` : 'Channel Videos'}
-              </h3>
-              <p className="text-sm text-[#64748b] mt-1">
-                Latest videos from our YouTube channel · {channelVideos.length} video{channelVideos.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-            {channelUrl && (
-              <a
-                href={channelUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden sm:flex items-center gap-1.5 text-sm text-[#059669] hover:text-[#047857] font-medium transition-colors"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Visit Channel
-              </a>
-            )}
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {channelVideos.map((video) => (
-              <YouTubeVideoCard
-                key={video.videoId}
-                video={video}
-                onPlay={setSelectedVideo}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Other Videos */}
-      <div className="mb-8">
-        <div className="mb-6">
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
           <h3
             className="text-xl font-bold text-[#0f172a] flex items-center gap-2"
             style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
           >
-            <FileText className="w-5 h-5 text-amber-500" />
-            Other Videos
+            <Video className="w-5 h-5 text-[#065f46]" />
+            Video Gallery
           </h3>
           <p className="text-sm text-[#64748b] mt-1">
-            Featured videos from other channels and sources
-            {hasOtherVideos && ` · ${otherVideos.length} video${otherVideos.length !== 1 ? 's' : ''}`}
+            Videos managed through WordPress ACF &middot; {videos.length} video{videos.length !== 1 ? 's' : ''}
           </p>
         </div>
-
-        {hasOtherVideos ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {otherVideos.map((video) => (
-              <YouTubeVideoCard
-                key={video.videoId}
-                video={video}
-                onPlay={setSelectedVideo}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-10 bg-[#f8fafc] rounded-xl border border-dashed border-[#e2e8f0]">
-            <FileText className="w-10 h-10 mx-auto text-[#cbd5e1] mb-3" />
-            <p className="text-sm text-[#94a3b8]">
-              No additional videos added yet.
-            </p>
-            <p className="text-xs text-[#cbd5e1] mt-1">
-              Add YouTube video URLs to the <code className="bg-[#f1f5f9] px-1.5 py-0.5 rounded text-[#64748b] font-mono">OTHER_YOUTUBE_VIDEO_URLS</code> environment variable to display them here.
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* No videos */}
-      {!hasAnyVideos && (
-        <div className="text-center py-16">
-          <Video className="w-16 h-16 mx-auto text-[#cbd5e1] mb-4" />
-          <h3 className="text-lg font-semibold text-[#0f172a] mb-2">No videos available</h3>
-          <p className="text-sm text-[#64748b]">
-            Videos will appear here once they are added to the YouTube channel.
-          </p>
-        </div>
-      )}
+      {/* Video Grid */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {videos.map((video) => (
+          <ACFVideoCard
+            key={video.videoId}
+            video={video}
+            onPlay={setSelectedVideo}
+          />
+        ))}
+      </div>
 
       {/* Video Player Dialog */}
       {selectedVideo && (
@@ -444,7 +457,6 @@ function VideoGallerySection() {
             className="relative w-[95vw] max-w-4xl bg-black rounded-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* YouTube Embed */}
             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
               <iframe
                 src={`${selectedVideo.embedUrl}?autoplay=1&rel=0`}
@@ -454,7 +466,6 @@ function VideoGallerySection() {
                 className="absolute inset-0 w-full h-full"
               />
             </div>
-            {/* Video info */}
             <div className="p-4 bg-[#0f172a]">
               <h3 className="text-white font-semibold text-sm sm:text-base mb-1" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
                 {selectedVideo.title}
@@ -463,12 +474,8 @@ function VideoGallerySection() {
                 {selectedVideo.channelTitle && (
                   <span>{selectedVideo.channelTitle}</span>
                 )}
-                {selectedVideo.publishedAt && (
-                  <span>{new Date(selectedVideo.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                )}
               </div>
             </div>
-            {/* Close button */}
             <button
               onClick={() => setSelectedVideo(null)}
               className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors z-10"
@@ -489,8 +496,12 @@ function VideoGallerySection() {
 
 export default function OutputsPageClient({
   outputs,
+  videos,
 }: OutputsPageClientProps) {
-  const [activeTab, setActiveTab] = useState('all');
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  // Use URL param as initial value; tab changes via user interaction
+  const [activeTab, setActiveTab] = useState(tabParam && tabDefs.some(t => t.value === tabParam) ? tabParam : 'all');
 
   const filteredOutputs = useMemo(() => {
     if (activeTab === 'all') return outputs;
@@ -502,6 +513,7 @@ export default function OutputsPageClient({
   const tabCounts = useMemo(() => {
     const counts: Record<string, number> = {
       all: outputs.length,
+      video: videos.length,
     };
 
     for (const output of outputs) {
@@ -509,7 +521,7 @@ export default function OutputsPageClient({
     }
 
     return counts;
-  }, [outputs]);
+  }, [outputs, videos]);
 
   return (
     <main className="pt-20">
@@ -574,9 +586,9 @@ export default function OutputsPageClient({
                 </TabsContent>
               ))}
 
-            {/* Video Gallery tab content - fetches YouTube data client-side */}
+            {/* Video Gallery tab content - ACF-driven from WordPress */}
             <TabsContent value="video">
-              <VideoGallerySection />
+              <VideoGallerySection videos={videos} />
             </TabsContent>
           </Tabs>
         </div>

@@ -71,13 +71,30 @@ export interface GTEEPActivityResource {
   description?: string;
 }
 
+export interface GTEEPActivityChild {
+  id: string;
+  databaseId: number;
+  title: string;
+  slug: string;
+  uri: string;
+  content: string;
+  image?: string;
+  policyFirechat?: string;
+}
+
 export interface GTEEPActivity {
   id: string;
+  databaseId: number;
   title: string;
+  slug: string;
+  uri: string;
   description: string;
+  content: string;
   icon: string;
   image?: string;
   resources?: GTEEPActivityResource[];
+  children?: GTEEPActivityChild[];
+  policyFirechat?: string;
 }
 
 export interface GTEEPPhilosophy {
@@ -109,6 +126,12 @@ export interface GTEEPOutput {
   image?: string;
   authors?: string;
   tags?: string[];
+  /** Activity page slug this output is related to (e.g. 'policy-engagement') */
+  relatedActivity?: string;
+  /** Activity child page slug (e.g. 'policy-firechat') */
+  relatedSubActivity?: string;
+  /** File extension inferred from URL */
+  fileType?: string;
 }
 
 export interface GTEEPBlogPost {
@@ -172,6 +195,14 @@ export interface WPPost {
   tags?: WPTag[];
   seo?: WPSEO;
   uri: string;
+  // ACF Team Member fields (available when ACF field group "Team Member" is configured)
+  teamMember?: {
+    teamName?: string;
+    teamRole?: string;
+    teamCategory?: string;
+    teamBio?: string;
+    teamImage?: WPImage | null;
+  } | null;
 }
 
 export interface WPPage {
@@ -198,6 +229,25 @@ export interface WPPage {
     heroCtaUrl?: string;
     sections?: WPPageSection[];
   };
+  aboutContent?: {
+    aboutSummary?: string;
+    aboutVision?: string;
+    aboutMission?: string;
+    aboutGoal?: string;
+  };
+  contactdetails?: {
+    address?: string;
+    email?: string;
+    phoneNumber?: number;
+  };
+  videoGallery?: {
+    firechatEvent?: string;
+    videos?: Array<{
+      videoUrl?: string;
+      videoTitle?: string;
+      videoDescription?: string;
+    }>;
+  } | null;
 }
 
 export interface WPPageSection {
@@ -394,6 +444,9 @@ export interface WPSiteSettings {
     heroCtaUrl?: string;
     aboutSummary?: string;
     aboutImage?: WPImage | null;
+    aboutVision?: string;
+    aboutMission?: string;
+    aboutGoal?: string;
     contactEmail?: string;
     contactPhone?: string;
     contactAddress?: string;

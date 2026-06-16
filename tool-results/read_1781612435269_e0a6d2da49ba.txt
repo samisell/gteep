@@ -1,0 +1,1121 @@
+     1→// =============================================================================
+     2→// GTEEP - Gilead Trust Economic Empowerment Project
+     3→// Mock Data for the website
+     4→//
+     5→// Comprehensive mock data that allows the site to function fully without
+     6→// a live WordPress backend. When the WP backend is connected later,
+     7→// this data will be replaced by live GraphQL queries.
+     8→// =============================================================================
+     9→
+    10→import type {
+    11→  GTEEPActivity,
+    12→  GTEEPPhilosophy,
+    13→  GTEEPTeamMember,
+    14→  GTEEPOutput,
+    15→  GTEEPBlogPost,
+    16→  GTEEPPartner,
+    17→  WPSiteSettings,
+    18→} from '@/types';
+    19→
+    20→// =============================================================================
+    21→// Site Settings
+    22→// =============================================================================
+    23→
+    24→export const mockSiteSettings: WPSiteSettings = {
+    25→  siteTitle: 'GTEEP',
+    26→  siteDescription:
+    27→    'Gilead Trust Economic Empowerment Project — Evidence-driven policy analysis for socially inclusive development in Africa.',
+    28→  siteUrl: 'https://gteep.com',
+    29→  siteLogo: {
+    30→    sourceUrl: '/images/gteep-banner.png',
+    31→    altText: 'GTEEP Logo',
+    32→    mediaItemId: 1,
+    33→    width: 200,
+    34→    height: 60,
+    35→  },
+    36→  favicon: null,
+    37→  acfOptions: {
+    38→    heroTitle: 'GTEEP',
+    39→    heroSubtitle: 'Gilead Trust Economic Empowerment Project',
+    40→    heroDescription:
+    41→      'Evidence-driven policy analysis for socially inclusive development. We champion partnerships for African development, people-centered growth, and gender equitable economic transformation.',
+    42→    heroImage: null,
+    43→    heroCtaText: 'Explore Our Work',
+    44→    heroCtaUrl: '/what-we-do',
+    45→    aboutSummary:
+    46→      "Africa's economic transformation and the challenges and opportunities lie in the ability to learn, relearn and unlearn. This process is both integrative and intentional and be socially inclusive. This calls for continuous studying the root causes of Africa's terrain through research, dialogue and enlightenment of the citizens especially the more vulnerable ones who have been distanced from the heart of governance — the poor, majority of low income women and unpaid carers, the youth and aged who are either shut out of objective discourses by virtue of the culture of ageism, the rural dwellers who are locational disadvantaged and even the physiologically challenged. Liberating Africans to unleash untapped economic and human resources needs Africans to be all hands on (together) in addressing the challenges and digging into opportunities.\n\nGTEEP aims to contribute to meeting these needs through research (learning and applying knowledge), public enlightenment and continuous engagement with policy makers to reshape economic choices based on critical success factors and focused on the felt needs of different cohorts of its citizens.",
+    47→    aboutImage: null,
+    48→    aboutVision: 'A socially and culturally inclusive economy where everyone is heard.',
+    49→    aboutMission: 'To continually knowledge spaces and inform policies with data-driven evidence and empower the citizens with requisite tools to reshape their individual and collective economic choices.',
+    50→    aboutGoal: 'To promote spaces that create more participatory and equitable access to resources and opportunities.',
+    51→    contactEmail: 'info@gteep.com',
+    52→    contactPhone: '+234 801 234 5678',
+    53→    contactAddress: 'Lagos, Nigeria',
+    54→    officeHours: 'Monday - Friday, 9:00 AM - 5:00 PM WAT',
+    55→    footerText: 'Empowering communities through evidence-based policy.',
+    56→  },
+    57→};
+    58→
+    59→// =============================================================================
+    60→// Activities (What We Do)
+    61→// =============================================================================
+    62→
+    63→export const mockActivities: GTEEPActivity[] = [
+    64→  {
+    65→    id: 'act-1',
+    66→    title: 'Policy Research',
+    67→    description:
+    68→      'Conducting rigorous, evidence-based research on trade policy, regional integration, economic development, and social inclusion to inform policy decisions across Africa. Our research agenda spans macroeconomic policy, trade facilitation, and structural transformation.',
+    69→    icon: 'FileSearch',
+    70→    image: '/images/data-speaks.png',
+    71→  },
+    72→  {
+    73→    id: 'act-2',
+    74→    title: 'Policy Engagement',
+    75→    description:
+    76→      'Bridging the gap between research and policy by engaging governments, regional organizations, civil society, and the private sector. We facilitate policy dialogues, convene stakeholder forums, and provide advisory services to ensure research findings translate into actionable policy.',
+    77→    icon: 'Users',
+    78→    image: '/images/policy-engagement.jpg',
+    79→    resources: [
+    80→      {
+    81→        title: 'Gender Backlash Architecture',
+    82→        type: 'presentation',
+    83→        url: '/downloads/gender-backlash-architecture.pptx',
+    84→        description: 'Presentation on the architecture of gender backlash — structures, drivers, and policy implications.',
+    85→      },
+    86→      {
+    87→        title: 'Graphics on Book Talk',
+    88→        type: 'presentation',
+    89→        url: '/downloads/graphics-on-book-talk.pptx',
+    90→        description: 'Visual presentation from the GTEEP Book Talk session on policy engagement and inclusive development.',
+    91→      },
+    92→      {
+    93→        title: 'Fireside Chat Presentation',
+    94→        type: 'presentation',
+    95→        url: '/downloads/fireside.pptx',
+    96→        description: 'Slide deck from the GTEEP Fireside Chat on evidence-driven policy engagement.',
+    97→      },
+    98→      {
+    99→        title: 'Fireside Chat — Full Video',
+   100→        type: 'video',
+   101→        url: 'https://www.youtube.com/watch?v=PN-kqs9AZ8g',
+   102→        description: 'Watch the full recording of the GTEEP Fireside Chat on policy engagement.',
+   103→      },
+   104→    ],
+   105→  },
+   106→  {
+   107→    id: 'act-3',
+   108→    title: 'Citizen Enlightenment',
+   109→    description:
+   110→      'Empowering citizens with accessible information about policies that affect their lives and livelihoods. Through community outreach, media engagement, and plain-language publications, we demystify complex policy issues and promote informed public participation in governance.',
+   111→    icon: 'Lightbulb',
+   112→    image: '/images/gteep-community-outreach.png',
+   113→  },
+   114→  {
+   115→    id: 'act-4',
+   116→    title: '"Data Speaks"',
+   117→    description:
+   118→      'Our flagship data-driven advocacy program that uses compelling data visualizations, infographics, and evidence briefs to influence public discourse and policy outcomes. We believe that when data speaks, decision-makers listen — and act.',
+   119→    icon: 'BarChart3',
+   120→    image: '/images/data-speaks.png',
+   121→  },
+   122→  {
+   123→    id: 'act-5',
+   124→    title: 'Youth Mentoring',
+   125→    description:
+   126→      'Investing in the next generation of African policy leaders through structured mentoring programs, research internships, and capacity-building workshops. We pair emerging scholars and practitioners with experienced mentors to develop skills in research, analysis, and policy communication.',
+   127→    icon: 'GraduationCap',
+   128→    image: '/images/youth-mentoring.png',
+   129→  },
+   130→  {
+   131→    id: 'act-6',
+   132→    title: "Women's Economic Livelihood",
+   133→    description:
+   134→      'Promoting gender-equitable economic growth by supporting women\'s economic empowerment, enhancing livelihood opportunities, and advocating for policy frameworks that address gender-based barriers to economic participation. Our work focuses on women in informal trade, agriculture, and entrepreneurship.',
+   135→    icon: 'Heart',
+   136→    image: '/images/women-livelihood.png',
+   137→  },
+   138→];
+   139→
+   140→// =============================================================================
+   141→// Our Philosophy
+   142→// =============================================================================
+   143→
+   144→export const mockPhilosophy: GTEEPPhilosophy[] = [
+   145→  {
+   146→    id: 'phil-1',
+   147→    title: 'Partnerships for African Development',
+   148→    description:
+   149→      'We believe that meaningful development in Africa requires collaborative partnerships across governments, civil society, academia, and the private sector. No single actor can address the continent\'s complex challenges alone.',
+   150→    icon: 'Handshake',
+   151→  },
+   152→  {
+   153→    id: 'phil-2',
+   154→    title: 'Evidence-driven Policy Analysis for Socially Inclusive Development',
+   155→    description:
+   156→      'Our analysis is grounded in rigorous evidence, not ideology. We are committed to producing policy research that prioritizes social inclusion and ensures that development benefits reach the most vulnerable populations.',
+   157→    icon: 'Microscope',
+   158→  },
+   159→  {
+   160→    id: 'phil-3',
+   161→    title: 'Data Speaks More Than Rhetoric',
+   162→    description:
+   163→      'In an era of information overload, we let the data lead. Our "Data Speaks" approach ensures that policy recommendations are backed by solid evidence and that our advocacy is compelling because it is credible.',
+   164→    icon: 'TrendingUp',
+   165→  },
+   166→  {
+   167→    id: 'phil-4',
+   168→    title: 'People-centered Development',
+   169→    description:
+   170→      'Development must serve people, not just economic indicators. We center our research and advocacy on the lived experiences of ordinary Africans, ensuring that policy outcomes improve real lives and livelihoods.',
+   171→    icon: 'UserCheck',
+   172→  },
+   173→  {
+   174→    id: 'phil-5',
+   175→    title: 'Gender Equitable Economic Growth and Transformation',
+   176→    description:
+   177→      'Economic growth that excludes women is neither sustainable nor just. We champion gender-equitable approaches to economic policy that recognize and address the structural barriers women face in accessing economic opportunities.',
+   178→    icon: 'Scale',
+   179→  },
+   180→];
+   181→
+   182→// =============================================================================
+   183→// Team Members
+   184→// =============================================================================
+   185→
+   186→export const mockTeamMembers: GTEEPTeamMember[] = [
+   187→  // Executive Leadership
+   188→  {
+   189→    id: 'team-1',
+   190→    name: 'Bola Akanji',
+   191→    role: 'Executive Director',
+   192→    category: 'executive',
+   193→    bio: 'Bola Akanji is a distinguished economist and policy researcher with over 25 years of experience in international trade policy, African economic integration, and development economics. As the founder and Executive Director of GTEEP, she leads the organization\'s mission to promote evidence-driven, socially inclusive policy across Africa. A PhD holder from the University of Ibadan, she has published extensively on the AfCFTA, ECOWAS trade protocols, and the gender dimensions of trade policy.',
+   194→    image: '',
+   195→  },
+   196→  // Directors
+   197→  {
+   198→    id: 'team-2',
+   199→    name: 'Tomi Adu',
+   200→    role: 'Director',
+   201→    category: 'director',
+   202→    bio: 'Tomi Adu brings extensive experience in development finance and institutional management to GTEEP. With a background in banking and international development, she oversees strategic partnerships and organizational development, ensuring GTEEP\'s operations align with its mission of empowering African communities through evidence-based policy.',
+   203→    image: '',
+   204→  },
+   205→  {
+   206→    id: 'team-3',
+   207→    name: 'Michael Akanji',
+   208→    role: 'Director',
+   209→    category: 'director',
+   210→    bio: 'Michael Akanji contributes expertise in project management and community development to GTEEP\'s board. His work focuses on translating research findings into practical interventions that benefit grassroots communities, particularly in the areas of youth empowerment and agricultural value chains.',
+   211→    image: '',
+   212→  },
+   213→  {
+   214→    id: 'team-4',
+   215→    name: 'Yemi Akanji',
+   216→    role: 'Director',
+   217→    category: 'director',
+   218→    bio: 'Yemi Akanji brings a wealth of experience in organizational strategy and governance. With a keen interest in capacity building and institutional strengthening, Yemi supports GTEEP\'s efforts to build the next generation of African policy leaders and researchers.',
+   219→    image: '',
+   220→  },
+   221→  // Board of Trustees
+   222→  {
+   223→    id: 'trustee-1',
+   224→    name: 'Abayomi Akanji',
+   225→    role: 'Board of Trustees',
+   226→    category: 'board-of-trustees',
+   227→    bio: 'Abayomi Akanji serves on the Board of Trustees, providing strategic oversight and governance guidance to GTEEP. With decades of experience in business and community leadership, he ensures the organization remains true to its founding mission and values.',
+   228→    image: '',
+   229→  },
+   230→  {
+   231→    id: 'trustee-2',
+   232→    name: 'Tomi Adu',
+   233→    role: 'Board of Trustees',
+   234→    category: 'board-of-trustees',
+   235→    bio: 'In addition to her role as Director, Tomi Adu serves on the Board of Trustees, contributing her expertise in financial governance and institutional accountability to ensure GTEEP operates with the highest standards of transparency and impact.',
+   236→    image: '',
+   237→  },
+   238→  {
+   239→    id: 'trustee-3',
+   240→    name: 'Adenike Shoyinka',
+   241→    role: 'Board of Trustees',
+   242→    category: 'board-of-trustees',
+   243→    bio: 'Adenike Shoyinka brings a distinguished background in education and social development to GTEEP\'s Board of Trustees. Her commitment to women\'s empowerment and community development aligns closely with GTEEP\'s mission of inclusive economic growth.',
+   244→    image: '',
+   245→  },
+   246→  // Advisory Board
+   247→  {
+   248→    id: 'adv-1',
+   249→    name: 'Olaide Adedokun',
+   250→    role: 'Advisory Board',
+   251→    category: 'advisory-board',
+   252→    bio: 'Olaide Adedokun is a seasoned policy analyst and development practitioner who provides strategic guidance to GTEEP\'s research agenda. With expertise in public policy and governance reforms, Olaide helps ensure GTEEP\'s work remains relevant and impactful.',
+   253→    image: '',
+   254→  },
+   255→  {
+   256→    id: 'adv-2',
+   257→    name: 'Funmi Soetan',
+   258→    role: 'Advisory Board',
+   259→    category: 'advisory-board',
+   260→    bio: 'Funmi Soetan brings deep expertise in financial inclusion and economic empowerment to GTEEP\'s Advisory Board. Her work on expanding access to financial services for underserved populations informs GTEEP\'s approach to people-centered development.',
+   261→    image: '',
+   262→  },
+   263→  {
+   264→    id: 'adv-3',
+   265→    name: 'Mike Faborode',
+   266→    role: 'Advisory Board',
+   267→    category: 'advisory-board',
+   268→    bio: 'Mike Faborode is an accomplished academic and policy advisor who contributes strategic insight on education policy, human capital development, and institutional capacity building. His guidance strengthens GTEEP\'s youth mentoring and citizen enlightenment programs.',
+   269→    image: '',
+   270→  },
+   271→  {
+   272→    id: 'adv-4',
+   273→    name: 'Joseph Oluponna',
+   274→    role: 'Advisory Board',
+   275→    category: 'advisory-board',
+   276→    bio: 'Joseph Oluponna provides expert guidance on agricultural policy, rural development, and food security. His extensive field experience across West Africa enriches GTEEP\'s research on agricultural value chains and livelihood improvement strategies.',
+   277→    image: '',
+   278→  },
+   279→  {
+   280→    id: 'adv-5',
+   281→    name: 'Funke Mojubaolu Okome',
+   282→    role: 'Advisory Board',
+   283→    category: 'advisory-board',
+   284→    bio: 'Funke Mojubaolu Okome is a renowned scholar of African political economy and gender studies. Her expertise in gender analysis and women\'s economic empowerment provides critical direction to GTEEP\'s work on gender-equitable economic growth and transformation.',
+   285→    image: '',
+   286→  },
+   287→];
+   288→
+   289→// =============================================================================
+   290→// Outputs
+   291→// =============================================================================
+   292→
+   293→export const mockOutputs: GTEEPOutput[] = [
+   294→  // Concept Notes
+   295→  {
+   296→    id: 'out-1',
+   297→    title: 'Conceptual Framework for Intra-African Trade Under the AfCFTA',
+   298→    slug: 'concept-framework-afcfta',
+   299→    type: 'concept-note',
+   300→    description: 'A comprehensive concept note outlining the analytical framework for assessing intra-African trade flows under the African Continental Free Trade Area, including key indicators, methodology, and policy dimensions.',
+   301→    excerpt: 'Analytical framework for assessing intra-African trade flows under the AfCFTA.',
+   302→    date: '2025-01-15',
+   303→    downloadUrl: '#',
+   304→    image: '/images/data-speaks.png',
+   305→    authors: 'Akanji, B.O.',
+   306→    tags: ['AfCFTA', 'Trade Policy', 'Regional Integration'],
+   307→  },
+   308→  {
+   309→    id: 'out-2',
+   310→    title: 'Gender-Responsive Trade Policy: A Conceptual Approach for West Africa',
+   311→    slug: 'gender-responsive-trade-concept',
+   312→    type: 'concept-note',
+   313→    description: 'This concept note proposes a gender-responsive framework for trade policy analysis in West Africa, drawing on feminist economics and trade theory to identify structural barriers facing women in cross-border trade.',
+   314→    excerpt: 'Proposing a gender-responsive framework for trade policy analysis in West Africa.',
+   315→    date: '2024-09-20',
+   316→    downloadUrl: '#',
+   317→    image: '/images/women-livelihood.png',
+   318→    authors: 'Akanji, B.O. & Diop, F.',
+   319→    tags: ['Gender', 'Trade Policy', 'West Africa'],
+   320→  },
+   321→  // Policy Briefs
+   322→  {
+   323→    id: 'out-3',
+   324→    title: 'Policy Brief: Navigating the AfCFTA — A Guide for West African SMEs',
+   325→    slug: 'policy-brief-afcfta-smes',
+   326→    type: 'policy-brief',
+   327→    description: 'A practical policy brief providing guidance for West African small and medium enterprises seeking to leverage the opportunities created by the AfCFTA. Covers tariff preferences, rules of origin, customs procedures, and trade facilitation support.',
+   328→    excerpt: 'Practical guidance for West African SMEs on leveraging the AfCFTA.',
+   329→    date: '2025-02-10',
+   330→    downloadUrl: '#',
+   331→    image: '/images/gteep-community-outreach.png',
+   332→    authors: 'Akanji, B.O.',
+   333→    tags: ['AfCFTA', 'SMEs', 'Policy Brief'],
+   334→  },
+   335→  {
+   336→    id: 'out-4',
+   337→    title: 'Policy Brief: Reducing Non-Tariff Barriers in ECOWAS Agricultural Trade',
+   338→    slug: 'policy-brief-ntb-ecowas',
+   339→    type: 'policy-brief',
+   340→    description: 'This policy brief summarizes findings from a quantitative assessment of non-tariff barriers in ECOWAS agricultural trade and proposes actionable recommendations for policy-makers to reduce trade frictions and improve food security.',
+   341→    excerpt: 'Actionable recommendations for reducing NTBs in ECOWAS agricultural trade.',
+   342→    date: '2024-06-15',
+   343→    downloadUrl: '#',
+   344→    image: '/images/data-speaks.png',
+   345→    authors: 'Akanji, B.O., Souley, A.M., & Boateng, K.',
+   346→    tags: ['ECOWAS', 'Agriculture', 'Non-Tariff Barriers'],
+   347→  },
+   348→  // Data Stock
+   349→  {
+   350→    id: 'out-5',
+   351→    title: 'Intra-African Trade Flow Database (2018-2024)',
+   352→    slug: 'data-stock-intra-african-trade',
+   353→    type: 'data-stock',
+   354→    description: 'A comprehensive dataset of intra-African trade flows compiled from customs data across 35 African countries, covering the period 2018-2024. Includes values, volumes, product categories, and preferential tariff utilization rates under the AfCFTA.',
+   355→    excerpt: 'Comprehensive dataset of intra-African trade flows from 35 countries (2018-2024).',
+   356→    date: '2025-01-30',
+   357→    downloadUrl: '#',
+   358→    image: '/images/data-speaks.png',
+   359→    authors: 'GTEEP Research Team',
+   360→    tags: ['Trade Data', 'AfCFTA', 'Database'],
+   361→  },
+   362→  {
+   363→    id: 'out-6',
+   364→    title: 'Women in Informal Cross-Border Trade: Survey Data from Five Border Posts',
+   365→    slug: 'data-stock-women-icbt',
+   366→    type: 'data-stock',
+   367→    description: 'Survey data from over 500 women informal cross-border traders at five border posts in West Africa. Covers trade volumes, income, barriers encountered, and access to information and finance.',
+   368→    excerpt: 'Survey data from 500+ women informal cross-border traders in West Africa.',
+   369→    date: '2024-08-15',
+   370→    downloadUrl: '#',
+   371→    image: '/images/women-livelihood.png',
+   372→    authors: 'Akanji, B.O. & Diop, F.',
+   373→    tags: ['Gender', 'Informal Trade', 'Survey Data'],
+   374→  },
+   375→  // Video Gallery
+   376→  {
+   377→    id: 'out-7',
+   378→    title: 'Data Speaks: Visualizing AfCFTA Trade Flows',
+   379→    slug: 'video-afcfta-trade-flows',
+   380→    type: 'video',
+   381→    description: 'An animated data visualization presenting key findings from GTEEP\'s research on intra-African trade flows under the AfCFTA. This video illustrates how preferential tariffs are being utilized and identifies bottlenecks in trade implementation.',
+   382→    excerpt: 'Animated visualization of AfCFTA trade flow data and implementation insights.',
+   383→    date: '2025-02-20',
+   384→    externalUrl: '#',
+   385→    image: '/images/data-speaks.png',
+   386→    tags: ['Data Visualization', 'AfCFTA', 'Video'],
+   387→  },
+   388→  {
+   389→    id: 'out-8',
+   390→    title: 'Voices from the Border: Women Traders in West Africa',
+   391→    slug: 'video-women-traders',
+   392→    type: 'video',
+   393→    description: 'A documentary-style video featuring interviews with women informal cross-border traders at key border posts in West Africa. Their stories illuminate the challenges and resilience of women navigating trade policy in practice.',
+   394→    excerpt: 'Documentary featuring women informal cross-border traders in West Africa.',
+   395→    date: '2024-11-05',
+   396→    externalUrl: '#',
+   397→    image: '/images/women-livelihood.png',
+   398→    tags: ['Gender', 'Documentary', 'West Africa'],
+   399→  },
+   400→  // Photo Gallery
+   401→  {
+   402→    id: 'out-9',
+   403→    title: 'GTEEP Policy Dialogue — AfCFTA Implementation Forum 2025',
+   404→    slug: 'photo-afcfta-forum-2025',
+   405→    type: 'photo',
+   406→    description: 'Photo highlights from GTEEP\'s Policy Dialogue on AfCFTA Implementation, held in Abuja, Nigeria, in January 2025. The forum brought together trade ministers, private sector leaders, and civil society representatives.',
+   407→    excerpt: 'Photos from GTEEP\'s AfCFTA Implementation Policy Dialogue in Abuja.',
+   408→    date: '2025-01-25',
+   409→    image: '/images/gteep-community-outreach.png',
+   410→    tags: ['Event', 'AfCFTA', 'Policy Dialogue'],
+   411→  },
+   412→  {
+   413→    id: 'out-10',
+   414→    title: 'Youth Mentoring Workshop — Lagos 2024',
+   415→    slug: 'photo-youth-workshop-2024',
+   416→    type: 'photo',
+   417→    description: 'Moments captured from GTEEP\'s Youth Mentoring Workshop in Lagos, where emerging policy researchers and practitioners were paired with experienced mentors for intensive capacity-building sessions.',
+   418→    excerpt: 'Highlights from GTEEP\'s Youth Mentoring Workshop in Lagos.',
+   419→    date: '2024-07-20',
+   420→    image: '/images/youth-mentoring.png',
+   421→    tags: ['Youth', 'Mentoring', 'Workshop'],
+   422→  },
+   423→  // Knowledge Products
+   424→  {
+   425→    id: 'out-11',
+   426→    title: 'Gender-Responsive Trade Facilitation Assessment Toolkit',
+   427→    slug: 'toolkit-gender-trade-facilitation',
+   428→    type: 'knowledge-product',
+   429→    description: 'A practical toolkit developed by GTEEP for assessing the gender responsiveness of trade facilitation measures at border crossings. Includes assessment checklists, interview guides, data collection templates, and analysis frameworks.',
+   430→    excerpt: 'Practical toolkit for assessing gender responsiveness of trade facilitation measures.',
+   431→    date: '2024-10-10',
+   432→    downloadUrl: '#',
+   433→    image: '/images/women-livelihood.png',
+   434→    authors: 'Akanji, B.O. & Diop, F.',
+   435→    tags: ['Toolkit', 'Gender', 'Trade Facilitation'],
+   436→  },
+   437→  {
+   438→    id: 'out-12',
+   439→    title: 'AfCFTA Implementation Monitoring Dashboard — Methodology Guide',
+   440→    slug: 'methodology-afcfta-dashboard',
+   441→    type: 'knowledge-product',
+   442→    description: 'A detailed methodology guide for GTEEP\'s AfCFTA Implementation Monitoring Dashboard, explaining the indicators tracked, data sources used, analytical methods applied, and how to interpret the dashboard findings.',
+   443→    excerpt: 'Methodology guide for GTEEP\'s AfCFTA Implementation Monitoring Dashboard.',
+   444→    date: '2025-02-01',
+   445→    downloadUrl: '#',
+   446→    image: '/images/data-speaks.png',
+   447→    authors: 'GTEEP Research Team',
+   448→    tags: ['Methodology', 'AfCFTA', 'Dashboard'],
+   449→  },
+   450→];
+   451→
+   452→// =============================================================================
+   453→// Partners
+   454→// =============================================================================
+   455→
+   456→export const mockPartners: GTEEPPartner[] = [
+   457→  {
+   458→    id: 'partner-1',
+   459→    name: 'African Development Bank',
+   460→    type: 'international-organization',
+   461→    website: 'https://afdb.org',
+   462→    country: 'Côte d\'Ivoire',
+   463→    description: 'The African Development Bank Group is the premier development finance institution in Africa, supporting economic development and social progress across the continent.',
+   464→    logo: '',
+   465→  },
+   466→  {
+   467→    id: 'partner-2',
+   468→    name: 'International Development Research Centre',
+   469→    type: 'international-organization',
+   470→    website: 'https://idrc.ca',
+   471→    country: 'Canada',
+   472→    description: 'IDRC is a Canadian Crown corporation that supports research in developing countries to promote growth and development. A key funder of GTEEP\'s gender and trade research.',
+   473→    logo: '',
+   474→  },
+   475→  {
+   476→    id: 'partner-3',
+   477→    name: 'University of Ibadan',
+   478→    type: 'university',
+   479→    website: 'https://ui.edu.ng',
+   480→    country: 'Nigeria',
+   481→    description: 'Nigeria\'s premier university and a leading center for economic research in West Africa. GTEEP collaborates with UI on policy research and graduate mentoring programs.',
+   482→    logo: '',
+   483→  },
+   484→  {
+   485→    id: 'partner-4',
+   486→    name: 'ECOWAS Commission',
+   487→    type: 'government',
+   488→    website: 'https://ecowas.int',
+   489→    country: 'Nigeria',
+   490→    description: 'The Economic Community of West African States Commission, which facilitates regional economic integration. GTEEP provides policy advisory support to ECOWAS trade programs.',
+   491→    logo: '',
+   492→  },
+   493→  {
+   494→    id: 'partner-5',
+   495→    name: 'African Economic Research Consortium',
+   496→    type: 'research-institute',
+   497→    website: 'https://aercafrica.org',
+   498→    country: 'Kenya',
+   499→    description: 'AERC is a premier economic research network in Africa. GTEEP collaborates on collaborative research projects and capacity building for economic policy analysis.',
+   500→    logo: '',
+   501→  },
+   502→  {
+   503→    id: 'partner-6',
+   504→    name: 'United Nations Economic Commission for Africa',
+   505→    type: 'international-organization',
+   506→    website: 'https://uneca.org',
+   507→    country: 'Ethiopia',
+   508→    description: 'UNECA promotes the economic and social development of its member states. GTEEP partners with UNECA on trade policy research and the AfCFTA implementation monitoring.',
+   509→    logo: '',
+   510→  },
+   511→  {
+   512→    id: 'partner-7',
+   513→    name: 'University of Ghana',
+   514→    type: 'university',
+   515→    website: 'https://ug.edu.gh',
+   516→    country: 'Ghana',
+   517→    description: 'The University of Ghana is a leading research university in West Africa. GTEEP collaborates on trade policy research and joint publications.',
+   518→    logo: '',
+   519→  },
+   520→  {
+   521→    id: 'partner-8',
+   522→    name: 'Trade Policy Research Centre',
+   523→    type: 'research-institute',
+   524→    website: '#',
+   525→    country: 'Nigeria',
+   526→    description: 'A specialized research center focused on trade policy analysis and capacity building in Nigeria and the West African region.',
+   527→    logo: '',
+   528→  },
+   529→];
+   530→
+   531→// =============================================================================
+   532→// Blog Posts
+   533→// =============================================================================
+   534→
+   535→export const mockBlogPosts: GTEEPBlogPost[] = [
+   536→  {
+   537→    id: 'blog-1',
+   538→    title: 'AfCFTA Year Two: Assessing Trade Flows and Implementation Progress',
+   539→    slug: 'afcfta-year-two-assessing-trade-flows',
+   540→    excerpt:
+   541→      'An analysis of trade flows and implementation progress two years into the African Continental Free Trade Area, revealing both promising trends and persistent challenges.',
+   542→    content: '<p>The African Continental Free Trade Area (AfCFTA) has now been operational for over two years, and the initial trade flows under the agreement are beginning to reveal both promises and challenges.</p>',
+   543→    date: '2025-02-15',
+   544→    author: 'Bola Akanji',
+   545→    image: '/images/gteep-banner.png',
+   546→    categories: ['Trade Policy', 'AfCFTA'],
+   547→  },
+   548→  {
+   549→    id: 'blog-2',
+   550→    title: 'Gender and Trade: How African Women Navigate Cross-Border Commerce',
+   551→    slug: 'gender-and-trade-african-women',
+   552→    excerpt:
+   553→      'Exploring how African women navigate the challenges and opportunities of cross-border trade, based on field research across West African border posts.',
+   554→    content: '<p>Women constitute over 70% of informal cross-border traders in many African countries, yet their experiences remain under-documented in mainstream trade policy discourse.</p>',
+   555→    date: '2025-01-20',
+   556→    author: 'Bola Akanji',
+   557→    image: '/images/women-livelihood.png',
+   558→    categories: ['Gender & Trade', 'Policy'],
+   559→  },
+   560→  {
+   561→    id: 'blog-3',
+   562→    title: 'Why Data Speaks: The Power of Evidence in African Policy-Making',
+   563→    slug: 'why-data-speaks-evidence-policy',
+   564→    excerpt:
+   565→      'How GTEEP\'s "Data Speaks" initiative is changing the conversation around policy in Africa by putting evidence at the center of public discourse.',
+   566→    content: '<p>In policy circles across Africa, decisions have too often been driven by political expediency rather than evidence. GTEEP\'s Data Speaks initiative aims to change that.</p>',
+   567→    date: '2024-12-05',
+   568→    author: 'GTEEP Team',
+   569→    image: '/images/data-speaks.png',
+   570→    categories: ['Data Speaks', 'Policy'],
+   571→  },
+   572→  {
+   573→    id: 'blog-4',
+   574→    title: 'Mentoring the Next Generation: Reflections from Our Youth Program',
+   575→    slug: 'mentoring-next-generation-reflections',
+   576→    excerpt:
+   577→      'Reflections from GTEEP\'s youth mentoring program, where emerging policy researchers are paired with experienced mentors to develop critical skills.',
+   578→    content: '<p>At GTEEP, we believe that investing in the next generation of African policy leaders is not optional — it is essential for the continent\'s future.</p>',
+   579→    date: '2024-10-15',
+   580→    author: 'GTEEP Team',
+   581→    image: '/images/youth-mentoring.png',
+   582→    categories: ['Youth Mentoring', 'Capacity Building'],
+   583→  },
+   584→];
+   585→
+   586→// =============================================================================
+   587→// Legacy WordPress mock data (kept for backward compatibility until WP backend is connected)
+   588→// =============================================================================
+   589→
+   590→export const mockPages: any[] = [];
+   591→export const mockPosts: any[] = [];
+   592→export const mockMediaItems: any[] = [];
+   593→export const mockTestimonials: any[] = [];
+   594→export const mockMenus: any[] = [];
+   595→
+   596→// =============================================================================
+   597→// Publications (Mock Data)
+   598→// =============================================================================
+   599→
+   600→import type { WPPublication, WPProject, WPEvent, WPResource } from '@/types';
+   601→
+   602→export const mockPublications: WPPublication[] = [
+   603→  {
+   604→    id: 'pub-1',
+   605→    databaseId: 101,
+   606→    title: 'Intra-African Trade Under the AfCFTA: An Empirical Assessment',
+   607→    slug: 'intra-african-trade-afcfta-empirical-assessment',
+   608→    content: '<p>This paper provides an empirical assessment of intra-African trade flows since the implementation of the African Continental Free Trade Area (AfCFTA). Using customs data from 35 African countries, we analyze tariff preference utilization, trade creation effects, and remaining non-tariff barriers.</p>',
+   609→    excerpt: 'An empirical assessment of intra-African trade flows since the AfCFTA implementation.',
+   610→    date: '2025-01-15',
+   611→    modified: '2025-01-20',
+   612→    status: 'publish',
+   613→    uri: '/publications/intra-african-trade-afcfta-empirical-assessment',
+   614→    featuredImage: null,
+   615→    acfPublicationFields: {
+   616→      publicationType: 'journal-article',
+   617→      authors: 'Akanji, B.O.',
+   618→      journal: 'African Development Review',
+   619→      year: '2025',
+   620→      volume: '37',
+   621→      issue: '1',
+   622→      pages: '45-72',
+   623→      doi: '10.1111/afdb.2025.37.1.45',
+   624→      abstract: 'This paper provides an empirical assessment of intra-African trade flows since the implementation of the AfCFTA.',
+   625→      keywords: 'AfCFTA, intra-African trade, regional integration',
+   626→      isFeatured: true,
+   627→    },
+   628→  },
+   629→  {
+   630→    id: 'pub-2',
+   631→    databaseId: 102,
+   632→    title: 'Gender-Responsive Trade Policy: Framework for West Africa',
+   633→    slug: 'gender-responsive-trade-policy-west-africa',
+   634→    content: '<p>This working paper proposes a gender-responsive framework for trade policy analysis in West Africa, drawing on feminist economics and trade theory to identify structural barriers facing women in cross-border trade.</p>',
+   635→    excerpt: 'A gender-responsive framework for trade policy analysis in West Africa.',
+   636→    date: '2024-09-20',
+   637→    modified: '2024-10-01',
+   638→    status: 'publish',
+   639→    uri: '/publications/gender-responsive-trade-policy-west-africa',
+   640→    featuredImage: null,
+   641→    acfPublicationFields: {
+   642→      publicationType: 'working-paper',
+   643→      authors: 'Akanji, B.O. & Diop, F.',
+   644→      year: '2024',
+   645→      abstract: 'This working paper proposes a gender-responsive framework for trade policy analysis in West Africa.',
+   646→      keywords: 'gender, trade policy, West Africa',
+   647→      isFeatured: true,
+   648→    },
+   649→  },
+   650→  {
+   651→    id: 'pub-3',
+   652→    databaseId: 103,
+   653→    title: 'Navigating the AfCFTA: A Guide for West African SMEs',
+   654→    slug: 'navigating-afcfta-guide-west-african-smes',
+   655→    content: '<p>A practical policy brief providing guidance for West African small and medium enterprises seeking to leverage the opportunities created by the AfCFTA.</p>',
+   656→    excerpt: 'Practical guidance for West African SMEs on leveraging the AfCFTA.',
+   657→    date: '2025-02-10',
+   658→    modified: '2025-02-15',
+   659→    status: 'publish',
+   660→    uri: '/publications/navigating-afcfta-guide-west-african-smes',
+   661→    featuredImage: null,
+   662→    acfPublicationFields: {
+   663→      publicationType: 'policy-brief',
+   664→      authors: 'Akanji, B.O.',
+   665→      year: '2025',
+   666→      abstract: 'Practical guidance for West African SMEs on leveraging the AfCFTA.',
+   667→      keywords: 'AfCFTA, SMEs, policy brief',
+   668→      downloadUrl: '#',
+   669→    },
+   670→  },
+   671→  {
+   672→    id: 'pub-4',
+   673→    databaseId: 104,
+   674→    title: 'Non-Tariff Barriers in ECOWAS Agricultural Trade',
+   675→    slug: 'non-tariff-barriers-ecowas-agricultural-trade',
+   676→    content: '<p>This paper summarizes findings from a quantitative assessment of non-tariff barriers in ECOWAS agricultural trade and proposes actionable recommendations.</p>',
+   677→    excerpt: 'Actionable recommendations for reducing NTBs in ECOWAS agricultural trade.',
+   678→    date: '2024-06-15',
+   679→    modified: '2024-07-01',
+   680→    status: 'publish',
+   681→    uri: '/publications/non-tariff-barriers-ecowas-agricultural-trade',
+   682→    featuredImage: null,
+   683→    acfPublicationFields: {
+   684→      publicationType: 'journal-article',
+   685→      authors: 'Akanji, B.O., Souley, A.M., & Boateng, K.',
+   686→      journal: 'Journal of International Trade Policy',
+   687→      year: '2024',
+   688→      volume: '22',
+   689→      issue: '2',
+   690→      pages: '112-138',
+   691→      abstract: 'Findings from a quantitative assessment of non-tariff barriers in ECOWAS agricultural trade.',
+   692→      keywords: 'ECOWAS, agriculture, non-tariff barriers',
+   693→    },
+   694→  },
+   695→  {
+   696→    id: 'pub-5',
+   697→    databaseId: 105,
+   698→    title: 'Women in Informal Cross-Border Trade: Evidence from West Africa',
+   699→    slug: 'women-informal-cross-border-trade-west-africa',
+   700→    content: '<p>A book chapter examining the lived experiences of women informal cross-border traders in West Africa and the policy implications for inclusive trade.</p>',
+   701→    excerpt: 'Examining the lived experiences of women informal cross-border traders in West Africa.',
+   702→    date: '2024-03-10',
+   703→    modified: '2024-04-05',
+   704→    status: 'publish',
+   705→    uri: '/publications/women-informal-cross-border-trade-west-africa',
+   706→    featuredImage: null,
+   707→    acfPublicationFields: {
+   708→      publicationType: 'book-chapter',
+   709→      authors: 'Akanji, B.O.',
+   710→      publisher: 'Oxford University Press',
+   711→      year: '2024',
+   712→      abstract: 'A book chapter examining the lived experiences of women informal cross-border traders.',
+   713→      keywords: 'women, informal trade, West Africa',
+   714→    },
+   715→  },
+   716→  {
+   717→    id: 'pub-6',
+   718→    databaseId: 106,
+   719→    title: 'AfCFTA Implementation Monitoring: Methodology and Early Results',
+   720→    slug: 'afcfta-implementation-monitoring-methodology',
+   721→    content: '<p>A conference paper presenting the methodology and early results from GTEEP\'s AfCFTA Implementation Monitoring Dashboard.</p>',
+   722→    excerpt: 'Methodology and early results from GTEEP\'s AfCFTA Implementation Monitoring Dashboard.',
+   723→    date: '2025-02-01',
+   724→    modified: '2025-02-10',
+   725→    status: 'publish',
+   726→    uri: '/publications/afcfta-implementation-monitoring-methodology',
+   727→    featuredImage: null,
+   728→    acfPublicationFields: {
+   729→      publicationType: 'conference-paper',
+   730→      authors: 'GTEEP Research Team',
+   731→      year: '2025',
+   732→      abstract: 'Methodology and early results from the AfCFTA Implementation Monitoring Dashboard.',
+   733→      keywords: 'AfCFTA, monitoring, methodology',
+   734→      isFeatured: false,
+   735→    },
+   736→  },
+   737→];
+   738→
+   739→// =============================================================================
+   740→// Projects (Mock Data)
+   741→// =============================================================================
+   742→
+   743→export const mockProjects: WPProject[] = [
+   744→  {
+   745→    id: 'proj-1',
+   746→    databaseId: 201,
+   747→    title: 'AfCFTA Implementation Monitoring Dashboard',
+   748→    slug: 'afcfta-implementation-monitoring-dashboard',
+   749→    content: '<p>GTEEP\'s AfCFTA Implementation Monitoring Dashboard is a comprehensive data platform tracking trade flows, tariff preference utilization, and non-tariff barrier resolution across African countries under the African Continental Free Trade Area.</p>',
+   750→    excerpt: 'A comprehensive data platform tracking AfCFTA implementation across Africa.',
+   751→    date: '2024-06-01',
+   752→    modified: '2025-01-15',
+   753→    status: 'publish',
+   754→    uri: '/projects/afcfta-implementation-monitoring-dashboard',
+   755→    featuredImage: null,
+   756→    acfProjectFields: {
+   757→      projectStatus: 'ongoing',
+   758→      startDate: '2024-01-01',
+   759→      endDate: '2026-12-31',
+   760→      fundingAgency: 'African Development Bank',
+   761→      grantAmount: '$450,000',
+   762→      principalInvestigator: 'Prof. Bola Akanji',
+   763→      coInvestigators: 'Dr. Fatou Diop, Dr. Kwame Boateng',
+   764→      partnerInstitutions: 'University of Ibadan, University of Ghana, AERC',
+   765→      highlights: 'Dashboard launched in January 2025; covers 35 African countries; data updated quarterly.',
+   766→      isFeatured: true,
+   767→    },
+   768→  },
+   769→  {
+   770→    id: 'proj-2',
+   771→    databaseId: 202,
+   772→    title: 'Gender and Trade in West Africa: Evidence for Policy Reform',
+   773→    slug: 'gender-trade-west-africa-policy-reform',
+   774→    content: '<p>This research project investigates the gender dimensions of trade policy in West Africa, focusing on women in informal cross-border trade, agricultural value chains, and the impact of trade facilitation measures on women\'s economic empowerment.</p>',
+   775→    excerpt: 'Investigating gender dimensions of trade policy in West Africa.',
+   776→    date: '2023-09-01',
+   777→    modified: '2025-01-10',
+   778→    status: 'publish',
+   779→    uri: '/projects/gender-trade-west-africa-policy-reform',
+   780→    featuredImage: null,
+   781→    acfProjectFields: {
+   782→      projectStatus: 'ongoing',
+   783→      startDate: '2023-09-01',
+   784→      endDate: '2025-08-31',
+   785→      fundingAgency: 'International Development Research Centre (IDRC)',
+   786→      grantAmount: '$300,000',
+   787→      principalInvestigator: 'Prof. Bola Akanji',
+   788→      coInvestigators: 'Dr. Fatou Diop',
+   789→      partnerInstitutions: 'University of Ibadan, Trade Policy Research Centre',
+   790→      highlights: 'Survey of 500+ women traders completed; two policy briefs published; stakeholder workshops held in Lagos and Accra.',
+   791→      isFeatured: true,
+   792→    },
+   793→  },
+   794→  {
+   795→    id: 'proj-3',
+   796→    databaseId: 203,
+   797→    title: 'ECOWAS Agricultural Trade Integration: Barriers and Opportunities',
+   798→    slug: 'ecowas-agricultural-trade-integration',
+   799→    content: '<p>A completed research project that assessed non-tariff barriers in ECOWAS agricultural trade and proposed policy recommendations for improved regional food security and trade facilitation.</p>',
+   800→    excerpt: 'Assessing non-tariff barriers in ECOWAS agricultural trade.',
+   801→    date: '2022-03-01',
+   802→    modified: '2024-06-15',
+   803→    status: 'publish',
+   804→    uri: '/projects/ecowas-agricultural-trade-integration',
+   805→    featuredImage: null,
+   806→    acfProjectFields: {
+   807→      projectStatus: 'completed',
+   808→      startDate: '2022-03-01',
+   809→      endDate: '2024-02-28',
+   810→      fundingAgency: 'ECOWAS Commission',
+   811→      grantAmount: '$200,000',
+   812→      principalInvestigator: 'Prof. Bola Akanji',
+   813→      coInvestigators: 'Dr. Aminata Souley, Dr. Kwame Boateng',
+   814→      partnerInstitutions: 'ECOWAS Commission, University of Ghana',
+   815→      highlights: 'Final report submitted to ECOWAS Commission; 4 journal articles published; policy brief presented at ECOWAS Ministerial Meeting.',
+   816→      isFeatured: false,
+   817→    },
+   818→  },
+   819→  {
+   820→    id: 'proj-4',
+   821→    databaseId: 204,
+   822→    title: 'Youth Employment and Trade Policy in Nigeria',
+   823→    slug: 'youth-employment-trade-policy-nigeria',
+   824→    content: '<p>An upcoming research project examining the linkages between trade policy and youth employment in Nigeria, with a focus on the creative economy, digital services, and agribusiness sectors.</p>',
+   825→    excerpt: 'Examining linkages between trade policy and youth employment in Nigeria.',
+   826→    date: '2025-01-15',
+   827→    modified: '2025-01-15',
+   828→    status: 'publish',
+   829→    uri: '/projects/youth-employment-trade-policy-nigeria',
+   830→    featuredImage: null,
+   831→    acfProjectFields: {
+   832→      projectStatus: 'upcoming',
+   833→      startDate: '2025-07-01',
+   834→      endDate: '2027-06-30',
+   835→      fundingAgency: 'UN Economic Commission for Africa',
+   836→      grantAmount: '$350,000',
+   837→      principalInvestigator: 'Prof. Bola Akanji',
+   838→      highlights: 'Project design phase; stakeholder consultations planned for Q2 2025.',
+   839→      isFeatured: false,
+   840→    },
+   841→  },
+   842→];
+   843→
+   844→// =============================================================================
+   845→// Events (Mock Data)
+   846→// =============================================================================
+   847→
+   848→export const mockEvents: WPEvent[] = [
+   849→  {
+   850→    id: 'evt-1',
+   851→    databaseId: 301,
+   852→    title: 'Policy Fireside Chat — Africa: The Gender Backlash',
+   853→    slug: 'policy-fireside-chat-africa-gender-backlash',
+   854→    content: '<p>GTEEP\'s Policy Fireside Chat series continues with a critical conversation on the gender backlash in African policy spaces. This event will bring together leading scholars, policy practitioners, and civil society advocates to examine the growing resistance to gender-equitable policies across the continent.</p>',
+   855→    excerpt: 'A critical conversation on the gender backlash in African policy spaces.',
+   856→    date: '2025-03-15',
+   857→    modified: '2025-03-10',
+   858→    status: 'publish',
+   859→    uri: '/events/policy-fireside-chat-africa-gender-backlash',
+   860→    featuredImage: null,
+   861→    acfEventFields: {
+   862→      eventStartDate: '2025-04-10',
+   863→      eventEndDate: '2025-04-10',
+   864→      eventTime: '2:00 PM - 4:00 PM WAT',
+   865→      venue: 'GTEEP Conference Center',
+   866→      city: 'Lagos',
+   867→      country: 'Nigeria',
+   868→      eventType: 'panel',
+   869→      organizer: 'GTEEP',
+   870→      isVirtual: true,
+   871→      isFeatured: true,
+   872→    },
+   873→  },
+   874→  {
+   875→    id: 'evt-2',
+   876→    databaseId: 302,
+   877→    title: 'AfCFTA Implementation Forum 2025',
+   878→    slug: 'afcfta-implementation-forum-2025',
+   879→    content: '<p>GTEEP\'s flagship policy dialogue on AfCFTA implementation brings together trade ministers, private sector leaders, and civil society representatives to assess progress and identify priorities for the coming year.</p>',
+   880→    excerpt: 'Flagship policy dialogue on AfCFTA implementation progress and priorities.',
+   881→    date: '2025-01-25',
+   882→    modified: '2025-01-20',
+   883→    status: 'publish',
+   884→    uri: '/events/afcfta-implementation-forum-2025',
+   885→    featuredImage: null,
+   886→    acfEventFields: {
+   887→      eventStartDate: '2025-02-20',
+   888→      eventEndDate: '2025-02-21',
+   889→      eventTime: '9:00 AM - 5:00 PM WAT',
+   890→      venue: 'Transcorp Hilton',
+   891→      city: 'Abuja',
+   892→      country: 'Nigeria',
+   893→      eventType: 'conference',
+   894→      organizer: 'GTEEP',
+   895→      isVirtual: false,
+   896→      isFeatured: true,
+   897→    },
+   898→  },
+   899→  {
+   900→    id: 'evt-3',
+   901→    databaseId: 303,
+   902→    title: 'Youth Mentoring Workshop — Lagos 2025',
+   903→    slug: 'youth-mentoring-workshop-lagos-2025',
+   904→    content: '<p>GTEEP\'s Youth Mentoring Workshop pairs emerging policy researchers and practitioners with experienced mentors for intensive capacity-building sessions in research methodology, policy analysis, and communication.</p>',
+   905→    excerpt: 'Capacity-building workshop pairing emerging researchers with experienced mentors.',
+   906→    date: '2025-05-01',
+   907→    modified: '2025-04-25',
+   908→    status: 'publish',
+   909→    uri: '/events/youth-mentoring-workshop-lagos-2025',
+   910→    featuredImage: null,
+   911→    acfEventFields: {
+   912→      eventStartDate: '2025-06-15',
+   913→      eventEndDate: '2025-06-17',
+   914→      eventTime: '10:00 AM - 4:00 PM WAT',
+   915→      venue: 'University of Lagos',
+   916→      city: 'Lagos',
+   917→      country: 'Nigeria',
+   918→      eventType: 'workshop',
+   919→      organizer: 'GTEEP',
+   920→      registrationUrl: '#',
+   921→      isVirtual: false,
+   922→      isFeatured: false,
+   923→    },
+   924→  },
+   925→  {
+   926→    id: 'evt-4',
+   927→    databaseId: 304,
+   928→    title: 'Data Speaks Webinar: Visualizing Trade Flows Under AfCFTA',
+   929→    slug: 'data-speaks-webinar-visualizing-trade-flows',
+   930→    content: '<p>A webinar showcasing GTEEP\'s latest data visualizations of intra-African trade flows under the AfCFTA, with live demonstrations of the Implementation Monitoring Dashboard.</p>',
+   931→    excerpt: 'Webinar showcasing data visualizations of AfCFTA trade flows.',
+   932→    date: '2025-02-20',
+   933→    modified: '2025-02-18',
+   934→    status: 'publish',
+   935→    uri: '/events/data-speaks-webinar-visualizing-trade-flows',
+   936→    featuredImage: null,
+   937→    acfEventFields: {
+   938→      eventStartDate: '2025-03-05',
+   939→      eventEndDate: '2025-03-05',
+   940→      eventTime: '3:00 PM - 4:30 PM WAT',
+   941→      eventType: 'webinar',
+   942→      organizer: 'GTEEP',
+   943→      isVirtual: true,
+   944→      isFeatured: false,
+   945→      registrationUrl: '#',
+   946→    },
+   947→  },
+   948→  {
+   949→    id: 'evt-5',
+   950→    databaseId: 305,
+   951→    title: 'Seminar: Women\'s Economic Empowerment in African Trade',
+   952→    slug: 'seminar-womens-economic-empowerment-african-trade',
+   953→    content: '<p>A research seminar presenting findings from GTEEP\'s ongoing project on gender and trade in West Africa, with discussants from the African Development Bank and UNCTAD.</p>',
+   954→    excerpt: 'Research seminar on women\'s economic empowerment in African trade.',
+   955→    date: '2024-11-10',
+   956→    modified: '2024-11-05',
+   957→    status: 'publish',
+   958→    uri: '/events/seminar-womens-economic-empowerment-african-trade',
+   959→    featuredImage: null,
+   960→    acfEventFields: {
+   961→      eventStartDate: '2024-12-05',
+   962→      eventEndDate: '2024-12-05',
+   963→      eventTime: '11:00 AM - 1:00 PM WAT',
+   964→      venue: 'GTEEP Conference Center',
+   965→      city: 'Lagos',
+   966→      country: 'Nigeria',
+   967→      eventType: 'seminar',
+   968→      organizer: 'GTEEP',
+   969→      isVirtual: false,
+   970→      isFeatured: false,
+   971→    },
+   972→  },
+   973→];
+   974→
+   975→// =============================================================================
+   976→// Resources (Mock Data)
+   977→// =============================================================================
+   978→
+   979→export const mockResources: WPResource[] = [
+   980→  {
+   981→    id: 'res-1',
+   982→    databaseId: 401,
+   983→    title: 'Intra-African Trade Flow Database (2018-2024)',
+   984→    slug: 'intra-african-trade-flow-database',
+   985→    content: '<p>A comprehensive dataset of intra-African trade flows compiled from customs data across 35 African countries, covering the period 2018-2024. Includes values, volumes, product categories, and preferential tariff utilization rates under the AfCFTA.</p>',
+   986→    excerpt: 'Comprehensive dataset of intra-African trade flows from 35 countries (2018-2024).',
+   987→    date: '2025-01-30',
+   988→    modified: '2025-02-05',
+   989→    status: 'publish',
+   990→    uri: '/resources/intra-african-trade-flow-database',
+   991→    featuredImage: null,
+   992→    acfResourceFields: {
+   993→      resourceType: 'dataset',
+   994→      fileSize: '45 MB',
+   995→      fileFormat: 'CSV',
+   996→      downloadUrl: '#',
+   997→      version: '2.1',
+   998→      license: 'CC BY 4.0',
+   999→      isGated: true,
+  1000→      isFeatured: true,
+  1001→    },
+  1002→  },
+  1003→  {
+  1004→    id: 'res-2',
+  1005→    databaseId: 402,
+  1006→    title: 'Women in Informal Cross-Border Trade: Survey Dataset',
+  1007→    slug: 'women-informal-cross-border-trade-survey-dataset',
+  1008→    content: '<p>Survey data from over 500 women informal cross-border traders at five border posts in West Africa. Covers trade volumes, income, barriers encountered, and access to information and finance.</p>',
+  1009→    excerpt: 'Survey data from 500+ women informal cross-border traders in West Africa.',
+  1010→    date: '2024-08-15',
+  1011→    modified: '2024-09-01',
+  1012→    status: 'publish',
+  1013→    uri: '/resources/women-informal-cross-border-trade-survey-dataset',
+  1014→    featuredImage: null,
+  1015→    acfResourceFields: {
+  1016→      resourceType: 'dataset',
+  1017→      fileSize: '12 MB',
+  1018→      fileFormat: 'CSV / Stata',
+  1019→      downloadUrl: '#',
+  1020→      version: '1.0',
+  1021→      license: 'CC BY 4.0',
+  1022→      isGated: true,
+  1023→      isFeatured: true,
+  1024→    },
+  1025→  },
+  1026→  {
+  1027→    id: 'res-3',
+  1028→    databaseId: 403,
+  1029→    title: 'AfCFTA Policy Landscape: Presentation Slides',
+  1030→    slug: 'afcfta-policy-landscape-presentation',
+  1031→    content: '<p>Presentation slides from GTEEP\'s AfCFTA Implementation Forum 2025, covering the policy landscape, key implementation milestones, and emerging challenges.</p>',
+  1032→    excerpt: 'Presentation slides from the AfCFTA Implementation Forum 2025.',
+  1033→    date: '2025-02-22',
+  1034→    modified: '2025-02-25',
+  1035→    status: 'publish',
+  1036→    uri: '/resources/afcfta-policy-landscape-presentation',
+  1037→    featuredImage: null,
+  1038→    acfResourceFields: {
+  1039→      resourceType: 'presentation',
+  1040→      fileSize: '8 MB',
+  1041→      fileFormat: 'PDF',
+  1042→      downloadUrl: '#',
+  1043→      isGated: false,
+  1044→      isFeatured: false,
+  1045→    },
+  1046→  },
+  1047→  {
+  1048→    id: 'res-4',
+  1049→    databaseId: 404,
+  1050→    title: 'Gender-Responsive Trade Facilitation Assessment Toolkit',
+  1051→    slug: 'gender-responsive-trade-facilitation-toolkit',
+  1052→    content: '<p>A practical toolkit for assessing the gender responsiveness of trade facilitation measures at border crossings. Includes assessment checklists, interview guides, data collection templates, and analysis frameworks.</p>',
+  1053→    excerpt: 'Practical toolkit for assessing gender responsiveness of trade facilitation measures.',
+  1054→    date: '2024-10-10',
+  1055→    modified: '2024-11-01',
+  1056→    status: 'publish',
+  1057→    uri: '/resources/gender-responsive-trade-facilitation-toolkit',
+  1058→    featuredImage: null,
+  1059→    acfResourceFields: {
+  1060→      resourceType: 'tool',
+  1061→      fileSize: '3 MB',
+  1062→      fileFormat: 'PDF',
+  1063→      downloadUrl: '#',
+  1064→      version: '1.2',
+  1065→      isGated: false,
+  1066→      isFeatured: true,
+  1067→    },
+  1068→  },
+  1069→  {
+  1070→    id: 'res-5',
+  1071→    databaseId: 405,
+  1072→    title: 'AfCFTA One Year On: Key Data Infographic',
+  1073→    slug: 'afcfta-one-year-key-data-infographic',
+  1074→    content: '<p>A visual infographic summarizing key trade data one year into the AfCFTA, including trade values, top trading partners, and utilization rates of preferential tariffs.</p>',
+  1075→    excerpt: 'Visual infographic summarizing key trade data one year into the AfCFTA.',
+  1076→    date: '2024-12-01',
+  1077→    modified: '2024-12-10',
+  1078→    status: 'publish',
+  1079→    uri: '/resources/afcfta-one-year-key-data-infographic',
+  1080→    featuredImage: null,
+  1081→    acfResourceFields: {
+  1082→      resourceType: 'infographic',
+  1083→      fileSize: '2 MB',
+  1084→      fileFormat: 'PNG / PDF',
+  1085→      downloadUrl: '#',
+  1086→      isGated: false,
+  1087→      isFeatured: false,
+  1088→    },
+  1089→  },
+  1090→  {
+  1091→    id: 'res-6',
+  1092→    databaseId: 406,
+  1093→    title: 'Trade Policy Note: ECOWAS Common External Tariff Reforms',
+  1094→    slug: 'trade-policy-note-ecowas-common-external-tariff',
+  1095→    content: '<p>A policy note analyzing proposed reforms to the ECOWAS Common External Tariff and their implications for regional trade integration and fiscal revenue.</p>',
+  1096→    excerpt: 'Policy note on ECOWAS Common External Tariff reforms and implications.',
+  1097→    date: '2024-05-20',
+  1098→    modified: '2024-06-01',
+  1099→    status: 'publish',
+  1100→    uri: '/resources/trade-policy-note-ecowas-common-external-tariff',
+  1101→    featuredImage: null,
+  1102→    acfResourceFields: {
+  1103→      resourceType: 'policy-note',
+  1104→      fileSize: '500 KB',
+  1105→      fileFormat: 'PDF',
+  1106→      downloadUrl: '#',
+  1107→      isGated: false,
+  1108→      isFeatured: false,
+  1109→    },
+  1110→  },
+  1111→];
+  1112→export const mockSocialLinks = {
+  1113→  twitter: 'https://twitter.com/gteep_africa',
+  1114→  linkedin: 'https://linkedin.com/company/gteep',
+  1115→  facebook: 'https://facebook.com/gteepafrica',
+  1116→  instagram: 'https://instagram.com/gteep_africa',
+  1117→  youtube: '',
+  1118→  researchgate: '',
+  1119→  googlescholar: '',
+  1120→};
+  1121→

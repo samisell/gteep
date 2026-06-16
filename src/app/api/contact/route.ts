@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { contactFormLimiter } from '@/lib/rate-limiter';
 import { sanitizeInput } from '@/utils';
+import { getAdminEmail } from '@/graphql/fetchers';
 
 // ---------------------------------------------------------------------------
 // Validation schema — matches the frontend ContactPageClient form exactly
@@ -11,6 +12,7 @@ import { sanitizeInput } from '@/utils';
 const contactSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   email: z.string().email('Invalid email address'),
+  phone: z.string().max(30).optional(),
   organization: z.string().max(200).optional(),
   subject: z.string().min(3, 'Subject must be at least 3 characters').max(200),
   message: z.string().min(10, 'Message must be at least 10 characters').max(5000),
@@ -48,13 +50,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, email, organization, subject, message, consent } = result.data;
+    const { name, email, phone, organization, subject, message, consent } = result.data;
 
     // 3. Save to database
     const submission = await db.contactSubmission.create({
       data: {
         name: sanitizeInput(name),
         email: sanitizeInput(email),
+        phone: phone ? sanitizeInput(phone) : null,
         organization: organization ? sanitizeInput(organization) : null,
         subject: sanitizeInput(subject),
         message: sanitizeInput(message),
@@ -66,15 +69,17 @@ export async function POST(request: NextRequest) {
 
     // 4. Send notification emails (fire-and-forget, never block the response)
     try {
+      const adminEmail = await getAdminEmail();
       const { sendContactNotification, sendContactConfirmation } = await import('@/lib/email');
       await Promise.allSettled([
         sendContactNotification({
           name: submission.name,
           email: submission.email,
+          phone: submission.phone || undefined,
           organization: submission.organization || undefined,
           subject: submission.subject,
           message: submission.message,
-        }),
+        }, adminEmail),
         sendContactConfirmation({
           name: submission.name,
           email: submission.email,

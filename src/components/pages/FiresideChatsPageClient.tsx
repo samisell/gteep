@@ -38,15 +38,15 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react';
-import type { WPEvent } from '@/types';
-import { formatDateRange } from '@/utils';
+import type { WPEvent, GTEEPOutput } from '@/types';
 
 // =============================================================================
 // Props
 // =============================================================================
 
 interface FiresideChatsPageClientProps {
-  firesideEvents: WPEvent[];
+  firesideEvents?: WPEvent[];
+  relatedOutputs?: GTEEPOutput[];
 }
 
 // =============================================================================
@@ -288,7 +288,8 @@ function DownloadFormDialog({ fileUrl, fileName }: { fileUrl: string; fileName: 
 // =============================================================================
 
 export default function FiresideChatsPageClient({
-  firesideEvents,
+  firesideEvents = [],
+  relatedOutputs = [],
 }: FiresideChatsPageClientProps) {
   const getStatusBadge = (status: FiresideEpisode['status']) => {
     switch (status) {
@@ -695,11 +696,11 @@ export default function FiresideChatsPageClient({
                             </Badge>
                           )}
                         </div>
-                        <a href={`/events/${event.slug}`}>
+                        <div>
                           <h3 className="text-lg font-semibold text-[#0f172a] group-hover:text-emerald-700 transition-colors mb-2">
                             {event.title}
                           </h3>
-                        </a>
+                        </div>
                         <p className="text-sm text-[#64748b] line-clamp-2 mb-4">
                           {event.excerpt}
                         </p>
@@ -707,10 +708,11 @@ export default function FiresideChatsPageClient({
                           {fields?.eventStartDate && (
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3 text-emerald-600" />
-                              {formatDateRange(
-                                fields.eventStartDate,
-                                fields.eventEndDate || ''
-                              )}
+                              {new Date(fields.eventStartDate).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
                             </span>
                           )}
                           {fields?.venue && (
@@ -830,6 +832,92 @@ export default function FiresideChatsPageClient({
           </AnimatedSection>
         </div>
       </section>
+
+      {/* ================================================================== */}
+      {/* RELATED OUTPUTS & DOWNLOADS */}
+      {/* ================================================================== */}
+      {relatedOutputs.length > 0 && (
+        <section className="py-16 md:py-20 bg-[#f8fafc]" aria-label="Related Outputs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <AnimatedSection>
+              <div className="text-center mb-10">
+                <Badge className="bg-[#d97706]/10 text-[#d97706] border-[#d97706]/20 mb-4">
+                  <FileText className="w-3 h-3 mr-1" />
+                  Downloads & Resources
+                </Badge>
+                <h2
+                  className="text-2xl md:text-3xl font-bold text-[#0f172a]"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  Policy Firechat Outputs
+                </h2>
+                <p className="mt-3 text-[#64748b] max-w-2xl mx-auto">
+                  Download concept notes, presentations, and reports from our Policy Fireside Chat sessions.
+                </p>
+              </div>
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {relatedOutputs.map((output) => (
+                  <Card
+                    key={output.id}
+                    className="group overflow-hidden border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        {/* File icon */}
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#065f46] to-[#047857] flex items-center justify-center shrink-0">
+                          {output.fileType === 'pptx' || output.fileType === 'ppt' ? (
+                            <Lightbulb className="w-6 h-6 text-white/90" />
+                          ) : (
+                            <FileText className="w-6 h-6 text-white/90" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-semibold text-[#0f172a] leading-snug group-hover:text-[#065f46] transition-colors line-clamp-2">
+                            {output.title}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-[10px] px-1.5 py-0">
+                              {output.fileType?.toUpperCase()}
+                            </Badge>
+                            <span className="text-xs text-[#94a3b8]">Concept Note</span>
+                          </div>
+                        </div>
+                      </div>
+                      {output.downloadUrl && (
+                        <div className="mt-4 pt-4 border-t border-[#f1f5f9]">
+                          <a
+                            href={output.downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm font-medium text-[#059669] hover:text-[#047857] transition-colors"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download {output.fileType?.toUpperCase()}
+                          </a>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="mt-8 text-center">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white rounded-xl"
+                >
+                  <a href="/outputs?tab=concept-note">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View All Concept Notes
+                  </a>
+                </Button>
+              </div>
+            </AnimatedSection>
+          </div>
+        </section>
+      )}
 
       {/* ================================================================== */}
       {/* CTA SECTION */}

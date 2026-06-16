@@ -88,8 +88,8 @@ export default function PrivacyPage() {
             <h2>8. Contact</h2>
             <p>
               If you have any questions about this Privacy Policy, please contact us at{' '}
-              <a href="mailto:info@gteep.com" className="text-emerald-700 hover:underline">
-                info@gteep.com
+              <a href="mailto:info@gteep.gileadtrust.com" className="text-emerald-700 hover:underline">
+                info@gteep.gileadtrust.com
               </a>.
             </p>
 

@@ -7,37 +7,34 @@ import { motion } from 'framer-motion';
 import {
   Linkedin,
   Twitter,
-  BookOpen,
   Mail,
   ArrowRight,
   MapPin,
   Phone,
   ExternalLink,
-  Heart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
 const quickLinks = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About Us' },
   { href: '/what-we-do', label: 'What We Do' },
-  { href: '/fireside-chats', label: 'Fireside Chats' },
-  { href: '/partners', label: 'Our Partners' },
   { href: '/outputs', label: 'Our Outputs' },
+  { href: '/fireside-chats', label: 'Fireside Chats' },
   { href: '/blog', label: 'Blog' },
+  { href: '/partners', label: 'Our Partners' },
   { href: '/contact', label: 'Contact Us' },
 ];
 
 const focusAreas = [
-  { label: 'Policy Research', href: '/what-we-do' },
-  { label: 'Policy Engagement', href: '/fireside-chats' },
-  { label: 'Data Speaks', href: '/what-we-do' },
-  { label: 'Youth Mentoring', href: '/what-we-do' },
-  { label: "Women's Economic Livelihood", href: '/what-we-do' },
-  { label: 'Citizen Enlightenment', href: '/what-we-do' },
+  { label: 'Policy Research', href: '/what-we-do/policy-research' },
+  { label: 'Policy Engagement', href: '/what-we-do/policy-engagement' },
+  { label: 'Citizen Enlightenment', href: '/what-we-do/citizen-enlightenment' },
+  { label: 'Data Speaks', href: '/what-we-do/data-speaks' },
+  { label: 'Youth Mentoring', href: '/what-we-do/youth-mentoring' },
+  { label: "Women's Economic Livelihood", href: '/what-we-do/womens-economic-livelihood' },
 ];
 
 const socialLinks = [
@@ -54,12 +51,12 @@ const socialLinks = [
   {
     href: 'https://facebook.com',
     label: 'Facebook',
-    icon: BookOpen,
+    icon: ExternalLink,
   },
   {
     href: 'https://instagram.com',
     label: 'Instagram',
-    icon: Heart,
+    icon: ExternalLink,
   },
 ];
 
@@ -85,27 +82,46 @@ const itemVariants = {
 
 interface FooterProps {
   logoUrl?: string | null;
+  contactDetails?: {
+    email: string;
+    phone: string;
+    address: string;
+  };
 }
 
-export default function Footer({ logoUrl }: FooterProps) {
+export default function Footer({ logoUrl, contactDetails }: FooterProps) {
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) {
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error('Please enter a valid email address.');
       return;
     }
 
     setIsSubscribing(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
 
-    toast.success("Thank you for subscribing! You'll receive our latest policy insights and updates.");
-    setEmail('');
-    setIsSubscribing(false);
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success(data.message || "Thank you for subscribing! You'll receive our latest policy insights and updates.");
+        setEmail('');
+      } else {
+        toast.error(data.error || 'Failed to subscribe. Please try again.');
+      }
+    } catch {
+      toast.error('Network error. Please check your connection and try again.');
+    } finally {
+      setIsSubscribing(false);
+    }
   };
 
   const currentYear = new Date().getFullYear();
@@ -231,22 +247,22 @@ export default function Footer({ logoUrl }: FooterProps) {
             {/* Contact Info */}
             <div className="space-y-3 mb-6">
               <a
-                href="mailto:info@gteep.com"
+                href={`mailto:${contactDetails?.email || 'info@gteep.gileadtrust.com'}`}
                 className="flex items-center gap-2.5 text-slate-400 hover:text-emerald-400 text-sm transition-colors"
               >
                 <Mail className="h-4 w-4 text-emerald-600 shrink-0" />
-                info@gteep.com
+                {contactDetails?.email || 'info@gteep.gileadtrust.com'}
               </a>
               <div className="flex items-center gap-2.5 text-slate-400 text-sm">
                 <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
-                Lagos, Nigeria
+                {contactDetails?.address || 'Ikeja Lagos, Nigeria'}
               </div>
               <a
-                href="tel:+2348012345678"
+                href={`tel:${(contactDetails?.phone || '+234 801 234 5678').replace(/\s/g, '')}`}
                 className="flex items-center gap-2.5 text-slate-400 hover:text-emerald-400 text-sm transition-colors"
               >
                 <Phone className="h-4 w-4 text-emerald-600 shrink-0" />
-                +234 801 234 5678
+                {contactDetails?.phone || '+234 801 234 5678'}
               </a>
             </div>
 
@@ -301,13 +317,6 @@ export default function Footer({ logoUrl }: FooterProps) {
                 className="text-slate-500 hover:text-emerald-400 transition-colors"
               >
                 Privacy Policy
-              </Link>
-              <Separator orientation="vertical" className="h-3 bg-slate-700" />
-              <Link
-                href="/terms"
-                className="text-slate-500 hover:text-emerald-400 transition-colors"
-              >
-                Terms of Use
               </Link>
             </div>
           </div>

@@ -29,17 +29,30 @@ interface NavLink {
 const navLinks: NavLink[] = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About Us' },
-  { href: '/what-we-do', label: 'What We Do' },
-  { href: '/partners', label: 'Our Partners' },
+  {
+    href: '/what-we-do',
+    label: 'What We Do',
+    children: [
+      { href: '/what-we-do', label: 'All Activities' },
+      { href: '/what-we-do/policy-research', label: 'Policy Research' },
+      { href: '/what-we-do/policy-engagement', label: 'Policy Engagement' },
+      { href: '/what-we-do/citizen-enlightenment', label: 'Citizen Enlightenment' },
+      { href: '/what-we-do/data-speaks', label: 'Data Speaks' },
+      { href: '/what-we-do/youth-mentoring', label: 'Youth Mentoring' },
+      { href: '/what-we-do/womens-economic-livelihood', label: "Women's Economic Livelihood" },
+    ],
+  },
   {
     href: '/outputs',
     label: 'Our Outputs',
     children: [
       { href: '/outputs', label: 'All Outputs' },
       { href: '/fireside-chats', label: 'Fireside Chats' },
+      { href: '/gallery', label: 'Gallery' },
     ],
   },
   { href: '/blog', label: 'Blog' },
+  { href: '/partners', label: 'Our Partners' },
   { href: '/contact', label: 'Contact Us' },
 ];
 
@@ -228,7 +241,7 @@ export default function Navbar({ logoUrl }: NavbarProps) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 8 }}
                         transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="absolute top-full left-0 mt-1 w-52 py-2 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-emerald-100/50 dark:border-emerald-900/30 overflow-hidden z-50"
+                        className={`absolute top-full left-0 mt-1 py-2 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-emerald-100/50 dark:border-emerald-900/30 overflow-hidden z-50 ${link.label === 'What We Do' ? 'w-64' : 'w-52'}`}
                       >
                         {link.children.map((child) => (
                           <Link

@@ -53,6 +53,12 @@ interface HomePageClientProps {
   outputs: GTEEPOutput[];
   partners: GTEEPPartner[];
   blogPosts: GTEEPBlogPost[];
+  aboutData: {
+    aboutSummary: string;
+    aboutVision: string;
+    aboutMission: string;
+    aboutGoal: string;
+  };
 }
 
 // =============================================================================
@@ -249,9 +255,33 @@ export default function HomePageClient({
   outputs,
   partners,
   blogPosts,
+  aboutData,
 }: HomePageClientProps) {
-  const heroDescription = settings.acfOptions?.heroDescription ||
-    'Evidence-driven policy analysis for socially inclusive development. We champion partnerships for African development, people-centered growth, and gender equitable economic transformation.';
+  // Use the about summary from WordPress for the hero description.
+  // If the aboutSummary is long, extract the first 1-2 sentences for the hero.
+  const getHeroDescription = () => {
+    const summary = aboutData.aboutSummary;
+    if (!summary) {
+      return settings.acfOptions?.heroDescription ||
+        'Evidence-driven policy analysis for socially inclusive development. We champion partnerships for African development, people-centered growth, and gender equitable economic transformation.';
+    }
+
+    // If the summary is short enough (under 200 chars), use it directly
+    if (summary.length <= 200) return summary;
+
+    // Otherwise, extract the first two sentences
+    const sentences = summary.match(/[^.!?]+[.!?]+/g);
+    if (sentences && sentences.length > 1) {
+      const firstTwo = sentences.slice(0, 2).join('').trim();
+      // If still too long, just use the first sentence
+      if (firstTwo.length > 250) return sentences[0].trim();
+      return firstTwo;
+    }
+
+    return summary;
+  };
+
+  const heroDescription = getHeroDescription();
 
   const executive = teamMembers.filter((m) => m.category === 'executive');
   const directors = teamMembers.filter((m) => m.category === 'director');
@@ -419,51 +449,66 @@ export default function HomePageClient({
             </div>
 
             {/* Activity cards */}
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-50px' }}
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              {activities.map((activity) => {
-                const IconComponent = getActivityIcon(activity.icon);
-                return (
-                  <motion.div key={activity.id} variants={staggerItem}>
-                    <Link
-                      href={`/what-we-do#activity-${activity.id}`}
-                      className="group block p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white cursor-pointer"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-[#f0fdf4] flex items-center justify-center mb-4 group-hover:bg-[#065f46] transition-colors">
-                        <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-white transition-colors" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-[#0f172a] mb-2 group-hover:text-[#065f46] transition-colors" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-                        {activity.title}
-                      </h3>
-                      <p className="text-sm text-[#64748b] leading-relaxed">{activity.description}</p>
-                      <span className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-[#065f46] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        Learn more
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
-                    </Link>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
+            {activities.length > 0 ? (
+              <motion.div
+                variants={staggerContainer}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '-50px' }}
+                className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                {activities.map((activity) => {
+                  const IconComponent = getActivityIcon(activity.icon);
+                  // Use description if available, otherwise extract snippet from content
+                  const description = activity.description || activity.content
+                    ? activity.description || activity.content.replace(/<[^>]*>/g, '').trim().substring(0, 150) + '...'
+                    : 'Learn more about our ' + activity.title.toLowerCase() + ' programme.';
+                  return (
+                    <motion.div key={activity.id} variants={staggerItem}>
+                      <Link
+                        href={`/what-we-do/${activity.slug}`}
+                        className="group block p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white cursor-pointer"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-[#f0fdf4] flex items-center justify-center mb-4 group-hover:bg-[#065f46] transition-colors">
+                          <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-white transition-colors" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-[#0f172a] mb-2 group-hover:text-[#065f46] transition-colors" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                          {activity.title}
+                        </h3>
+                        <p className="text-sm text-[#64748b] leading-relaxed">{description}</p>
+                        <span className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-[#065f46] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          Learn more
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </span>
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-2xl bg-[#f0fdf4] flex items-center justify-center mx-auto mb-4">
+                  <FileSearch className="w-8 h-8 text-[#059669]" />
+                </div>
+                <p className="text-[#64748b] text-base">Our activities are being updated. Check back soon!</p>
+              </div>
+            )}
 
             {/* View all button */}
-            <div className="text-center mt-12">
-              <Button
-                variant="outline"
-                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
-                asChild
-              >
-                <a href="/what-we-do">
-                  View All Activities
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </a>
-              </Button>
-            </div>
+            {activities.length > 0 && (
+              <div className="text-center mt-12">
+                <Button
+                  variant="outline"
+                  className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+                  asChild
+                >
+                  <a href="/what-we-do">
+                    View All Activities
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </a>
+                </Button>
+              </div>
+            )}
           </div>
         </section>
       </SectionReveal>
@@ -497,36 +542,42 @@ export default function HomePageClient({
             </div>
           </SectionReveal>
 
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-50px' }}
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {philosophy.map((item, index) => {
-              const IconComponent = getPhilosophyIcon(item.icon);
-              // Make the first item span 2 columns on lg for visual interest
-              const isLarge = index === 0;
-              return (
-                <motion.div
-                  key={item.id}
-                  variants={staggerItem}
-                  className={isLarge ? 'sm:col-span-2 lg:col-span-2' : ''}
-                >
-                  <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
-                    <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
-                      <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+          {philosophy.length > 0 ? (
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {philosophy.map((item, index) => {
+                const IconComponent = getPhilosophyIcon(item.icon);
+                // Make the first item span 2 columns on lg for visual interest
+                const isLarge = index === 0;
+                return (
+                  <motion.div
+                    key={item.id}
+                    variants={staggerItem}
+                    className={isLarge ? 'sm:col-span-2 lg:col-span-2' : ''}
+                  >
+                    <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+                      <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+                        <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-[#94a3b8] leading-relaxed">{item.description}</p>
                     </div>
-                    <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-[#94a3b8] leading-relaxed">{item.description}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-[#94a3b8] text-base">Our philosophy is being updated. Check back soon!</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -1065,10 +1116,10 @@ export default function HomePageClient({
                 </div>
                 <p className="text-white font-medium text-sm">Email</p>
                 <a
-                  href={`mailto:${settings.acfOptions?.contactEmail || 'info@gteep.com'}`}
+                  href={`mailto:${settings.acfOptions?.contactEmail || 'info@gteep.gileadtrust.com'}`}
                   className="text-[#94a3b8] text-sm hover:text-[#f59e0b] transition-colors"
                 >
-                  {settings.acfOptions?.contactEmail || 'info@gteep.com'}
+                  {settings.acfOptions?.contactEmail || 'info@gteep.gileadtrust.com'}
                 </a>
               </div>
 

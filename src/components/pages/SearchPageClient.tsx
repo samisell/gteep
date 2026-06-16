@@ -11,13 +11,10 @@ import { Input } from '@/components/ui/input';
 import {
   Search as SearchIcon,
   BookOpen,
-  Briefcase,
-  Calendar,
-  FileText,
   Loader2,
   ArrowRight,
 } from 'lucide-react';
-import { getPublicationTypeLabel, getProjectStatusLabel, getEventTypeLabel, truncateText, stripHtml } from '@/utils';
+import { stripHtml } from '@/utils';
 import type { WPSearchData } from '@/types';
 
 type SearchResultItem = {
@@ -56,51 +53,6 @@ export default function SearchPageClient() {
       if (data.success && data.data) {
         const items: SearchResultItem[] = [];
 
-        // Publications
-        if (data.data.publications) {
-          data.data.publications.forEach((p: any) => {
-            items.push({
-              id: p.id,
-              title: p.title,
-              slug: p.slug,
-              excerpt: stripHtml(p.excerpt || p.acfPublicationFields?.abstract || ''),
-              type: 'Publication',
-              extra: getPublicationTypeLabel(p.acfPublicationFields?.publicationType || ''),
-              href: `/publications/${p.slug}`,
-            });
-          });
-        }
-
-        // Projects
-        if (data.data.projects) {
-          data.data.projects.forEach((p: any) => {
-            items.push({
-              id: p.id,
-              title: p.title,
-              slug: p.slug,
-              excerpt: stripHtml(p.excerpt || ''),
-              type: 'Project',
-              extra: getProjectStatusLabel(p.acfProjectFields?.projectStatus || ''),
-              href: `/projects/${p.slug}`,
-            });
-          });
-        }
-
-        // Events
-        if (data.data.events) {
-          data.data.events.forEach((e: any) => {
-            items.push({
-              id: e.id,
-              title: e.title,
-              slug: e.slug,
-              excerpt: stripHtml(e.excerpt || ''),
-              type: 'Event',
-              extra: getEventTypeLabel(e.acfEventFields?.eventType || ''),
-              href: `/events/${e.slug}`,
-            });
-          });
-        }
-
         // Pages
         if (data.data.pages) {
           data.data.pages.forEach((p: any) => {
@@ -115,7 +67,7 @@ export default function SearchPageClient() {
           });
         }
 
-        // Posts
+        // Posts (Blog)
         if (data.data.posts) {
           data.data.posts.forEach((p: any) => {
             items.push({

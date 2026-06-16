@@ -1,0 +1,758 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState } from 'react';
+     4→     4→import { motion } from 'framer-motion';
+     5→     5→import PageHeader from '@/components/shared/PageHeader';
+     6→     6→import { AnimatedSection } from '@/components/shared/AnimatedSection';
+     7→     7→import { Card, CardContent } from '@/components/ui/card';
+     8→     8→import { Button } from '@/components/ui/button';
+     9→     9→import { Input } from '@/components/ui/input';
+    10→    10→import { Textarea } from '@/components/ui/textarea';
+    11→    11→import { Label } from '@/components/ui/label';
+    12→    12→import { Checkbox } from '@/components/ui/checkbox';
+    13→    13→import { Separator } from '@/components/ui/separator';
+    14→    14→import {
+    15→    15→  Select,
+    16→    16→  SelectContent,
+    17→    17→  SelectItem,
+    18→    18→  SelectTrigger,
+    19→    19→  SelectValue,
+    20→    20→} from '@/components/ui/select';
+    21→    21→import {
+    22→    22→  Accordion,
+    23→    23→  AccordionContent,
+    24→    24→  AccordionItem,
+    25→    25→  AccordionTrigger,
+    26→    26→} from '@/components/ui/accordion';
+    27→    27→import {
+    28→    28→  Mail,
+    29→    29→  Phone,
+    30→    30→  MapPin,
+    31→    31→  Clock,
+    32→    32→  Send,
+    33→    33→  Loader2,
+    34→    34→  CheckCircle2,
+    35→    35→  MessageSquare,
+    36→    36→  Handshake,
+    37→    37→  BookOpen,
+    38→    38→  Users,
+    39→    39→  Globe2,
+    40→    40→  Building2,
+    41→    41→  HelpCircle,
+    42→    42→} from 'lucide-react';
+    43→    43→import { toast } from 'sonner';
+    44→    44→import type { ContactDetailsData } from '@/graphql/fetchers';
+    45→    45→
+    46→    46→// =============================================================================
+    47→    47→// Props
+    48→    48→// =============================================================================
+    49→    49→
+    50→    50→interface ContactPageClientProps {
+    51→    51→  contactDetails: ContactDetailsData;
+    52→    52→}
+    53→    53→
+    54→    54→// =============================================================================
+    55→    55→// Constants
+    56→    56→// =============================================================================
+    57→    57→
+    58→    58→const OFFICE_HOURS = 'Monday - Friday, 9:00 AM - 5:00 PM WAT';
+    59→    59→
+    60→    60→const SUBJECT_OPTIONS = [
+    61→    61→  { value: 'general-inquiry', label: 'General Inquiry' },
+    62→    62→  { value: 'research-collaboration', label: 'Research Collaboration' },
+    63→    63→  { value: 'partnership-opportunity', label: 'Partnership Opportunity' },
+    64→    64→  { value: 'policy-advisory', label: 'Policy Advisory' },
+    65→    65→  { value: 'media-press', label: 'Media / Press' },
+    66→    66→  { value: 'event-inquiry', label: 'Event Inquiry' },
+    67→    67→  { value: 'publication-request', label: 'Publication Request' },
+    68→    68→  { value: 'volunteer-internship', label: 'Volunteer / Internship' },
+    69→    69→  { value: 'other', label: 'Other' },
+    70→    70→];
+    71→    71→
+    72→    72→const FAQ_ITEMS = [
+    73→    73→  {
+    74→    74→    question: 'How can I collaborate with GTEEP on research?',
+    75→    75→    answer:
+    76→    76→      'We welcome research collaborations with academic institutions, think tanks, and policy organizations. Please select "Research Collaboration" as your subject and provide details about your proposed research area, timeline, and expected outcomes.',
+    77→    77→  },
+    78→    78→  {
+    79→    79→    question: 'Does GTEEP offer policy advisory services?',
+    80→    80→    answer:
+    81→    81→      'Yes, GTEEP provides evidence-based policy advisory services to governments, international organizations, and development agencies across Africa. Our expertise spans trade policy, gender equity, regional integration, and economic empowerment.',
+    82→    82→  },
+    83→    83→  {
+    84→    84→    question: 'How can my organization partner with GTEEP?',
+    85→    85→    answer:
+    86→    86→      'We are always open to strategic partnerships that align with our mission. Select "Partnership Opportunity" and share your organization details, proposed area of collaboration, and expected mutual benefits.',
+    87→    87→  },
+    88→    88→  {
+    89→    89→    question: 'What is the typical response time?',
+    90→    90→    answer:
+    91→    91→      'We aim to respond to all inquiries within 2-3 business days. For urgent matters, please call our office during business hours (Monday-Friday, 9 AM - 5 PM WAT).',
+    92→    92→  },
+    93→    93→  {
+    94→    94→    question: 'Are GTEEP publications freely available?',
+    95→    95→    answer:
+    96→    96→      'Most of our research outputs, policy briefs, and data products are freely available for download. Some specialized reports may require registration. Visit our Outputs page to browse our publications.',
+    97→    97→  },
+    98→    98→  {
+    99→    99→    question: 'Does GTEEP offer internship opportunities?',
+   100→   100→    answer:
+   101→   101→      'Yes, we periodically offer internship and volunteer positions for emerging researchers and policy enthusiasts. Select "Volunteer / Internship" as your subject to express your interest.',
+   102→   102→  },
+   103→   103→];
+   104→   104→
+   105→   105→function getContactCards(email: string) {
+   106→   106→  return [
+   107→   107→    {
+   108→   108→      icon: MessageSquare,
+   109→   109→      title: 'General Inquiries',
+   110→   110→      description: 'Questions about our programs, research, or operations',
+   111→   111→      action: email,
+   112→   112→      actionLabel: 'Email Us',
+   113→   113→      href: `mailto:${email}`,
+   114→   114→      color: 'emerald',
+   115→   115→    },
+   116→   116→    {
+   117→   117→      icon: Handshake,
+   118→   118→      title: 'Partnerships',
+   119→   119→      description: 'Explore strategic collaboration opportunities',
+   120→   120→      action: `partnerships@${email.split('@')[1] || 'gteep.gileadtrust.com'}`,
+   121→   121→      actionLabel: 'Email Partnerships',
+   122→   122→      href: `mailto:partnerships@${email.split('@')[1] || 'gteep.gileadtrust.com'}`,
+   123→   123→      color: 'amber',
+   124→   124→    },
+   125→   125→    {
+   126→   126→      icon: BookOpen,
+   127→   127→      title: 'Research & Publications',
+   128→   128→      description: 'Access our policy briefs, reports, and data',
+   129→   129→      action: '/outputs',
+   130→   130→      actionLabel: 'Browse Outputs',
+   131→   131→      href: '/outputs',
+   132→   132→      color: 'emerald',
+   133→   133→    },
+   134→   134→    {
+   135→   135→      icon: Users,
+   136→   136→      title: 'Media & Press',
+   137→   137→      description: 'Press inquiries, interviews, and commentary',
+   138→   138→      action: `media@${email.split('@')[1] || 'gteep.gileadtrust.com'}`,
+   139→   139→      actionLabel: 'Email Media Team',
+   140→   140→      href: `mailto:media@${email.split('@')[1] || 'gteep.gileadtrust.com'}`,
+   141→   141→      color: 'amber',
+   142→   142→    },
+   143→   143→  ];
+   144→   144→}
+   145→   145→
+   146→   146→// =============================================================================
+   147→   147→// Animation Variants
+   148→   148→// =============================================================================
+   149→   149→
+   150→   150→const containerVariants = {
+   151→   151→  hidden: { opacity: 0 },
+   152→   152→  visible: {
+   153→   153→    opacity: 1,
+   154→   154→    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+   155→   155→  },
+   156→   156→};
+   157→   157→
+   158→   158→const itemVariants = {
+   159→   159→  hidden: { opacity: 0, y: 20 },
+   160→   160→  visible: {
+   161→   161→    opacity: 1,
+   162→   162→    y: 0,
+   163→   163→    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+   164→   164→  },
+   165→   165→};
+   166→   166→
+   167→   167→// =============================================================================
+   168→   168→// Main Component
+   169→   169→// =============================================================================
+   170→   170→
+   171→   171→export default function ContactPageClient({ contactDetails }: ContactPageClientProps) {
+   172→   172→  const [isSubmitting, setIsSubmitting] = useState(false);
+   173→   173→  const [isSuccess, setIsSuccess] = useState(false);
+   174→   174→  const [consent, setConsent] = useState(false);
+   175→   175→
+   176→   176→  // Derived from WordPress ACF contactdetails
+   177→   177→  const contactEmail = contactDetails.email;
+   178→   178→  const contactPhone = contactDetails.phone;
+   179→   179→  const contactAddress = contactDetails.address;
+   180→   180→  const contactCards = getContactCards(contactEmail);
+   181→   181→
+   182→   182→  const [formData, setFormData] = useState({
+   183→   183→    name: '',
+   184→   184→    email: '',
+   185→   185→    subject: '',
+   186→   186→    subjectCategory: '',
+   187→   187→    message: '',
+   188→   188→    organization: '',
+   189→   189→    phone: '',
+   190→   190→  });
+   191→   191→
+   192→   192→  const [errors, setErrors] = useState<Record<string, string>>({});
+   193→   193→
+   194→   194→  const validate = () => {
+   195→   195→    const newErrors: Record<string, string> = {};
+   196→   196→    if (!formData.name.trim()) newErrors.name = 'Full name is required';
+   197→   197→    if (!formData.email.trim()) newErrors.email = 'Email is required';
+   198→   198→    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email';
+   199→   199→    if (!formData.subjectCategory) newErrors.subjectCategory = 'Please select a subject category';
+   200→   200→    if (!formData.subject.trim()) newErrors.subject = 'Subject is required';
+   201→   201→    if (!formData.message.trim()) newErrors.message = 'Message is required';
+   202→   202→    else if (formData.message.trim().length < 10) newErrors.message = 'Message must be at least 10 characters';
+   203→   203→    if (!consent) newErrors.consent = 'You must consent to data processing';
+   204→   204→    setErrors(newErrors);
+   205→   205→    return Object.keys(newErrors).length === 0;
+   206→   206→  };
+   207→   207→
+   208→   208→  const handleSubmit = async (e: React.FormEvent) => {
+   209→   209→    e.preventDefault();
+   210→   210→    if (!validate()) return;
+   211→   211→
+   212→   212→    setIsSubmitting(true);
+   213→   213→
+   214→   214→    try {
+   215→   215→      const response = await fetch('/api/contact', {
+   216→   216→        method: 'POST',
+   217→   217→        headers: { 'Content-Type': 'application/json' },
+   218→   218→        body: JSON.stringify({
+   219→   219→          name: formData.name,
+   220→   220→          email: formData.email,
+   221→   221→          subject: `[${formData.subjectCategory}] ${formData.subject}`,
+   222→   222→          message: formData.message,
+   223→   223→          organization: formData.organization,
+   224→   224→          phone: formData.phone,
+   225→   225→          consent,
+   226→   226→        }),
+   227→   227→      });
+   228→   228→
+   229→   229→      const data = await response.json();
+   230→   230→
+   231→   231→      if (response.ok && data.success) {
+   232→   232→        setIsSuccess(true);
+   233→   233→        toast.success('Message sent!', {
+   234→   234→          description: 'Thank you for reaching out. We will get back to you shortly.',
+   235→   235→        });
+   236→   236→      } else {
+   237→   237→        const errorMsg = data.error || 'Something went wrong. Please try again.';
+   238→   238→        toast.error('Submission failed', { description: errorMsg });
+   239→   239→      }
+   240→   240→    } catch {
+   241→   241→      toast.error('Network error', {
+   242→   242→        description: 'Could not connect to the server. Please check your internet connection and try again.',
+   243→   243→      });
+   244→   244→    } finally {
+   245→   245→      setIsSubmitting(false);
+   246→   246→    }
+   247→   247→  };
+   248→   248→
+   249→   249→  const handleChange = (field: string, value: string) => {
+   250→   250→    setFormData((prev) => ({ ...prev, [field]: value }));
+   251→   251→    if (errors[field]) {
+   252→   252→      setErrors((prev) => {
+   253→   253→        const next = { ...prev };
+   254→   254→        delete next[field];
+   255→   255→        return next;
+   256→   256→      });
+   257→   257→    }
+   258→   258→  };
+   259→   259→
+   260→   260→  return (
+   261→   261→    <main className="pt-20">
+   262→   262→      {/* Page Header */}
+   263→   263→      <PageHeader
+   264→   264→        title="Contact Us"
+   265→   265→        subtitle="Get in Touch"
+   266→   266→        description="We'd love to hear from you. Whether you have a question about our research, partnerships, or anything else, our team is ready to answer."
+   267→   267→        breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Contact Us' }]}
+   268→   268→      />
+   269→   269→
+   270→   270→      {/* ================================================================== */}
+   271→   271→      {/* CONTACT CARDS - Quick Access */}
+   272→   272→      {/* ================================================================== */}
+   273→   273→      <section className="py-12 md:py-16 bg-white" aria-label="Quick Contact Options">
+   274→   274→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   275→   275→          <motion.div
+   276→   276→            variants={containerVariants}
+   277→   277→            initial="hidden"
+   278→   278→            whileInView="visible"
+   279→   279→            viewport={{ once: true, margin: '-50px' }}
+   280→   280→            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+   281→   281→          >
+   282→   282→            {contactCards.map((card) => (
+   283→   283→              <motion.div key={card.title} variants={itemVariants}>
+   284→   284→                <Card className="group h-full border border-[#e2e8f0] hover:border-[#065f46]/30 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+   285→   285→                  <CardContent className="p-6">
+   286→   286→                    <div
+   287→   287→                      className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 ${
+   288→   288→                        card.color === 'emerald'
+   289→   289→                          ? 'bg-[#065f46]/10 text-[#065f46]'
+   290→   290→                          : 'bg-[#d97706]/10 text-[#d97706]'
+   291→   291→                      }`}
+   292→   292→                    >
+   293→   293→                      <card.icon className="h-6 w-6" />
+   294→   294→                    </div>
+   295→   295→                    <h3
+   296→   296→                      className="font-semibold text-[#0f172a] mb-1"
+   297→   297→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   298→   298→                    >
+   299→   299→                      {card.title}
+   300→   300→                    </h3>
+   301→   301→                    <p className="text-sm text-[#64748b] mb-4">{card.description}</p>
+   302→   302→                    {card.href.startsWith('mailto:') ? (
+   303→   303→                      <a
+   304→   304→                        href={card.href}
+   305→   305→                        className="text-sm font-medium text-[#059669] hover:text-[#065f46] transition-colors inline-flex items-center gap-1"
+   306→   306→                      >
+   307→   307→                        {card.actionLabel}
+   308→   308→                        <span className="text-xs">→</span>
+   309→   309→                      </a>
+   310→   310→                    ) : (
+   311→   311→                      <a
+   312→   312→                        href={card.href}
+   313→   313→                        className="text-sm font-medium text-[#059669] hover:text-[#065f46] transition-colors inline-flex items-center gap-1"
+   314→   314→                      >
+   315→   315→                        {card.actionLabel}
+   316→   316→                        <span className="text-xs">→</span>
+   317→   317→                      </a>
+   318→   318→                    )}
+   319→   319→                  </CardContent>
+   320→   320→                </Card>
+   321→   321→              </motion.div>
+   322→   322→            ))}
+   323→   323→          </motion.div>
+   324→   324→        </div>
+   325→   325→      </section>
+   326→   326→
+   327→   327→      {/* ================================================================== */}
+   328→   328→      {/* CONTACT FORM + INFO */}
+   329→   329→      {/* ================================================================== */}
+   330→   330→      <section className="py-12 md:py-20 bg-gradient-to-b from-slate-50/50 to-white" aria-label="Contact Form">
+   331→   331→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   332→   332→          <div className="grid gap-10 lg:grid-cols-3">
+   333→   333→            {/* Contact Form */}
+   334→   334→            <div className="lg:col-span-2">
+   335→   335→              <AnimatedSection>
+   336→   336→                <Card className="border border-[#e2e8f0] shadow-md">
+   337→   337→                  <CardContent className="p-6 md:p-8">
+   338→   338→                    {isSuccess ? (
+   339→   339→                      <div className="py-10 text-center">
+   340→   340→                        <motion.div
+   341→   341→                          initial={{ scale: 0 }}
+   342→   342→                          animate={{ scale: 1 }}
+   343→   343→                          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+   344→   344→                        >
+   345→   345→                          <CheckCircle2 className="mx-auto h-16 w-16 text-[#059669]" />
+   346→   346→                        </motion.div>
+   347→   347→                        <h3
+   348→   348→                          className="mt-4 text-xl font-semibold text-[#0f172a]"
+   349→   349→                          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   350→   350→                        >
+   351→   351→                          Message Sent Successfully!
+   352→   352→                        </h3>
+   353→   353→                        <p className="mt-2 text-[#64748b] max-w-md mx-auto">
+   354→   354→                          Thank you for reaching out to GTEEP. Our team will review your message and
+   355→   355→                          get back to you within 2-3 business days.
+   356→   356→                        </p>
+   357→   357→                        <p className="mt-1 text-sm text-[#94a3b8]">
+   358→   358→                          A confirmation email has been sent to your inbox.
+   359→   359→                        </p>
+   360→   360→                        <Button
+   361→   361→                          variant="outline"
+   362→   362→                          className="mt-6 border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white rounded-xl"
+   363→   363→                          onClick={() => {
+   364→   364→                            setIsSuccess(false);
+   365→   365→                            setFormData({
+   366→   366→                              name: '',
+   367→   367→                              email: '',
+   368→   368→                              subject: '',
+   369→   369→                              subjectCategory: '',
+   370→   370→                              message: '',
+   371→   371→                              organization: '',
+   372→   372→                              phone: '',
+   373→   373→                            });
+   374→   374→                            setConsent(false);
+   375→   375→                          }}
+   376→   376→                        >
+   377→   377→                          Send Another Message
+   378→   378→                        </Button>
+   379→   379→                      </div>
+   380→   380→                    ) : (
+   381→   381→                      <form onSubmit={handleSubmit} className="space-y-6">
+   382→   382→                        <div>
+   383→   383→                          <h2
+   384→   384→                            className="text-xl font-semibold text-[#0f172a]"
+   385→   385→                            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   386→   386→                          >
+   387→   387→                            Send a Message
+   388→   388→                          </h2>
+   389→   389→                          <p className="text-sm text-[#64748b] mt-1">
+   390→   390→                            Fill out the form below and we&apos;ll get back to you as soon as possible.
+   391→   391→                          </p>
+   392→   392→                        </div>
+   393→   393→
+   394→   394→                        {/* Row 1: Name + Email */}
+   395→   395→                        <div className="grid gap-4 sm:grid-cols-2">
+   396→   396→                          <div className="space-y-2">
+   397→   397→                            <Label htmlFor="contact-name">
+   398→   398→                              Full Name <span className="text-red-500">*</span>
+   399→   399→                            </Label>
+   400→   400→                            <Input
+   401→   401→                              id="contact-name"
+   402→   402→                              placeholder="Your full name"
+   403→   403→                              value={formData.name}
+   404→   404→                              onChange={(e) => handleChange('name', e.target.value)}
+   405→   405→                              aria-invalid={!!errors.name}
+   406→   406→                              className="border-[#e2e8f0] focus-visible:border-[#065f46] focus-visible:ring-[#065f46]/20"
+   407→   407→                            />
+   408→   408→                            {errors.name && (
+   409→   409→                              <p className="text-sm text-red-500">{errors.name}</p>
+   410→   410→                            )}
+   411→   411→                          </div>
+   412→   412→
+   413→   413→                          <div className="space-y-2">
+   414→   414→                            <Label htmlFor="contact-email">
+   415→   415→                              Email Address <span className="text-red-500">*</span>
+   416→   416→                            </Label>
+   417→   417→                            <Input
+   418→   418→                              id="contact-email"
+   419→   419→                              type="email"
+   420→   420→                              placeholder="you@example.com"
+   421→   421→                              value={formData.email}
+   422→   422→                              onChange={(e) => handleChange('email', e.target.value)}
+   423→   423→                              aria-invalid={!!errors.email}
+   424→   424→                              className="border-[#e2e8f0] focus-visible:border-[#065f46] focus-visible:ring-[#065f46]/20"
+   425→   425→                            />
+   426→   426→                            {errors.email && (
+   427→   427→                              <p className="text-sm text-red-500">{errors.email}</p>
+   428→   428→                            )}
+   429→   429→                          </div>
+   430→   430→                        </div>
+   431→   431→
+   432→   432→                        {/* Row 2: Organization + Phone */}
+   433→   433→                        <div className="grid gap-4 sm:grid-cols-2">
+   434→   434→                          <div className="space-y-2">
+   435→   435→                            <Label htmlFor="contact-organization">
+   436→   436→                              Organization
+   437→   437→                            </Label>
+   438→   438→                            <Input
+   439→   439→                              id="contact-organization"
+   440→   440→                              placeholder="Your organization (optional)"
+   441→   441→                              value={formData.organization}
+   442→   442→                              onChange={(e) => handleChange('organization', e.target.value)}
+   443→   443→                              className="border-[#e2e8f0] focus-visible:border-[#065f46] focus-visible:ring-[#065f46]/20"
+   444→   444→                            />
+   445→   445→                          </div>
+   446→   446→
+   447→   447→                          <div className="space-y-2">
+   448→   448→                            <Label htmlFor="contact-phone">
+   449→   449→                              Phone Number
+   450→   450→                            </Label>
+   451→   451→                            <Input
+   452→   452→                              id="contact-phone"
+   453→   453→                              type="tel"
+   454→   454→                              placeholder="+234 800 000 0000 (optional)"
+   455→   455→                              value={formData.phone}
+   456→   456→                              onChange={(e) => handleChange('phone', e.target.value)}
+   457→   457→                              className="border-[#e2e8f0] focus-visible:border-[#065f46] focus-visible:ring-[#065f46]/20"
+   458→   458→                            />
+   459→   459→                          </div>
+   460→   460→                        </div>
+   461→   461→
+   462→   462→                        {/* Row 3: Subject Category + Subject */}
+   463→   463→                        <div className="grid gap-4 sm:grid-cols-2">
+   464→   464→                          <div className="space-y-2">
+   465→   465→                            <Label htmlFor="contact-category">
+   466→   466→                              Inquiry Type <span className="text-red-500">*</span>
+   467→   467→                            </Label>
+   468→   468→                            <Select
+   469→   469→                              value={formData.subjectCategory}
+   470→   470→                              onValueChange={(value) => handleChange('subjectCategory', value)}
+   471→   471→                            >
+   472→   472→                              <SelectTrigger
+   473→   473→                                id="contact-category"
+   474→   474→                                className={`border-[#e2e8f0] focus:ring-[#065f46]/20 ${
+   475→   475→                                  errors.subjectCategory ? 'border-red-500' : ''
+   476→   476→                                }`}
+   477→   477→                              >
+   478→   478→                                <SelectValue placeholder="Select inquiry type" />
+   479→   479→                              </SelectTrigger>
+   480→   480→                              <SelectContent>
+   481→   481→                                {SUBJECT_OPTIONS.map((option) => (
+   482→   482→                                  <SelectItem key={option.value} value={option.label}>
+   483→   483→                                    {option.label}
+   484→   484→                                  </SelectItem>
+   485→   485→                                ))}
+   486→   486→                              </SelectContent>
+   487→   487→                            </Select>
+   488→   488→                            {errors.subjectCategory && (
+   489→   489→                              <p className="text-sm text-red-500">{errors.subjectCategory}</p>
+   490→   490→                            )}
+   491→   491→                          </div>
+   492→   492→
+   493→   493→                          <div className="space-y-2">
+   494→   494→                            <Label htmlFor="contact-subject">
+   495→   495→                              Subject <span className="text-red-500">*</span>
+   496→   496→                            </Label>
+   497→   497→                            <Input
+   498→   498→                              id="contact-subject"
+   499→   499→                              placeholder="Brief subject of your message"
+   500→   500→                              value={formData.subject}
+   501→   501→                              onChange={(e) => handleChange('subject', e.target.value)}
+   502→   502→                              aria-invalid={!!errors.subject}
+   503→   503→                              className="border-[#e2e8f0] focus-visible:border-[#065f46] focus-visible:ring-[#065f46]/20"
+   504→   504→                            />
+   505→   505→                            {errors.subject && (
+   506→   506→                              <p className="text-sm text-red-500">{errors.subject}</p>
+   507→   507→                            )}
+   508→   508→                          </div>
+   509→   509→                        </div>
+   510→   510→
+   511→   511→                        {/* Message */}
+   512→   512→                        <div className="space-y-2">
+   513→   513→                          <Label htmlFor="contact-message">
+   514→   514→                            Message <span className="text-red-500">*</span>
+   515→   515→                          </Label>
+   516→   516→                          <Textarea
+   517→   517→                            id="contact-message"
+   518→   518→                            placeholder="Tell us how we can help you..."
+   519→   519→                            rows={6}
+   520→   520→                            value={formData.message}
+   521→   521→                            onChange={(e) => handleChange('message', e.target.value)}
+   522→   522→                            aria-invalid={!!errors.message}
+   523→   523→                            className="border-[#e2e8f0] focus-visible:border-[#065f46] focus-visible:ring-[#065f46]/20 resize-none"
+   524→   524→                          />
+   525→   525→                          {errors.message && (
+   526→   526→                            <p className="text-sm text-red-500">{errors.message}</p>
+   527→   527→                          )}
+   528→   528→                          <p className="text-xs text-[#94a3b8]">
+   529→   529→                            {formData.message.length}/5000 characters
+   530→   530→                          </p>
+   531→   531→                        </div>
+   532→   532→
+   533→   533→                        {/* Consent Checkbox */}
+   534→   534→                        <div className="flex items-start gap-3">
+   535→   535→                          <Checkbox
+   536→   536→                            id="contact-consent"
+   537→   537→                            checked={consent}
+   538→   538→                            onCheckedChange={(checked) => {
+   539→   539→                              setConsent(checked === true);
+   540→   540→                              if (errors.consent) {
+   541→   541→                                setErrors((prev) => {
+   542→   542→                                  const next = { ...prev };
+   543→   543→                                  delete next.consent;
+   544→   544→                                  return next;
+   545→   545→                                });
+   546→   546→                              }
+   547→   547→                            }}
+   548→   548→                            className="mt-0.5 data-[state=checked]:bg-[#065f46] data-[state=checked]:border-[#065f46]"
+   549→   549→                          />
+   550→   550→                          <div>
+   551→   551→                            <Label htmlFor="contact-consent" className="text-sm font-normal text-[#64748b] cursor-pointer">
+   552→   552→                              I consent to GTEEP processing my personal data in accordance with the{' '}
+   553→   553→                              <a href="/privacy" className="text-[#059669] hover:underline">
+   554→   554→                                privacy policy
+   555→   555→                              </a>.{' '}
+   556→   556→                              <span className="text-red-500">*</span>
+   557→   557→                            </Label>
+   558→   558→                            {errors.consent && (
+   559→   559→                              <p className="text-sm text-red-500 mt-1">{errors.consent}</p>
+   560→   560→                            )}
+   561→   561→                          </div>
+   562→   562→                        </div>
+   563→   563→
+   564→   564→                        <Button
+   565→   565→                          type="submit"
+   566→   566→                          disabled={isSubmitting}
+   567→   567→                          size="lg"
+   568→   568→                          className="w-full bg-[#065f46] hover:bg-[#064e3b] text-white sm:w-auto rounded-xl px-8"
+   569→   569→                        >
+   570→   570→                          {isSubmitting ? (
+   571→   571→                            <>
+   572→   572→                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+   573→   573→                              Sending...
+   574→   574→                            </>
+   575→   575→                          ) : (
+   576→   576→                            <>
+   577→   577→                              <Send className="mr-2 h-4 w-4" />
+   578→   578→                              Send Message
+   579→   579→                            </>
+   580→   580→                          )}
+   581→   581→                        </Button>
+   582→   582→                      </form>
+   583→   583→                    )}
+   584→   584→                  </CardContent>
+   585→   585→                </Card>
+   586→   586→              </AnimatedSection>
+   587→   587→            </div>
+   588→   588→
+   589→   589→            {/* Contact Info Sidebar */}
+   590→   590→            <div className="lg:col-span-1">
+   591→   591→              <AnimatedSection delay={0.1}>
+   592→   592→                <div className="space-y-6">
+   593→   593→                  {/* Office Info */}
+   594→   594→                  <Card className="border border-[#e2e8f0] shadow-md">
+   595→   595→                    <CardContent className="p-6 space-y-5">
+   596→   596→                      <h3
+   597→   597→                        className="font-semibold text-[#0f172a]"
+   598→   598→                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   599→   599→                      >
+   600→   600→                        Office Information
+   601→   601→                      </h3>
+   602→   602→
+   603→   603→                      <div className="flex items-start gap-3">
+   604→   604→                        <div className="w-9 h-9 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0">
+   605→   605→                          <Mail className="h-4 w-4 text-[#065f46]" />
+   606→   606→                        </div>
+   607→   607→                        <div>
+   608→   608→                          <p className="text-sm font-medium text-[#0f172a]">Email</p>
+   609→   609→                          <a
+   610→   610→                            href={`mailto:${contactEmail}`}
+   611→   611→                            className="text-sm text-[#059669] hover:underline"
+   612→   612→                          >
+   613→   613→                            {contactEmail}
+   614→   614→                          </a>
+   615→   615→                        </div>
+   616→   616→                      </div>
+   617→   617→
+   618→   618→                      <div className="flex items-start gap-3">
+   619→   619→                        <div className="w-9 h-9 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0">
+   620→   620→                          <Phone className="h-4 w-4 text-[#065f46]" />
+   621→   621→                        </div>
+   622→   622→                        <div>
+   623→   623→                          <p className="text-sm font-medium text-[#0f172a]">Phone</p>
+   624→   624→                          <a
+   625→   625→                            href={`tel:${contactPhone.replace(/\s/g, '')}`}
+   626→   626→                            className="text-sm text-[#059669] hover:underline"
+   627→   627→                          >
+   628→   628→                            {contactPhone}
+   629→   629→                          </a>
+   630→   630→                        </div>
+   631→   631→                      </div>
+   632→   632→
+   633→   633→                      <div className="flex items-start gap-3">
+   634→   634→                        <div className="w-9 h-9 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0">
+   635→   635→                          <MapPin className="h-4 w-4 text-[#065f46]" />
+   636→   636→                        </div>
+   637→   637→                        <div>
+   638→   638→                          <p className="text-sm font-medium text-[#0f172a]">Address</p>
+   639→   639→                          <p className="text-sm text-[#64748b]">
+   640→   640→                            {contactAddress}
+   641→   641→                          </p>
+   642→   642→                        </div>
+   643→   643→                      </div>
+   644→   644→
+   645→   645→                      <div className="flex items-start gap-3">
+   646→   646→                        <div className="w-9 h-9 rounded-lg bg-[#d97706]/10 flex items-center justify-center shrink-0">
+   647→   647→                          <Clock className="h-4 w-4 text-[#d97706]" />
+   648→   648→                        </div>
+   649→   649→                        <div>
+   650→   650→                          <p className="text-sm font-medium text-[#0f172a]">Office Hours</p>
+   651→   651→                          <p className="text-sm text-[#64748b]">
+   652→   652→                            {OFFICE_HOURS}
+   653→   653→                          </p>
+   654→   654→                        </div>
+   655→   655→                      </div>
+   656→   656→                    </CardContent>
+   657→   657→                  </Card>
+   658→   658→
+   659→   659→                  {/* Map Card */}
+   660→   660→                  <Card className="border border-[#e2e8f0] shadow-md overflow-hidden">
+   661→   661→                    <div className="flex h-56 items-center justify-center bg-gradient-to-br from-[#065f46]/5 to-[#0f172a]/5">
+   662→   662→                      <div className="text-center">
+   663→   663→                        <div className="w-14 h-14 rounded-full bg-[#065f46]/10 flex items-center justify-center mx-auto mb-3">
+   664→   664→                          <Globe2 className="h-7 w-7 text-[#065f46]/40" />
+   665→   665→                        </div>
+   666→   666→                        <p className="text-sm font-medium text-[#0f172a]">
+   667→   667→                          {contactAddress}
+   668→   668→                        </p>
+   669→   669→                        <p className="text-xs text-[#64748b] mt-1">GTEEP Headquarters</p>
+   670→   670→                      </div>
+   671→   671→                    </div>
+   672→   672→                  </Card>
+   673→   673→
+   674→   674→                  {/* Quick Response Notice */}
+   675→   675→                  <Card className="border border-[#065f46]/20 bg-[#065f46]/5">
+   676→   676→                    <CardContent className="p-5">
+   677→   677→                      <div className="flex items-start gap-3">
+   678→   678→                        <div className="w-8 h-8 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0">
+   679→   679→                          <Building2 className="h-4 w-4 text-[#065f46]" />
+   680→   680→                        </div>
+   681→   681→                        <div>
+   682→   682→                          <p className="text-sm font-semibold text-[#0f172a]">Quick Response</p>
+   683→   683→                          <p className="text-xs text-[#64748b] mt-1">
+   684→   684→                            We typically respond within 2-3 business days. For urgent matters,
+   685→   685→                            please call our office during business hours.
+   686→   686→                          </p>
+   687→   687→                        </div>
+   688→   688→                      </div>
+   689→   689→                    </CardContent>
+   690→   690→                  </Card>
+   691→   691→                </div>
+   692→   692→              </AnimatedSection>
+   693→   693→            </div>
+   694→   694→          </div>
+   695→   695→        </div>
+   696→   696→      </section>
+   697→   697→
+   698→   698→      {/* ================================================================== */}
+   699→   699→      {/* FAQ SECTION */}
+   700→   700→      {/* ================================================================== */}
+   701→   701→      <section className="py-12 md:py-20 bg-white" aria-label="Frequently Asked Questions">
+   702→   702→        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+   703→   703→          <AnimatedSection>
+   704→   704→            <div className="text-center mb-10">
+   705→   705→              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#d97706]/10 text-[#d97706] text-sm font-medium mb-4">
+   706→   706→                <HelpCircle className="h-4 w-4" />
+   707→   707→                FAQ
+   708→   708→              </div>
+   709→   709→              <h2
+   710→   710→                className="text-2xl md:text-3xl font-bold text-[#0f172a]"
+   711→   711→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   712→   712→              >
+   713→   713→                Frequently Asked Questions
+   714→   714→              </h2>
+   715→   715→              <p className="mt-2 text-[#64748b]">
+   716→   716→                Find answers to common questions about GTEEP and our work.
+   717→   717→              </p>
+   718→   718→            </div>
+   719→   719→
+   720→   720→            <Accordion type="single" collapsible className="space-y-3">
+   721→   721→              {FAQ_ITEMS.map((item, index) => (
+   722→   722→                <AccordionItem
+   723→   723→                  key={index}
+   724→   724→                  value={`faq-${index}`}
+   725→   725→                  className="border border-[#e2e8f0] rounded-xl px-6 data-[state=open]:border-[#065f46]/30 data-[state=open]:shadow-sm transition-all"
+   726→   726→                >
+   727→   727→                  <AccordionTrigger className="text-left text-[#0f172a] hover:no-underline hover:text-[#065f46] py-4 text-sm font-medium">
+   728→   728→                    {item.question}
+   729→   729→                  </AccordionTrigger>
+   730→   730→                  <AccordionContent className="text-[#64748b] text-sm leading-relaxed pb-4">
+   731→   731→                    {item.answer}
+   732→   732→                  </AccordionContent>
+   733→   733→                </AccordionItem>
+   734→   734→              ))}
+   735→   735→            </Accordion>
+   736→   736→          </AnimatedSection>
+   737→   737→
+   738→   738→          <AnimatedSection delay={0.2}>
+   739→   739→            <div className="mt-10 text-center">
+   740→   740→              <Separator className="mb-8" />
+   741→   741→              <p className="text-[#64748b] text-sm">
+   742→   742→                Still have questions?{' '}
+   743→   743→                <a
+   744→   744→                  href="mailto:info@gteep.com"
+   745→   745→                  className="text-[#059669] hover:underline font-medium"
+   746→   746→                >
+   747→   747→                  Email us directly
+   748→   748→                </a>{' '}
+   749→   749→                or use the contact form above.
+   750→   750→              </p>
+   751→   751→            </div>
+   752→   752→          </AnimatedSection>
+   753→   753→        </div>
+   754→   754→      </section>
+   755→   755→    </main>
+   756→   756→  );
+   757→   757→}
+   758→   758→

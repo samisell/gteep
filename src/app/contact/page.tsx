@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import ContactPageClient from '@/components/pages/ContactPageClient';
-import { getSiteSettings } from '@/graphql/fetchers';
+import { getContactDetails } from '@/graphql/fetchers';
 
 export const revalidate = 300;
 
@@ -11,6 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default async function ContactPage() {
-  const settings = await getSiteSettings();
-  return <ContactPageClient settings={settings} />;
+  // Fetch contact details from WordPress ACF (with sensible defaults if WP is unreachable)
+  const contactDetails = await getContactDetails();
+
+  return <ContactPageClient contactDetails={contactDetails} />;
 }

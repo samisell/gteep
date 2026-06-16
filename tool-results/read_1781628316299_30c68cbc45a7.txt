@@ -1,0 +1,921 @@
+     1→     1→// =============================================================================
+     2→     2→// GraphQL Data Fetchers - WordPress Headless CMS
+     3→     3→// GTEEP - Gilead Trust Economic Empowerment Project
+     4→     4→//
+     5→     5→// These fetchers use the GraphQL client to fetch data from WordPress.
+     6→     6→// When WordPress is unreachable, they return empty/null data and pages
+     7→     7→// show a "Check your internet" OfflinePage component.
+     8→     8→//
+     9→     9→// No mock data fallback — all content comes from WordPress.
+    10→    10→// =============================================================================
+    11→    11→
+    12→    12→import { fetchGraphQL, isWordPressConnected } from '@/lib/graphql-client';
+    13→    13→import {
+    14→    14→  GET_PAGES,
+    15→    15→  GET_PAGE_BY_SLUG,
+    16→    16→  GET_WHAT_WE_DO_PAGE,
+    17→    17→  GET_ACTIVITY_PAGE,
+    18→    18→  GET_POSTS,
+    19→    19→  GET_POST_BY_SLUG,
+    20→    20→  GET_MEDIA_ITEMS,
+    21→    21→  GET_SITE_SETTINGS,
+    22→    22→  GET_ADMIN_EMAIL,
+    23→    23→  GET_MENUS,
+    24→    24→  GET_TEAM_MEMBERS,
+    25→    25→  GET_TEAM_MEMBERS_ACF,
+    26→    26→  SEARCH_QUERY,
+    27→    27→  GET_PUBLICATIONS,
+    28→    28→  GET_PUBLICATION_BY_SLUG,
+    29→    29→  GET_PROJECTS,
+    30→    30→  GET_PROJECT_BY_SLUG,
+    31→    31→  GET_EVENTS,
+    32→    32→  GET_EVENT_BY_SLUG,
+    33→    33→  GET_RESOURCES,
+    34→    34→  GET_RESOURCE_BY_SLUG,
+    35→    35→} from './queries';
+    36→    36→
+    37→    37→import type {
+    38→    38→  WPPage,
+    39→    39→  WPPost,
+    40→    40→  WPMedia,
+    41→    41→  WPSiteSettings,
+    42→    42→  WPMenu,
+    43→    43→  WPPageInfo,
+    44→    44→  WPSearchData,
+    45→    45→  WPPageData,
+    46→    46→  WPPostData,
+    47→    47→  WPPagesData,
+    48→    48→  WPPostsData,
+    49→    49→  WPMediaData,
+    50→    50→  WPSiteSettingsData,
+    51→    51→  WPMenusData,
+    52→    52→  GTEEPTeamMember,
+    53→    53→  WPPublication,
+    54→    54→  WPProject,
+    55→    55→  WPEvent,
+    56→    56→  WPResource,
+    57→    57→  WPPublicationsData,
+    58→    58→  WPProjectsData,
+    59→    59→  WPEventsData,
+    60→    60→  WPResourcesData,
+    61→    61→  WPPublicationData,
+    62→    62→  WPProjectData,
+    63→    63→  WPEventData,
+    64→    64→  WPResourceData,
+    65→    65→} from '@/types';
+    66→    66→
+    67→    67→// Re-export WordPress connectivity check for pages to use
+    68→    68→export { isWordPressConnected };
+    69→    69→
+    70→    70→// -----------------------------------------------------------------------------
+    71→    71→// Helper: Extract nodes from a GraphQL response
+    72→    72→// -----------------------------------------------------------------------------
+    73→    73→
+    74→    74→function extractNodes<T>(
+    75→    75→  response: { data?: any; errors?: any[] },
+    76→    76→  path: string
+    77→    77→): T[] {
+    78→    78→  if (response.errors || !response.data) {
+    79→    79→    return [];
+    80→    80→  }
+    81→    81→
+    82→    82→  const parts = path.split('.');
+    83→    83→  let result: any = response.data;
+    84→    84→  for (const part of parts) {
+    85→    85→    if (result?.[part] === undefined) return [];
+    86→    86→    result = result[part];
+    87→    87→  }
+    88→    88→
+    89→    89→  if (result?.nodes && Array.isArray(result.nodes) && result.nodes.length > 0) {
+    90→    90→    return result.nodes as T[];
+    91→    91→  }
+    92→    92→
+    93→    93→  return [];
+    94→    94→}
+    95→    95→
+    96→    96→function extractSingleNode<T>(
+    97→    97→  response: { data?: any; errors?: any[] },
+    98→    98→  key: string
+    99→    99→): T | null {
+   100→   100→  if (response.errors || !response.data) {
+   101→   101→    return null;
+   102→   102→  }
+   103→   103→
+   104→   104→  const node = response.data[key];
+   105→   105→  if (!node) return null;
+   106→   106→
+   107→   107→  return node as T;
+   108→   108→}
+   109→   109→
+   110→   110→function extractPageInfo(
+   111→   111→  response: { data?: any; errors?: any[] },
+   112→   112→  path: string
+   113→   113→): WPPageInfo | null {
+   114→   114→  if (response.errors || !response.data) return null;
+   115→   115→
+   116→   116→  const parts = path.split('.');
+   117→   117→  let result: any = response.data;
+   118→   118→  for (const part of parts) {
+   119→   119→    if (result?.[part] === undefined) return null;
+   120→   120→    result = result[part];
+   121→   121→  }
+   122→   122→
+   123→   123→  return result?.pageInfo ?? null;
+   124→   124→}
+   125→   125→
+   126→   126→// -----------------------------------------------------------------------------
+   127→   127→// Default site settings (minimal, used when WP is unreachable)
+   128→   128→// -----------------------------------------------------------------------------
+   129→   129→
+   130→   130→const defaultSiteSettings: WPSiteSettings = {
+   131→   131→  siteTitle: 'GTEEP',
+   132→   132→  siteDescription: 'Gender, Trade, Economics and Empowerment Programme',
+   133→   133→  siteUrl: 'https://gteep.jileadtrust.com',
+   134→   134→  siteLogo: null,
+   135→   135→  favicon: null,
+   136→   136→  acfOptions: {
+   137→   137→    heroTitle: 'GTEEP',
+   138→   138→    heroSubtitle: 'Gender, Trade, Economics and Empowerment Programme',
+   139→   139→    heroCtaText: 'Learn More',
+   140→   140→    heroCtaUrl: '/about',
+   141→   141→    contactEmail: 'info@gteep.gileadtrust.com',
+   142→   142→    contactPhone: '',
+   143→   143→    contactAddress: '',
+   144→   144→    socialLinks: {
+   145→   145→      twitter: '',
+   146→   146→      linkedin: '',
+   147→   147→      facebook: '',
+   148→   148→      instagram: '',
+   149→   149→    },
+   150→   150→  },
+   151→   151→};
+   152→   152→
+   153→   153→// -----------------------------------------------------------------------------
+   154→   154→// Pages
+   155→   155→// -----------------------------------------------------------------------------
+   156→   156→
+   157→   157→export async function getPages(
+   158→   158→  first: number = 50,
+   159→   159→  after?: string
+   160→   160→): Promise<{ pages: WPPage[]; pageInfo: WPPageInfo | null }> {
+   161→   161→  const response = await fetchGraphQL<WPPagesData>(GET_PAGES, {
+   162→   162→    first,
+   163→   163→    after,
+   164→   164→  });
+   165→   165→
+   166→   166→  return {
+   167→   167→    pages: extractNodes<WPPage>(response, 'pages'),
+   168→   168→    pageInfo: extractPageInfo(response, 'pages'),
+   169→   169→  };
+   170→   170→}
+   171→   171→
+   172→   172→export async function getPageBySlug(slug: string): Promise<WPPage | null> {
+   173→   173→  const response = await fetchGraphQL<WPPageData>(GET_PAGE_BY_SLUG, { slug });
+   174→   174→
+   175→   175→  const page = extractSingleNode<WPPage>(response, 'page');
+   176→   176→
+   177→   177→  return page;
+   178→   178→}
+   179→   179→
+   180→   180→// -----------------------------------------------------------------------------
+   181→   181→// About Page (fetches ACF aboutContent fields from WP)
+   182→   182→// -----------------------------------------------------------------------------
+   183→   183→
+   184→   184→export interface AboutPageData {
+   185→   185→  aboutSummary: string;
+   186→   186→  aboutVision: string;
+   187→   187→  aboutMission: string;
+   188→   188→  aboutGoal: string;
+   189→   189→}
+   190→   190→
+   191→   191→export async function getAboutPage(): Promise<AboutPageData> {
+   192→   192→  const defaults: AboutPageData = {
+   193→   193→    aboutSummary: "Africa's economic transformation and the challenges and opportunities lie in the ability to learn, relearn and unlearn. This process is both integrative and intentional and be socially inclusive. GTEEP aims to curate and supply the required evidence and knowledge to support this process. Gender, Trade, Economics and Empowerment Programme (GTEEP) is an initiative of the Gilead Trust for Economic Empowerment. It is a knowledge, research and policy advocacy initiative that places people at the centre of economic policy and development. GTEEP's activities and one small successful bite at a time, contribute to creating spaces that promote more participatory and equitable access to resources and opportunities.",
+   194→   194→    aboutVision: 'A socially and culturally inclusive economy where everyone is heard.',
+   195→   195→    aboutMission: 'To continually knowledge spaces and inform policies with data-driven evidence and empower the citizens with requisite tools to reshape their individual and collective economic choices.',
+   196→   196→    aboutGoal: 'To promote spaces that create more participatory and equitable access to resources and opportunities.',
+   197→   197→  };
+   198→   198→
+   199→   199→  try {
+   200→   200→    const page = await getPageBySlug('about-us');
+   201→   201→
+   202→   202→    if (page?.aboutContent) {
+   203→   203→      return {
+   204→   204→        aboutSummary: page.aboutContent.aboutSummary || defaults.aboutSummary,
+   205→   205→        aboutVision: page.aboutContent.aboutVision || defaults.aboutVision,
+   206→   206→        aboutMission: page.aboutContent.aboutMission || defaults.aboutMission,
+   207→   207→        aboutGoal: page.aboutContent.aboutGoal || defaults.aboutGoal,
+   208→   208→      };
+   209→   209→    }
+   210→   210→  } catch {
+   211→   211→    // Fall through to defaults
+   212→   212→  }
+   213→   213→
+   214→   214→  return defaults;
+   215→   215→}
+   216→   216→
+   217→   217→// -----------------------------------------------------------------------------
+   218→   218→// Contact Details (fetches ACF contactdetails fields from WP)
+   219→   219→// -----------------------------------------------------------------------------
+   220→   220→
+   221→   221→export interface ContactDetailsData {
+   222→   222→  email: string;
+   223→   223→  phone: string;
+   224→   224→  address: string;
+   225→   225→}
+   226→   226→
+   227→   227→export async function getContactDetails(): Promise<ContactDetailsData> {
+   228→   228→  const defaults: ContactDetailsData = {
+   229→   229→    email: 'info@gteep.gileadtrust.com',
+   230→   230→    phone: '+234 801 234 5678',
+   231→   231→    address: 'Ikeja Lagos, Nigeria',
+   232→   232→  };
+   233→   233→
+   234→   234→  try {
+   235→   235→    const page = await getPageBySlug('contact-us');
+   236→   236→
+   237→   237→    if (page?.contactdetails) {
+   238→   238→      const cd = page.contactdetails;
+   239→   239→      return {
+   240→   240→        email: cd.email || defaults.email,
+   241→   241→        phone: cd.phoneNumber ? `+${cd.phoneNumber}` : defaults.phone,
+   242→   242→        address: cd.address || defaults.address,
+   243→   243→      };
+   244→   244→    }
+   245→   245→  } catch {
+   246→   246→    // Fall through to defaults
+   247→   247→  }
+   248→   248→
+   249→   249→  return defaults;
+   250→   250→}
+   251→   251→
+   252→   252→// -----------------------------------------------------------------------------
+   253→   253→// Admin Email (fetches ACF adminemail field from WP)
+   254→   254→// The adminemail ACF field group is on the Post type, with a single field:
+   255→   255→//   adminEmailForNotification — the email that receives contact/newsletter notifications
+   256→   256→// -----------------------------------------------------------------------------
+   257→   257→
+   258→   258→const DEFAULT_ADMIN_EMAIL = 'info@gteep.gileadtrust.com';
+   259→   259→
+   260→   260→// Cache admin email for 5 minutes to avoid repeated WP queries
+   261→   261→let adminEmailCache: { email: string; timestamp: number } | null = null;
+   262→   262→const ADMIN_EMAIL_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+   263→   263→
+   264→   264→export async function getAdminEmail(): Promise<string> {
+   265→   265→  // Return cached value if still valid
+   266→   266→  if (adminEmailCache && Date.now() - adminEmailCache.timestamp < ADMIN_EMAIL_CACHE_TTL) {
+   267→   267→    return adminEmailCache.email;
+   268→   268→  }
+   269→   269→
+   270→   270→  try {
+   271→   271→    const response = await fetchGraphQL<any>(GET_ADMIN_EMAIL);
+   272→   272→
+   273→   273→    if (!response.errors && response.data?.posts?.nodes?.length) {
+   274→   274→      const email = response.data.posts.nodes[0]?.adminemail?.adminEmailForNotification;
+   275→   275→      if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+   276→   276→        adminEmailCache = { email, timestamp: Date.now() };
+   277→   277→        return email;
+   278→   278→      }
+   279→   279→    }
+   280→   280→  } catch {
+   281→   281→    // Fall through to default
+   282→   282→  }
+   283→   283→
+   284→   284→  // Fall back to env var or default
+   285→   285→  const fallback = process.env.CONTACT_RECEIVER_EMAIL || process.env.SITE_EMAIL || DEFAULT_ADMIN_EMAIL;
+   286→   286→  return fallback;
+   287→   287→}
+   288→   288→
+   289→   289→// -----------------------------------------------------------------------------
+   290→   290→// Posts (Blog / News)
+   291→   291→// -----------------------------------------------------------------------------
+   292→   292→
+   293→   293→export async function getPosts(
+   294→   294→  first: number = 12,
+   295→   295→  after?: string
+   296→   296→): Promise<{ posts: WPPost[]; pageInfo: WPPageInfo | null }> {
+   297→   297→  const response = await fetchGraphQL<WPPostsData>(GET_POSTS, {
+   298→   298→    first,
+   299→   299→    after,
+   300→   300→  });
+   301→   301→
+   302→   302→  return {
+   303→   303→    posts: extractNodes<WPPost>(response, 'posts'),
+   304→   304→    pageInfo: extractPageInfo(response, 'posts'),
+   305→   305→  };
+   306→   306→}
+   307→   307→
+   308→   308→export async function getPostBySlug(slug: string): Promise<WPPost | null> {
+   309→   309→  const response = await fetchGraphQL<WPPostData>(GET_POST_BY_SLUG, { slug });
+   310→   310→
+   311→   311→  const post = extractSingleNode<WPPost>(response, 'post');
+   312→   312→
+   313→   313→  return post;
+   314→   314→}
+   315→   315→
+   316→   316→// -----------------------------------------------------------------------------
+   317→   317→// Media
+   318→   318→// -----------------------------------------------------------------------------
+   319→   319→
+   320→   320→export async function getMediaItems(
+   321→   321→  first: number = 50,
+   322→   322→  after?: string
+   323→   323→): Promise<{ mediaItems: WPMedia[]; pageInfo: WPPageInfo | null }> {
+   324→   324→  const response = await fetchGraphQL<WPMediaData>(GET_MEDIA_ITEMS, {
+   325→   325→    first,
+   326→   326→    after,
+   327→   327→  });
+   328→   328→
+   329→   329→  return {
+   330→   330→    mediaItems: extractNodes<WPMedia>(response, 'mediaItems'),
+   331→   331→    pageInfo: extractPageInfo(response, 'mediaItems'),
+   332→   332→  };
+   333→   333→}
+   334→   334→
+   335→   335→// -----------------------------------------------------------------------------
+   336→   336→// Site Settings & Logo
+   337→   337→// -----------------------------------------------------------------------------
+   338→   338→
+   339→   339→/**
+   340→   340→ * Fetch the site logo URL from WordPress.
+   341→   341→ */
+   342→   342→export async function getSiteLogo(): Promise<string | null> {
+   343→   343→  try {
+   344→   344→    const response = await fetchGraphQL<any>(`
+   345→   345→      query GetSiteLogo {
+   346→   346→        mediaItems(first: 10, where: { search: "cropped-refined_logo" }) {
+   347→   347→          nodes {
+   348→   348→            id
+   349→   349→            sourceUrl
+   350→   350→            altText
+   351→   351→            title
+   352→   352→          }
+   353→   353→        }
+   354→   354→      }
+   355→   355→    `);
+   356→   356→
+   357→   357→    if (response.errors || !response.data?.mediaItems?.nodes?.length) {
+   358→   358→      const fallbackResponse = await fetchGraphQL<any>(`
+   359→   359→        query GetSiteIcon {
+   360→   360→          mediaItem(id: "8", idType: DATABASE_ID) {
+   361→   361→            sourceUrl
+   362→   362→            altText
+   363→   363→          }
+   364→   364→        }
+   365→   365→      `);
+   366→   366→
+   367→   367→      if (fallbackResponse.errors || !fallbackResponse.data?.mediaItem?.sourceUrl) {
+   368→   368→        return null;
+   369→   369→      }
+   370→   370→
+   371→   371→      return fallbackResponse.data.mediaItem.sourceUrl;
+   372→   372→    }
+   373→   373→
+   374→   374→    const logo = response.data.mediaItems.nodes.find(
+   375→   375→      (node: any) => node.title?.includes('cropped-refined_logo') || node.sourceUrl?.includes('cropped-refined_logo')
+   376→   376→    );
+   377→   377→
+   378→   378→    return logo?.sourceUrl || response.data.mediaItems.nodes[0]?.sourceUrl || null;
+   379→   379→  } catch {
+   380→   380→    return null;
+   381→   381→  }
+   382→   382→}
+   383→   383→
+   384→   384→export async function getSiteSettings(): Promise<WPSiteSettings> {
+   385→   385→  const response = await fetchGraphQL<WPSiteSettingsData>(GET_SITE_SETTINGS);
+   386→   386→
+   387→   387→  if (response.errors || !response.data) {
+   388→   388→    return defaultSiteSettings;
+   389→   389→  }
+   390→   390→
+   391→   391→  const { generalSettings } = response.data;
+   392→   392→
+   393→   393→  if (!generalSettings) {
+   394→   394→    return defaultSiteSettings;
+   395→   395→  }
+   396→   396→
+   397→   397→  // Try to fetch the site logo from WP
+   398→   398→  const logoUrl = await getSiteLogo();
+   399→   399→
+   400→   400→  // Determine the site description
+   401→   401→  const wpDescription = generalSettings.description;
+   402→   402→  const isDefaultWpTagline = !wpDescription || wpDescription === 'Just another WordPress site';
+   403→   403→  const siteDescription = isDefaultWpTagline ? defaultSiteSettings.siteDescription : wpDescription;
+   404→   404→
+   405→   405→  return {
+   406→   406→    siteTitle: generalSettings.title || defaultSiteSettings.siteTitle,
+   407→   407→    siteDescription,
+   408→   408→    siteUrl: generalSettings.url || defaultSiteSettings.siteUrl,
+   409→   409→    siteLogo: logoUrl
+   410→   410→      ? {
+   411→   411→          sourceUrl: logoUrl,
+   412→   412→          altText: 'GTEEP Logo',
+   413→   413→          mediaItemId: 8,
+   414→   414→          width: 512,
+   415→   415→          height: 512,
+   416→   416→        }
+   417→   417→      : null,
+   418→   418→    favicon: logoUrl
+   419→   419→      ? {
+   420→   420→          sourceUrl: logoUrl,
+   421→   421→          altText: 'GTEEP Favicon',
+   422→   422→          mediaItemId: 8,
+   423→   423→          width: 512,
+   424→   424→          height: 512,
+   425→   425→        }
+   426→   426→      : null,
+   427→   427→    acfOptions: defaultSiteSettings.acfOptions,
+   428→   428→  };
+   429→   429→}
+   430→   430→
+   431→   431→// -----------------------------------------------------------------------------
+   432→   432→// Menus
+   433→   433→// -----------------------------------------------------------------------------
+   434→   434→
+   435→   435→export async function getMenus(): Promise<WPMenu[]> {
+   436→   436→  const response = await fetchGraphQL<WPMenusData>(GET_MENUS);
+   437→   437→
+   438→   438→  if (response.errors || !response.data?.menus?.nodes?.length) {
+   439→   439→    return [];
+   440→   440→  }
+   441→   441→
+   442→   442→  return response.data.menus.nodes;
+   443→   443→}
+   444→   444→
+   445→   445→// -----------------------------------------------------------------------------
+   446→   446→// GTEEP-Specific Data Fetchers
+   447→   447→// These use WP pages/posts to populate GTEEP-specific data types
+   448→   448→// -----------------------------------------------------------------------------
+   449→   449→
+   450→   450→/**
+   451→   451→ * Get activities (What We Do) data from WordPress.
+   452→   452→ * Fetches the "what-we-do" page and its child pages from WP.
+   453→   453→ * Each child page becomes an activity section.
+   454→   454→ * Nested children (e.g., Policy Firechat under Policy Engagement) are included.
+   455→   455→ * New pages added under "What We Do" in WP will appear automatically.
+   456→   456→ */
+   457→   457→export async function getActivities(): Promise<import('@/types').GTEEPActivity[]> {
+   458→   458→  try {
+   459→   459→    const response = await fetchGraphQL<any>(GET_WHAT_WE_DO_PAGE);
+   460→   460→
+   461→   461→    if (response.errors || !response.data?.page) {
+   462→   462→      return [];
+   463→   463→    }
+   464→   464→
+   465→   465→    const page = response.data.page;
+   466→   466→    const childNodes = page.children?.nodes || [];
+   467→   467→
+   468→   468→    if (childNodes.length === 0) {
+   469→   469→      return [];
+   470→   470→    }
+   471→   471→
+   472→   472→    // Map of known icons for specific activities (by slug)
+   473→   473→    const iconMap: Record<string, string> = {
+   474→   474→      'policy-research': 'FileSearch',
+   475→   475→      'policy-engagement': 'Users',
+   476→   476→      'citizen-enlightenment': 'Lightbulb',
+   477→   477→      'data-speaks': 'BarChart3',
+   478→   478→      'youth-mentoring': 'GraduationCap',
+   479→   479→      'womens-economic-livelihood': 'Heart',
+   480→   480→    };
+   481→   481→
+   482→   482→    return childNodes.map((child: any, index: number) => {
+   483→   483→      // Parse nested children (e.g., Policy Firechat under Policy Engagement)
+   484→   484→      const nestedChildren: import('@/types').GTEEPActivityChild[] = (child.children?.nodes || []).map(
+   485→   485→        (nested: any) => ({
+   486→   486→          id: nested.id,
+   487→   487→          databaseId: nested.databaseId,
+   488→   488→          title: nested.title,
+   489→   489→          slug: nested.slug,
+   490→   490→          uri: nested.uri,
+   491→   491→          content: nested.content || '',
+   492→   492→          image: nested.featuredImage?.node?.sourceUrl || undefined,
+   493→   493→          policyFirechat: nested.policyFirechat?.policyFirechat || undefined,
+   494→   494→        })
+   495→   495→      );
+   496→   496→
+   497→   497→      return {
+   498→   498→        id: child.id,
+   499→   499→        databaseId: child.databaseId,
+   500→   500→        title: child.title,
+   501→   501→        slug: child.slug,
+   502→   502→        uri: child.uri,
+   503→   503→        description: '', // Will use content or description from WP
+   504→   504→        content: child.content || '',
+   505→   505→        icon: iconMap[child.slug] || 'FileSearch',
+   506→   506→        image: child.featuredImage?.node?.sourceUrl || undefined,
+   507→   507→        children: nestedChildren.length > 0 ? nestedChildren : undefined,
+   508→   508→        policyFirechat: child.policyFirechat?.policyFirechat || undefined,
+   509→   509→      };
+   510→   510→    });
+   511→   511→  } catch {
+   512→   512→    return [];
+   513→   513→  }
+   514→   514→}
+   515→   515→
+   516→   516→/**
+   517→   517→ * Get a single activity page by its URI slug.
+   518→   518→ * Used for individual activity detail pages at /what-we-do/[slug].
+   519→   519→ */
+   520→   520→export async function getActivityPage(slug: string): Promise<{
+   521→   521→  activity: import('@/types').GTEEPActivity;
+   522→   522→  parentPage?: { id: string; title: string; slug: string; uri: string };
+   523→   523→} | null> {
+   524→   524→  try {
+   525→   525→    const response = await fetchGraphQL<any>(GET_ACTIVITY_PAGE, {
+   526→   526→      slug: `/what-we-do/${slug}/`,
+   527→   527→    });
+   528→   528→
+   529→   529→    if (response.errors || !response.data?.page) {
+   530→   530→      return null;
+   531→   531→    }
+   532→   532→
+   533→   533→    const page = response.data.page;
+   534→   534→
+   535→   535→    const iconMap: Record<string, string> = {
+   536→   536→      'policy-research': 'FileSearch',
+   537→   537→      'policy-engagement': 'Users',
+   538→   538→      'citizen-enlightenment': 'Lightbulb',
+   539→   539→      'data-speaks': 'BarChart3',
+   540→   540→      'youth-mentoring': 'GraduationCap',
+   541→   541→      'womens-economic-livelihood': 'Heart',
+   542→   542→    };
+   543→   543→
+   544→   544→    // Parse nested children
+   545→   545→    const nestedChildren: import('@/types').GTEEPActivityChild[] = (page.children?.nodes || []).map(
+   546→   546→      (nested: any) => ({
+   547→   547→        id: nested.id,
+   548→   548→        databaseId: nested.databaseId,
+   549→   549→        title: nested.title,
+   550→   550→        slug: nested.slug,
+   551→   551→        uri: nested.uri,
+   552→   552→        content: nested.content || '',
+   553→   553→        image: nested.featuredImage?.node?.sourceUrl || undefined,
+   554→   554→        policyFirechat: nested.policyFirechat?.policyFirechat || undefined,
+   555→   555→      })
+   556→   556→    );
+   557→   557→
+   558→   558→    const activity: import('@/types').GTEEPActivity = {
+   559→   559→      id: page.id,
+   560→   560→      databaseId: page.databaseId,
+   561→   561→      title: page.title,
+   562→   562→      slug: page.slug,
+   563→   563→      uri: page.uri,
+   564→   564→      description: '',
+   565→   565→      content: page.content || '',
+   566→   566→      icon: iconMap[page.slug] || 'FileSearch',
+   567→   567→      image: page.featuredImage?.node?.sourceUrl || undefined,
+   568→   568→      children: nestedChildren.length > 0 ? nestedChildren : undefined,
+   569→   569→      policyFirechat: page.policyFirechat?.policyFirechat || undefined,
+   570→   570→    };
+   571→   571→
+   572→   572→    const parent = page.parent?.node;
+   573→   573→    const parentPage = parent
+   574→   574→      ? { id: parent.id, title: parent.title, slug: parent.slug, uri: parent.uri }
+   575→   575→      : undefined;
+   576→   576→
+   577→   577→    return { activity, parentPage };
+   578→   578→  } catch {
+   579→   579→    return null;
+   580→   580→  }
+   581→   581→}
+   582→   582→
+   583→   583→/**
+   584→   584→ * Get philosophy data from WordPress.
+   585→   585→ */
+   586→   586→export async function getPhilosophy(): Promise<import('@/types').GTEEPPhilosophy[]> {
+   587→   587→  try {
+   588→   588→    const page = await getPageBySlug('our-philosophy');
+   589→   589→    if (page?.content) {
+   590→   590→      // Could parse WP content in the future
+   591→   591→    }
+   592→   592→  } catch {
+   593→   593→    // Fall through to empty array
+   594→   594→  }
+   595→   595→
+   596→   596→  return [];
+   597→   597→}
+   598→   598→
+   599→   599→/**
+   600→   600→ * Valid team member categories for ACF teamCategory select field
+   601→   601→ */
+   602→   602→const VALID_TEAM_CATEGORIES = ['executive', 'director', 'advisory-board', 'board-of-trustees'] as const;
+   603→   603→
+   604→   604→/**
+   605→   605→ * Get team members data from WordPress.
+   606→   606→ *
+   607→   607→ * Strategy: Try ACF first, then fall back to category-based approach.
+   608→   608→ *
+   609→   609→ * 1. ACF approach (preferred): Fetches posts with ACF "teamMember" field group.
+   610→   610→ *    - Requires ACF field group "Team Member" with GraphQL type "TeamMember"
+   611→   611→ *    - Uses a "team" category to scope the query
+   612→   612→ *    - Each post has ACF fields: teamName, teamRole, teamCategory, teamBio, teamImage
+   613→   613→ *
+   614→   614→ * 2. Category-based fallback (legacy): Fetches posts from 4 separate categories.
+   615→   615→ *    - Post Title = Person's Name
+   616→   616→ *    - First Tag = Role/Position
+   617→   617→ *    - Post Content/Excerpt = Bio
+   618→   618→ *    - Featured Image = Profile picture
+   619→   619→ *    - Category = Which group they belong to
+   620→   620→ */
+   621→   621→export async function getTeamMembers(): Promise<GTEEPTeamMember[]> {
+   622→   622→  // --- Try ACF approach first ---
+   623→   623→  try {
+   624→   624→    const acfResponse = await fetchGraphQL<any>(GET_TEAM_MEMBERS_ACF);
+   625→   625→
+   626→   626→    if (!acfResponse.errors && acfResponse.data?.posts?.nodes?.length) {
+   627→   627→      const posts = acfResponse.data.posts.nodes;
+   628→   628→
+   629→   629→      // Check if any posts actually have ACF teamMember data
+   630→   630→      const hasAcfData = posts.some(
+   631→   631→        (p: any) => p.teamMember && (p.teamMember.teamName || p.teamMember.teamRole)
+   632→   632→      );
+   633→   633→
+   634→   634→      if (hasAcfData) {
+   635→   635→        const teamMembers: GTEEPTeamMember[] = posts
+   636→   636→          .filter((p: any) => p.teamMember?.teamName || p.title)
+   637→   637→          .map((p: any) => {
+   638→   638→            const acf = p.teamMember || {};
+   639→   639→            const category = VALID_TEAM_CATEGORIES.includes(acf.teamCategory)
+   640→   640→              ? acf.teamCategory
+   641→   641→              : 'director'; // default fallback
+   642→   642→
+   643→   643→            return {
+   644→   644→              id: p.id,
+   645→   645→              name: acf.teamName || p.title || '',
+   646→   646→              role: acf.teamRole || (p.tags?.nodes?.[0]?.name || category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' ')),
+   647→   647→              category,
+   648→   648→              bio: acf.teamBio || (p.content
+   649→   649→                ? p.content.replace(/<[^>]*>/g, '').trim()
+   650→   650→                : p.excerpt?.replace(/<[^>]*>/g, '').trim() || ''),
+   651→   651→              image: acf.teamImage?.sourceUrl || p.featuredImage?.node?.sourceUrl || '',
+   652→   652→            };
+   653→   653→          });
+   654→   654→
+   655→   655→        return teamMembers;
+   656→   656→      }
+   657→   657→    }
+   658→   658→  } catch {
+   659→   659→    // ACF query failed — likely not set up yet. Fall through to category-based.
+   660→   660→  }
+   661→   661→
+   662→   662→  // --- Category-based fallback (original approach) ---
+   663→   663→  try {
+   664→   664→    const response = await fetchGraphQL<any>(GET_TEAM_MEMBERS);
+   665→   665→
+   666→   666→    if (response.errors || !response.data) {
+   667→   667→      return [];
+   668→   668→    }
+   669→   669→
+   670→   670→    const mapPostToMember = (
+   671→   671→      post: any,
+   672→   672→      category: GTEEPTeamMember['category']
+   673→   673→    ): GTEEPTeamMember => ({
+   674→   674→      id: post.id,
+   675→   675→      name: post.title || '',
+   676→   676→      role: post.tags?.nodes?.[0]?.name || category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' '),
+   677→   677→      category,
+   678→   678→      bio: post.content
+   679→   679→        ? post.content.replace(/<[^>]*>/g, '').trim()
+   680→   680→        : post.excerpt?.replace(/<[^>]*>/g, '').trim() || '',
+   681→   681→      image: post.featuredImage?.node?.sourceUrl || '',
+   682→   682→    });
+   683→   683→
+   684→   684→    const { executives, directors, advisoryBoard, boardOfTrustees } = response.data;
+   685→   685→
+   686→   686→    const teamMembers: GTEEPTeamMember[] = [
+   687→   687→      ...(executives?.nodes || []).map((p: any) => mapPostToMember(p, 'executive')),
+   688→   688→      ...(directors?.nodes || []).map((p: any) => mapPostToMember(p, 'director')),
+   689→   689→      ...(advisoryBoard?.nodes || []).map((p: any) => mapPostToMember(p, 'advisory-board')),
+   690→   690→      ...(boardOfTrustees?.nodes || []).map((p: any) => mapPostToMember(p, 'board-of-trustees')),
+   691→   691→    ];
+   692→   692→
+   693→   693→    return teamMembers;
+   694→   694→  } catch {
+   695→   695→    return [];
+   696→   696→  }
+   697→   697→}
+   698→   698→
+   699→   699→/**
+   700→   700→ * Get outputs data from WordPress.
+   701→   701→ */
+   702→   702→export async function getOutputs(): Promise<import('@/types').GTEEPOutput[]> {
+   703→   703→  try {
+   704→   704→    const page = await getPageBySlug('our-outputs');
+   705→   705→    if (page?.content) {
+   706→   706→      // Could parse WP content in the future
+   707→   707→    }
+   708→   708→  } catch {
+   709→   709→    // Fall through to empty array
+   710→   710→  }
+   711→   711→
+   712→   712→  return [];
+   713→   713→}
+   714→   714→
+   715→   715→/**
+   716→   716→ * Get partners data from WordPress.
+   717→   717→ */
+   718→   718→export async function getPartners(): Promise<import('@/types').GTEEPPartner[]> {
+   719→   719→  try {
+   720→   720→    const page = await getPageBySlug('our-partners');
+   721→   721→    if (page?.content) {
+   722→   722→      // Could parse WP content in the future
+   723→   723→    }
+   724→   724→  } catch {
+   725→   725→    // Fall through to empty array
+   726→   726→  }
+   727→   727→
+   728→   728→  return [];
+   729→   729→}
+   730→   730→
+   731→   731→/**
+   732→   732→ * Get blog posts data from WordPress.
+   733→   733→ */
+   734→   734→export async function getBlogPosts(): Promise<import('@/types').GTEEPBlogPost[]> {
+   735→   735→  const { posts } = await getPosts(50);
+   736→   736→
+   737→   737→  // Categories used for team members — these should NOT appear in blog posts
+   738→   738→  const teamCategorySlugs = ['executive', 'director', 'advisory-board', 'board-of-trustees', 'team'];
+   739→   739→
+   740→   740→  // Filter out team member posts and the default "Hello world!" WP post
+   741→   741→  const blogPosts = posts.filter((post) => {
+   742→   742→    if (post.slug === 'hello-world') return false;
+   743→   743→
+   744→   744→    const postCategories = (post.categories as any)?.nodes || [];
+   745→   745→    const hasTeamCategory = postCategories.some((cat: any) =>
+   746→   746→      teamCategorySlugs.includes(cat.slug)
+   747→   747→    );
+   748→   748→    if (hasTeamCategory) return false;
+   749→   749→
+   750→   750→    return true;
+   751→   751→  });
+   752→   752→
+   753→   753→  if (blogPosts.length > 0) {
+   754→   754→    return blogPosts.map((post): import('@/types').GTEEPBlogPost => ({
+   755→   755→      id: post.id,
+   756→   756→      title: post.title,
+   757→   757→      slug: post.slug,
+   758→   758→      excerpt: post.excerpt || '',
+   759→   759→      content: post.content || '',
+   760→   760→      date: post.date,
+   761→   761→      author: (post.author as any)?.node?.name || 'GTEEP Team',
+   762→   762→      image: post.featuredImage?.node?.sourceUrl || undefined,
+   763→   763→      categories: (post.categories as any)?.nodes?.map((c: any) => c.name) || [],
+   764→   764→    }));
+   765→   765→  }
+   766→   766→
+   767→   767→  return [];
+   768→   768→}
+   769→   769→
+   770→   770→// -----------------------------------------------------------------------------
+   771→   771→// Publications
+   772→   772→// -----------------------------------------------------------------------------
+   773→   773→
+   774→   774→export async function getPublications(
+   775→   775→  first: number = 50,
+   776→   776→  after?: string
+   777→   777→): Promise<{ publications: WPPublication[] }> {
+   778→   778→  try {
+   779→   779→    const response = await fetchGraphQL<WPPublicationsData>(GET_PUBLICATIONS, {
+   780→   780→      first,
+   781→   781→      after,
+   782→   782→    });
+   783→   783→
+   784→   784→    const publications = extractNodes<WPPublication>(response, 'publications');
+   785→   785→
+   786→   786→    return { publications };
+   787→   787→  } catch {
+   788→   788→    return { publications: [] };
+   789→   789→  }
+   790→   790→}
+   791→   791→
+   792→   792→export async function getPublicationBySlug(slug: string): Promise<WPPublication | null> {
+   793→   793→  try {
+   794→   794→    const response = await fetchGraphQL<WPPublicationData>(GET_PUBLICATION_BY_SLUG, { slug });
+   795→   795→
+   796→   796→    const publication = extractSingleNode<WPPublication>(response, 'publication');
+   797→   797→    return publication;
+   798→   798→  } catch {
+   799→   799→    return null;
+   800→   800→  }
+   801→   801→}
+   802→   802→
+   803→   803→// -----------------------------------------------------------------------------
+   804→   804→// Projects
+   805→   805→// -----------------------------------------------------------------------------
+   806→   806→
+   807→   807→export async function getProjects(
+   808→   808→  first: number = 50,
+   809→   809→  after?: string
+   810→   810→): Promise<{ projects: WPProject[] }> {
+   811→   811→  try {
+   812→   812→    const response = await fetchGraphQL<WPProjectsData>(GET_PROJECTS, {
+   813→   813→      first,
+   814→   814→      after,
+   815→   815→    });
+   816→   816→
+   817→   817→    const projects = extractNodes<WPProject>(response, 'projects');
+   818→   818→
+   819→   819→    return { projects };
+   820→   820→  } catch {
+   821→   821→    return { projects: [] };
+   822→   822→  }
+   823→   823→}
+   824→   824→
+   825→   825→export async function getProjectBySlug(slug: string): Promise<WPProject | null> {
+   826→   826→  try {
+   827→   827→    const response = await fetchGraphQL<WPProjectData>(GET_PROJECT_BY_SLUG, { slug });
+   828→   828→
+   829→   829→    const project = extractSingleNode<WPProject>(response, 'project');
+   830→   830→    return project;
+   831→   831→  } catch {
+   832→   832→    return null;
+   833→   833→  }
+   834→   834→}
+   835→   835→
+   836→   836→// -----------------------------------------------------------------------------
+   837→   837→// Events
+   838→   838→// -----------------------------------------------------------------------------
+   839→   839→
+   840→   840→export async function getEvents(
+   841→   841→  first: number = 50,
+   842→   842→  after?: string
+   843→   843→): Promise<{ events: WPEvent[] }> {
+   844→   844→  try {
+   845→   845→    const response = await fetchGraphQL<WPEventsData>(GET_EVENTS, {
+   846→   846→      first,
+   847→   847→      after,
+   848→   848→    });
+   849→   849→
+   850→   850→    const events = extractNodes<WPEvent>(response, 'events');
+   851→   851→
+   852→   852→    return { events };
+   853→   853→  } catch {
+   854→   854→    return { events: [] };
+   855→   855→  }
+   856→   856→}
+   857→   857→
+   858→   858→export async function getEventBySlug(slug: string): Promise<WPEvent | null> {
+   859→   859→  try {
+   860→   860→    const response = await fetchGraphQL<WPEventData>(GET_EVENT_BY_SLUG, { slug });
+   861→   861→
+   862→   862→    const event = extractSingleNode<WPEvent>(response, 'event');
+   863→   863→    return event;
+   864→   864→  } catch {
+   865→   865→    return null;
+   866→   866→  }
+   867→   867→}
+   868→   868→
+   869→   869→// -----------------------------------------------------------------------------
+   870→   870→// Resources
+   871→   871→// -----------------------------------------------------------------------------
+   872→   872→
+   873→   873→export async function getResources(
+   874→   874→  first: number = 50,
+   875→   875→  after?: string
+   876→   876→): Promise<{ resources: WPResource[] }> {
+   877→   877→  try {
+   878→   878→    const response = await fetchGraphQL<WPResourcesData>(GET_RESOURCES, {
+   879→   879→      first,
+   880→   880→      after,
+   881→   881→    });
+   882→   882→
+   883→   883→    const resources = extractNodes<WPResource>(response, 'resources');
+   884→   884→
+   885→   885→    return { resources };
+   886→   886→  } catch {
+   887→   887→    return { resources: [] };
+   888→   888→  }
+   889→   889→}
+   890→   890→
+   891→   891→export async function getResourceBySlug(slug: string): Promise<WPResource | null> {
+   892→   892→  try {
+   893→   893→    const response = await fetchGraphQL<WPResourceData>(GET_RESOURCE_BY_SLUG, { slug });
+   894→   894→
+   895→   895→    const resource = extractSingleNode<WPResource>(response, 'resource');
+   896→   896→    return resource;
+   897→   897→  } catch {
+   898→   898→    return null;
+   899→   899→  }
+   900→   900→}
+   901→   901→
+   902→   902→// -----------------------------------------------------------------------------
+   903→   903→// Search
+   904→   904→// -----------------------------------------------------------------------------
+   905→   905→
+   906→   906→export async function searchContent(
+   907→   907→  searchTerm: string,
+   908→   908→  first: number = 10
+   909→   909→): Promise<WPSearchData | null> {
+   910→   910→  const response = await fetchGraphQL<WPSearchData>(SEARCH_QUERY, {
+   911→   911→    search: searchTerm,
+   912→   912→    first,
+   913→   913→  });
+   914→   914→
+   915→   915→  if (response.errors || !response.data) {
+   916→   916→    return null;
+   917→   917→  }
+   918→   918→
+   919→   919→  return response.data;
+   920→   920→}
+   921→   921→

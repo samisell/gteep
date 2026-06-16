@@ -1,0 +1,891 @@
+     1→'use client';
+     2→
+     3→import { useState } from 'react';
+     4→import { motion } from 'framer-motion';
+     5→import PageHeader from '@/components/shared/PageHeader';
+     6→import {
+     7→  AnimatedSection,
+     8→  StaggerContainer,
+     9→  StaggerItem,
+    10→} from '@/components/shared/AnimatedSection';
+    11→import { Card, CardContent } from '@/components/ui/card';
+    12→import { Badge } from '@/components/ui/badge';
+    13→import { Button } from '@/components/ui/button';
+    14→import { Input } from '@/components/ui/input';
+    15→import {
+    16→  Dialog,
+    17→  DialogContent,
+    18→  DialogHeader,
+    19→  DialogTitle,
+    20→  DialogDescription,
+    21→  DialogTrigger,
+    22→} from '@/components/ui/dialog';
+    23→import {
+    24→  Flame,
+    25→  Users,
+    26→  Calendar,
+    27→  MapPin,
+    28→  Clock,
+    29→  Video,
+    30→  Download,
+    31→  FileText,
+    32→  Mic2,
+    33→  ArrowRight,
+    34→  ExternalLink,
+    35→  MessageSquare,
+    36→  Lightbulb,
+    37→  Globe,
+    38→  CheckCircle2,
+    39→  Loader2,
+    40→} from 'lucide-react';
+    41→import type { WPEvent } from '@/types';
+    42→
+    43→// =============================================================================
+    44→// Props
+    45→// =============================================================================
+    46→
+    47→interface FiresideChatsPageClientProps {
+    48→  firesideEvents?: WPEvent[];
+    49→}
+    50→
+    51→// =============================================================================
+    52→// Fireside Chat Episodes (Static Content)
+    53→// =============================================================================
+    54→
+    55→interface FiresideEpisode {
+    56→  id: string;
+    57→  title: string;
+    58→  subtitle: string;
+    59→  description: string;
+    60→  date: string;
+    61→  time: string;
+    62→  speakers: string[];
+    63→  topics: string[];
+    64→  status: 'upcoming' | 'past' | 'recorded';
+    65→  recordingUrl?: string;
+    66→  slidesUrl?: string;
+    67→  imageUrl?: string;
+    68→}
+    69→
+    70→const firesideEpisodes: FiresideEpisode[] = [
+    71→  {
+    72→    id: 'ep-1',
+    73→    title: 'Africa: The Gender Backlash',
+    74→    subtitle: 'Episode 1',
+    75→    description:
+    76→      'A critical conversation on the gender backlash in African policy spaces. Leading scholars, policy practitioners, and civil society advocates examine the growing resistance to gender-equitable policies across the continent and explore pathways forward.',
+    77→    date: 'April 10, 2025',
+    78→    time: '2:00 PM - 4:00 PM WAT',
+    79→    speakers: [
+    80→      'Dr. Amina Osman — Gender Policy Researcher',
+    81→      'Prof. Kofi Mensah — University of Ghana',
+    82→      'Ms. Folake Adeyemi — Civil Society Advocate',
+    83→    ],
+    84→    topics: ['Gender Policy', 'African Development', 'Social Inclusion'],
+    85→    status: 'recorded',
+    86→    recordingUrl: '#',
+    87→    slidesUrl: '/uploads/fireside.pptx',
+    88→  },
+    89→  {
+    90→    id: 'ep-2',
+    91→    title: 'Trade Justice vs. Free Trade: Africa\'s Dilemma',
+    92→    subtitle: 'Episode 2',
+    93→    description:
+    94→      'Exploring the tension between trade justice and free trade paradigms in Africa\'s economic transformation. How do we balance open markets with protecting vulnerable communities and emerging industries?',
+    95→    date: 'June 12, 2025',
+    96→    time: '3:00 PM - 5:00 PM WAT',
+    97→    speakers: [
+    98→      'Amb. Titi Ogunwande — Trade Policy Expert',
+    99→      'Dr. Samuel Njoroge — AfCFTA Advisor',
+   100→      'Ms. Adaora Ibe — Economic Justice Campaigner',
+   101→    ],
+   102→    topics: ['AfCFTA', 'Trade Policy', 'Economic Justice'],
+   103→    status: 'upcoming',
+   104→  },
+   105→  {
+   106→    id: 'ep-3',
+   107→    title: 'Youth, Tech & the Future of Work in Africa',
+   108→    subtitle: 'Episode 3',
+   109→    description:
+   110→      'How are digital technologies reshaping employment landscapes for Africa\'s youth? This fireside chat brings together tech entrepreneurs, labour economists, and youth advocates to discuss the opportunities and challenges ahead.',
+   111→    date: 'August 2025',
+   112→    time: 'TBA',
+   113→    speakers: [
+   114→      'Mr. Chidi Eze — Tech Entrepreneur',
+   115→      'Dr. Nneka Obi — Labour Economist',
+   116→      'Ms. Zainab Bello — Youth Advocate',
+   117→    ],
+   118→    topics: ['Digital Economy', 'Youth Employment', 'Technology'],
+   119→    status: 'upcoming',
+   120→  },
+   121→  {
+   122→    id: 'ep-4',
+   123→    title: 'Climate Finance: Who Pays for Africa\'s Resilience?',
+   124→    subtitle: 'Episode 4',
+   125→    description:
+   126→      'Examining the politics and promises of climate finance for Africa. Are global commitments translating into real resources for the communities most affected by climate change?',
+   127→    date: 'October 2025',
+   128→    time: 'TBA',
+   129→    speakers: ['Panelists to be announced'],
+   130→    topics: ['Climate Finance', 'Environmental Policy', 'Global Governance'],
+   131→    status: 'upcoming',
+   132→  },
+   133→];
+   134→
+   135→// =============================================================================
+   136→// Download Form Dialog Component
+   137→// =============================================================================
+   138→
+   139→function DownloadFormDialog({ fileUrl, fileName }: { fileUrl: string; fileName: string }) {
+   140→  const [email, setEmail] = useState('');
+   141→  const [name, setName] = useState('');
+   142→  const [isSubmitting, setIsSubmitting] = useState(false);
+   143→  const [isSubmitted, setIsSubmitted] = useState(false);
+   144→  const [isOpen, setIsOpen] = useState(false);
+   145→
+   146→  const handleSubmit = async (e: React.FormEvent) => {
+   147→    e.preventDefault();
+   148→    if (!email.trim()) return;
+   149→
+   150→    setIsSubmitting(true);
+   151→    try {
+   152→      const res = await fetch('/api/download/request', {
+   153→        method: 'POST',
+   154→        headers: { 'Content-Type': 'application/json' },
+   155→        body: JSON.stringify({ email, name, fileUrl, fileName }),
+   156→      });
+   157→      if (res.ok) {
+   158→        setIsSubmitted(true);
+   159→        // Also start the download directly
+   160→        window.open(fileUrl, '_blank');
+   161→      }
+   162→    } catch {
+   163→      // Still allow download even if API fails
+   164→      window.open(fileUrl, '_blank');
+   165→      setIsSubmitted(true);
+   166→    } finally {
+   167→      setIsSubmitting(false);
+   168→    }
+   169→  };
+   170→
+   171→  const handleOpenChange = (open: boolean) => {
+   172→    setIsOpen(open);
+   173→    if (!open) {
+   174→      // Reset after a short delay so the user doesn't see the form reset
+   175→      setTimeout(() => {
+   176→        setIsSubmitted(false);
+   177→        setEmail('');
+   178→        setName('');
+   179→      }, 300);
+   180→    }
+   181→  };
+   182→
+   183→  return (
+   184→    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+   185→      <DialogTrigger asChild>
+   186→        <Button
+   187→          size="sm"
+   188→          className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg"
+   189→        >
+   190→          <Download className="w-4 h-4 mr-2" />
+   191→          Download Slides
+   192→        </Button>
+   193→      </DialogTrigger>
+   194→      <DialogContent className="sm:max-w-md">
+   195→        <DialogHeader>
+   196→          <DialogTitle className="flex items-center gap-2">
+   197→            <FileText className="w-5 h-5 text-emerald-600" />
+   198→            Download Presentation
+   199→          </DialogTitle>
+   200→          <DialogDescription>
+   201→            {isSubmitted
+   202→              ? 'Your download has started!'
+   203→              : 'Enter your details to download the presentation slides.'}
+   204→          </DialogDescription>
+   205→        </DialogHeader>
+   206→        {isSubmitted ? (
+   207→          <motion.div
+   208→            initial={{ opacity: 0, scale: 0.9 }}
+   209→            animate={{ opacity: 1, scale: 1 }}
+   210→            className="py-8 text-center"
+   211→          >
+   212→            <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+   213→            <h3 className="text-lg font-semibold text-foreground mb-2">
+   214→              Download Started!
+   215→            </h3>
+   216→            <p className="text-sm text-muted-foreground mb-4">
+   217→              Thank you, {name || 'friend'}! Your download should begin automatically.
+   218→              We&apos;ve also sent a confirmation to <strong>{email}</strong>.
+   219→            </p>
+   220→            <Button
+   221→              variant="outline"
+   222→              onClick={() => handleOpenChange(false)}
+   223→              className="rounded-lg"
+   224→            >
+   225→              Close
+   226→            </Button>
+   227→          </motion.div>
+   228→        ) : (
+   229→          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+   230→            <div className="space-y-2">
+   231→              <label htmlFor="download-name" className="text-sm font-medium">
+   232→                Full Name
+   233→              </label>
+   234→              <Input
+   235→                id="download-name"
+   236→                type="text"
+   237→                placeholder="Your full name"
+   238→                value={name}
+   239→                onChange={(e) => setName(e.target.value)}
+   240→                className="rounded-lg"
+   241→              />
+   242→            </div>
+   243→            <div className="space-y-2">
+   244→              <label htmlFor="download-email" className="text-sm font-medium">
+   245→                Email Address <span className="text-red-500">*</span>
+   246→              </label>
+   247→              <Input
+   248→                id="download-email"
+   249→                type="email"
+   250→                placeholder="your@email.com"
+   251→                value={email}
+   252→                onChange={(e) => setEmail(e.target.value)}
+   253→                required
+   254→                className="rounded-lg"
+   255→              />
+   256→            </div>
+   257→            <p className="text-xs text-muted-foreground">
+   258→              By downloading, you agree to receive occasional policy updates from GTEEP.
+   259→              You can unsubscribe at any time.
+   260→            </p>
+   261→            <Button
+   262→              type="submit"
+   263→              disabled={isSubmitting || !email.trim()}
+   264→              className="w-full bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg"
+   265→            >
+   266→              {isSubmitting ? (
+   267→                <>
+   268→                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+   269→                  Processing...
+   270→                </>
+   271→              ) : (
+   272→                <>
+   273→                  <Download className="w-4 h-4 mr-2" />
+   274→                  Download Now
+   275→                </>
+   276→              )}
+   277→            </Button>
+   278→          </form>
+   279→        )}
+   280→      </DialogContent>
+   281→    </Dialog>
+   282→  );
+   283→}
+   284→
+   285→// =============================================================================
+   286→// Main Component
+   287→// =============================================================================
+   288→
+   289→export default function FiresideChatsPageClient({
+   290→  firesideEvents = [],
+   291→}: FiresideChatsPageClientProps) {
+   292→  const getStatusBadge = (status: FiresideEpisode['status']) => {
+   293→    switch (status) {
+   294→      case 'recorded':
+   295→        return (
+   296→          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+   297→            <Video className="w-3 h-3 mr-1" />
+   298→            Recorded
+   299→          </Badge>
+   300→        );
+   301→      case 'upcoming':
+   302→        return (
+   303→          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+   304→            <Calendar className="w-3 h-3 mr-1" />
+   305→            Upcoming
+   306→          </Badge>
+   307→        );
+   308→      case 'past':
+   309→        return (
+   310→          <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">
+   311→            Past
+   312→          </Badge>
+   313→        );
+   314→    }
+   315→  };
+   316→
+   317→  return (
+   318→    <main className="min-h-screen">
+   319→      {/* ================================================================== */}
+   320→      {/* PAGE HEADER */}
+   321→      {/* ================================================================== */}
+   322→      <PageHeader
+   323→        title="Policy Fireside Chats"
+   324→        subtitle="Our Development Conversations"
+   325→        description="Intimate, candid conversations with scholars, practitioners, and advocates shaping Africa's policy landscape — under our Policy Engagement programme."
+   326→        breadcrumb={[
+   327→          { label: 'What We Do', href: '/what-we-do' },
+   328→          { label: 'Policy Fireside Chats' },
+   329→        ]}
+   330→        variant="large"
+   331→      />
+   332→
+   333→      {/* ================================================================== */}
+   334→      {/* INTRODUCTION SECTION */}
+   335→      {/* ================================================================== */}
+   336→      <section className="py-16 md:py-20 bg-white" aria-label="Introduction">
+   337→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   338→          <AnimatedSection>
+   339→            <div className="grid gap-12 lg:grid-cols-2 items-center">
+   340→              {/* Content */}
+   341→              <div className="space-y-6">
+   342→                <div className="flex items-center gap-3">
+   343→                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-700 to-emerald-600 flex items-center justify-center shadow-md">
+   344→                    <Flame className="w-6 h-6 text-white" />
+   345→                  </div>
+   346→                  <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-sm px-3 py-1">
+   347→                    Policy Engagement
+   348→                  </Badge>
+   349→                </div>
+   350→                <h2
+   351→                  className="text-3xl sm:text-4xl font-bold text-[#0f172a]"
+   352→                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   353→                >
+   354→                  Where Policy Meets Practice
+   355→                </h2>
+   356→                <div className="h-1 w-20 rounded-full bg-gradient-to-r from-emerald-700 to-amber-500" />
+   357→                <p className="text-[#64748b] leading-relaxed text-base md:text-lg">
+   358→                  The <strong>Policy Fireside Chats</strong> are GTEEP&apos;s signature conversation
+   359→                  series — intimate, moderated dialogues that bring together the brightest minds
+   360→                  in African policy research, government, civil society, and the private sector.
+   361→                </p>
+   362→                <p className="text-[#64748b] leading-relaxed text-base md:text-lg">
+   363→                  Unlike formal conferences, our fireside chats create space for honest, unscripted
+   364→                  exchanges on the continent&apos;s most pressing development challenges. Each
+   365→                  conversation is designed to bridge the gap between evidence and action, turning
+   366→                  research insights into policy momentum.
+   367→                </p>
+   368→                <div className="flex flex-wrap gap-4 pt-2">
+   369→                  <Button
+   370→                    asChild
+   371→                    className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl"
+   372→                  >
+   373→                    <a href="#episodes">
+   374→                      <Flame className="w-4 h-4 mr-2" />
+   375→                      View Episodes
+   376→                    </a>
+   377→                  </Button>
+   378→                  <Button
+   379→                    asChild
+   380→                    variant="outline"
+   381→                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-xl"
+   382→                  >
+   383→                    <a href="/what-we-do">
+   384→                      <ArrowRight className="w-4 h-4 mr-2" />
+   385→                      About Policy Engagement
+   386→                    </a>
+   387→                  </Button>
+   388→                </div>
+   389→              </div>
+   390→
+   391→              {/* Visual */}
+   392→              <div className="relative">
+   393→                <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-xl relative">
+   394→                  <div className="h-full bg-gradient-to-br from-[#065f46] via-[#047857] to-[#0f172a] flex items-center justify-center">
+   395→                    <div className="text-center text-white/90 p-8">
+   396→                      <Flame className="w-20 h-20 mx-auto mb-6 text-amber-400 opacity-80" />
+   397→                      <h3
+   398→                        className="text-2xl md:text-3xl font-bold mb-3"
+   399→                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   400→                      >
+   401→                        Policy Fireside Chats
+   402→                      </h3>
+   403→                      <p className="text-emerald-200 text-sm md:text-base max-w-xs mx-auto">
+   404→                        Candid conversations for Africa&apos;s development
+   405→                      </p>
+   406→                    </div>
+   407→                  </div>
+   408→                  {/* Decorative */}
+   409→                  <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-amber-500/15 blur-xl" />
+   410→                  <div className="absolute -bottom-4 -left-4 w-32 h-32 rounded-full bg-emerald-500/15 blur-xl" />
+   411→                </div>
+   412→              </div>
+   413→            </div>
+   414→          </AnimatedSection>
+   415→        </div>
+   416→      </section>
+   417→
+   418→      {/* ================================================================== */}
+   419→      {/* HOW IT WORKS SECTION */}
+   420→      {/* ================================================================== */}
+   421→      <section className="py-16 md:py-20 bg-[#f8fafc]" aria-label="How It Works">
+   422→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   423→          <AnimatedSection>
+   424→            <div className="text-center mb-12">
+   425→              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-sm px-3 py-1 mb-4">
+   426→                The Format
+   427→              </Badge>
+   428→              <h2
+   429→                className="text-3xl md:text-4xl font-bold text-[#0f172a]"
+   430→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   431→              >
+   432→                How Fireside Chats Work
+   433→              </h2>
+   434→              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto text-base md:text-lg">
+   435→                Each session is carefully curated to foster genuine dialogue and actionable
+   436→                policy insights.
+   437→              </p>
+   438→            </div>
+   439→          </AnimatedSection>
+   440→
+   441→          <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+   442→            {[
+   443→              {
+   444→                icon: Mic2,
+   445→                title: 'Expert Moderation',
+   446→                description:
+   447→                  'Each chat is led by an experienced moderator who guides the conversation through key policy questions and ensures every voice is heard.',
+   448→                color: 'emerald',
+   449→              },
+   450→              {
+   451→                icon: Users,
+   452→                title: 'Diverse Panelists',
+   453→                description:
+   454→                  'We bring together voices from government, academia, civil society, and the private sector for multi-perspective dialogue.',
+   455→                color: 'amber',
+   456→              },
+   457→              {
+   458→                icon: MessageSquare,
+   459→                title: 'Live Q&A',
+   460→                description:
+   461→                  'Audience members — both in-person and virtual — can submit questions, ensuring the conversation reflects real community concerns.',
+   462→                color: 'emerald',
+   463→              },
+   464→              {
+   465→                icon: Lightbulb,
+   466→                title: 'Actionable Insights',
+   467→                description:
+   468→                  'Each fireside chat concludes with key takeaways and policy recommendations that feed directly into GTEEP\'s research and advocacy.',
+   469→                color: 'amber',
+   470→              },
+   471→            ].map((step) => (
+   472→              <StaggerItem key={step.title}>
+   473→                <Card className="group border-0 shadow-md hover:shadow-lg transition-all h-full">
+   474→                  <CardContent className="p-6">
+   475→                    <div
+   476→                      className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+   477→                        step.color === 'emerald'
+   478→                          ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-700 group-hover:text-white'
+   479→                          : 'bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white'
+   480→                      } transition-colors`}
+   481→                    >
+   482→                      <step.icon className="w-6 h-6" />
+   483→                    </div>
+   484→                    <h3 className="text-lg font-semibold text-[#0f172a] mb-2">
+   485→                      {step.title}
+   486→                    </h3>
+   487→                    <p className="text-sm text-[#64748b] leading-relaxed">
+   488→                      {step.description}
+   489→                    </p>
+   490→                  </CardContent>
+   491→                </Card>
+   492→              </StaggerItem>
+   493→            ))}
+   494→          </StaggerContainer>
+   495→        </div>
+   496→      </section>
+   497→
+   498→      {/* ================================================================== */}
+   499→      {/* EPISODES SECTION */}
+   500→      {/* ================================================================== */}
+   501→      <section id="episodes" className="py-16 md:py-20 bg-white" aria-label="Episodes">
+   502→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   503→          <AnimatedSection>
+   504→            <div className="text-center mb-12">
+   505→              <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-sm px-3 py-1 mb-4">
+   506→                Episodes
+   507→              </Badge>
+   508→              <h2
+   509→                className="text-3xl md:text-4xl font-bold text-[#0f172a]"
+   510→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   511→              >
+   512→                Our Conversations
+   513→              </h2>
+   514→              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto text-base md:text-lg">
+   515→                Explore past and upcoming fireside chat episodes on Africa&apos;s most
+   516→                critical policy issues.
+   517→              </p>
+   518→            </div>
+   519→          </AnimatedSection>
+   520→
+   521→          <StaggerContainer className="space-y-6">
+   522→            {firesideEpisodes.map((episode, index) => (
+   523→              <StaggerItem key={episode.id}>
+   524→                <Card className="group border-0 shadow-md hover:shadow-xl transition-all overflow-hidden">
+   525→                  <CardContent className="p-0">
+   526→                    <div className="flex flex-col md:flex-row">
+   527→                      {/* Episode Number / Visual */}
+   528→                      <div
+   529→                        className={`md:w-48 shrink-0 p-6 md:p-8 flex flex-col items-center justify-center text-center ${
+   530→                          episode.status === 'recorded'
+   531→                            ? 'bg-gradient-to-br from-emerald-800 to-emerald-900'
+   532→                            : episode.status === 'upcoming'
+   533→                              ? 'bg-gradient-to-br from-amber-700 to-amber-800'
+   534→                              : 'bg-gradient-to-br from-slate-700 to-slate-800'
+   535→                        }`}
+   536→                      >
+   537→                        <Flame className="w-10 h-10 text-white/80 mb-2" />
+   538→                        <span className="text-white/70 text-xs uppercase tracking-wider font-medium">
+   539→                          Episode
+   540→                        </span>
+   541→                        <span className="text-white text-3xl font-bold">
+   542→                          {index + 1}
+   543→                        </span>
+   544→                      </div>
+   545→
+   546→                      {/* Episode Content */}
+   547→                      <div className="flex-1 p-6">
+   548→                        <div className="flex flex-wrap items-center gap-2 mb-3">
+   549→                          {getStatusBadge(episode.status)}
+   550→                          {episode.topics.map((topic) => (
+   551→                            <Badge
+   552→                              key={topic}
+   553→                              variant="outline"
+   554→                              className="bg-slate-50 text-slate-600 border-slate-200 text-xs"
+   555→                            >
+   556→                              {topic}
+   557→                            </Badge>
+   558→                          ))}
+   559→                        </div>
+   560→
+   561→                        <h3
+   562→                          className="text-xl font-bold text-[#0f172a] mb-2 group-hover:text-emerald-700 transition-colors"
+   563→                          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   564→                        >
+   565→                          {episode.title}
+   566→                        </h3>
+   567→
+   568→                        <p className="text-[#64748b] leading-relaxed text-sm md:text-base mb-4">
+   569→                          {episode.description}
+   570→                        </p>
+   571→
+   572→                        {/* Meta Info */}
+   573→                        <div className="flex flex-wrap items-center gap-4 text-sm text-[#64748b] mb-4">
+   574→                          <div className="flex items-center gap-1.5">
+   575→                            <Calendar className="w-4 h-4 text-emerald-600" />
+   576→                            <span>{episode.date}</span>
+   577→                          </div>
+   578→                          <div className="flex items-center gap-1.5">
+   579→                            <Clock className="w-4 h-4 text-emerald-600" />
+   580→                            <span>{episode.time}</span>
+   581→                          </div>
+   582→                        </div>
+   583→
+   584→                        {/* Speakers */}
+   585→                        <div className="mb-4">
+   586→                          <p className="text-xs font-semibold text-[#0f172a] uppercase tracking-wider mb-1.5">
+   587→                            Speakers
+   588→                          </p>
+   589→                          <div className="flex flex-wrap gap-1.5">
+   590→                            {episode.speakers.map((speaker) => (
+   591→                              <span
+   592→                                key={speaker}
+   593→                                className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md"
+   594→                              >
+   595→                                <Users className="w-3 h-3" />
+   596→                                {speaker}
+   597→                              </span>
+   598→                            ))}
+   599→                          </div>
+   600→                        </div>
+   601→
+   602→                        {/* Actions */}
+   603→                        <div className="flex flex-wrap gap-3">
+   604→                          {episode.status === 'recorded' && episode.recordingUrl && (
+   605→                            <Button
+   606→                              asChild
+   607→                              size="sm"
+   608→                              variant="outline"
+   609→                              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-lg"
+   610→                            >
+   611→                              <a
+   612→                                href={episode.recordingUrl}
+   613→                                target="_blank"
+   614→                                rel="noopener noreferrer"
+   615→                              >
+   616→                                <Video className="w-4 h-4 mr-2" />
+   617→                                Watch Recording
+   618→                                <ExternalLink className="w-3 h-3 ml-1" />
+   619→                              </a>
+   620→                            </Button>
+   621→                          )}
+   622→                          {episode.status === 'recorded' && episode.slidesUrl && (
+   623→                            <DownloadFormDialog
+   624→                              fileUrl={episode.slidesUrl}
+   625→                              fileName="fireside.pptx"
+   626→                            />
+   627→                          )}
+   628→                          {episode.status === 'upcoming' && (
+   629→                            <Button
+   630→                              asChild
+   631→                              size="sm"
+   632→                              className="bg-amber-600 hover:bg-amber-700 text-white rounded-lg"
+   633→                            >
+   634→                              <a href="/contact">
+   635→                                <Calendar className="w-4 h-4 mr-2" />
+   636→                                Register Interest
+   637→                              </a>
+   638→                            </Button>
+   639→                          )}
+   640→                        </div>
+   641→                      </div>
+   642→                    </div>
+   643→                  </CardContent>
+   644→                </Card>
+   645→              </StaggerItem>
+   646→            ))}
+   647→          </StaggerContainer>
+   648→        </div>
+   649→      </section>
+   650→
+   651→      {/* ================================================================== */}
+   652→      {/* WP EVENTS INTEGRATION */}
+   653→      {/* ================================================================== */}
+   654→      {firesideEvents.length > 0 && (
+   655→        <section className="py-16 md:py-20 bg-[#f8fafc]" aria-label="Related Events">
+   656→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   657→            <AnimatedSection>
+   658→              <div className="text-center mb-12">
+   659→                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-sm px-3 py-1 mb-4">
+   660→                  From Our Calendar
+   661→                </Badge>
+   662→                <h2
+   663→                  className="text-3xl md:text-4xl font-bold text-[#0f172a]"
+   664→                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   665→                >
+   666→                  Related Policy Events
+   667→                </h2>
+   668→              </div>
+   669→            </AnimatedSection>
+   670→
+   671→            <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+   672→              {firesideEvents.slice(0, 3).map((event) => {
+   673→                const fields = event.acfEventFields;
+   674→                return (
+   675→                  <StaggerItem key={event.id}>
+   676→                    <Card className="group border-0 shadow-md hover:shadow-lg transition-all h-full">
+   677→                      <CardContent className="p-6">
+   678→                        <div className="flex items-center gap-2 mb-3">
+   679→                          {fields?.eventType && (
+   680→                            <Badge
+   681→                              variant="outline"
+   682→                              className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs"
+   683→                            >
+   684→                              {fields.eventType}
+   685→                            </Badge>
+   686→                          )}
+   687→                          {fields?.isVirtual && (
+   688→                            <Badge
+   689→                              variant="outline"
+   690→                              className="bg-teal-50 text-teal-700 border-teal-200 text-xs"
+   691→                            >
+   692→                              <Video className="w-3 h-3 mr-1" />
+   693→                              Virtual
+   694→                            </Badge>
+   695→                          )}
+   696→                        </div>
+   697→                        <div>
+   698→                          <h3 className="text-lg font-semibold text-[#0f172a] group-hover:text-emerald-700 transition-colors mb-2">
+   699→                            {event.title}
+   700→                          </h3>
+   701→                        </div>
+   702→                        <p className="text-sm text-[#64748b] line-clamp-2 mb-4">
+   703→                          {event.excerpt}
+   704→                        </p>
+   705→                        <div className="flex flex-wrap items-center gap-3 text-xs text-[#64748b]">
+   706→                          {fields?.eventStartDate && (
+   707→                            <span className="flex items-center gap-1">
+   708→                              <Calendar className="w-3 h-3 text-emerald-600" />
+   709→                              {new Date(fields.eventStartDate).toLocaleDateString('en-US', {
+   710→                                month: 'short',
+   711→                                day: 'numeric',
+   712→                                year: 'numeric',
+   713→                              })}
+   714→                            </span>
+   715→                          )}
+   716→                          {fields?.venue && (
+   717→                            <span className="flex items-center gap-1">
+   718→                              <MapPin className="w-3 h-3 text-emerald-600" />
+   719→                              {fields.venue}
+   720→                            </span>
+   721→                          )}
+   722→                        </div>
+   723→                      </CardContent>
+   724→                    </Card>
+   725→                  </StaggerItem>
+   726→                );
+   727→              })}
+   728→            </StaggerContainer>
+   729→          </div>
+   730→        </section>
+   731→      )}
+   732→
+   733→      {/* ================================================================== */}
+   734→      {/* WHY FIRESIDE CHATS MATTER */}
+   735→      {/* ================================================================== */}
+   736→      <section className="py-16 md:py-20 bg-white" aria-label="Why It Matters">
+   737→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   738→          <AnimatedSection>
+   739→            <div className="grid gap-12 lg:grid-cols-2 items-center">
+   740→              {/* Stats */}
+   741→              <div>
+   742→                <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-sm px-3 py-1 mb-4">
+   743→                  Impact
+   744→                </Badge>
+   745→                <h2
+   746→                  className="text-3xl sm:text-4xl font-bold text-[#0f172a] mb-4"
+   747→                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   748→                >
+   749→                  Why Fireside Chats Matter
+   750→                </h2>
+   751→                <div className="h-1 w-20 rounded-full bg-gradient-to-r from-emerald-700 to-amber-500 mb-6" />
+   752→                <p className="text-[#64748b] leading-relaxed text-base md:text-lg mb-8">
+   753→                  In an era of complex policy challenges, Africa needs more than white papers
+   754→                  and academic journals. It needs spaces where ideas are tested through dialogue,
+   755→                  where evidence meets experience, and where diverse perspectives converge to
+   756→                  shape better policy outcomes.
+   757→                </p>
+   758→
+   759→                <StaggerContainer className="grid grid-cols-2 gap-4">
+   760→                  {[
+   761→                    {
+   762→                      value: '4+',
+   763→                      label: 'Episodes',
+   764→                      icon: Mic2,
+   765→                      color: 'emerald',
+   766→                    },
+   767→                    {
+   768→                      value: '12+',
+   769→                      label: 'Expert Speakers',
+   770→                      icon: Users,
+   771→                      color: 'amber',
+   772→                    },
+   773→                    {
+   774→                      value: '500+',
+   775→                      label: 'Attendees',
+   776→                      icon: Globe,
+   777→                      color: 'emerald',
+   778→                    },
+   779→                    {
+   780→                      value: '3+',
+   781→                      label: 'Policy Briefs',
+   782→                      icon: FileText,
+   783→                      color: 'amber',
+   784→                    },
+   785→                  ].map((stat) => (
+   786→                    <StaggerItem key={stat.label}>
+   787→                      <div className="p-4 rounded-xl bg-[#f8fafc] border border-slate-100">
+   788→                        <stat.icon
+   789→                          className={`w-5 h-5 mb-2 ${
+   790→                            stat.color === 'emerald'
+   791→                              ? 'text-emerald-600'
+   792→                              : 'text-amber-600'
+   793→                          }`}
+   794→                        />
+   795→                        <p className="text-2xl font-bold text-[#0f172a]">
+   796→                          {stat.value}
+   797→                        </p>
+   798→                        <p className="text-xs text-[#64748b]">{stat.label}</p>
+   799→                      </div>
+   800→                    </StaggerItem>
+   801→                  ))}
+   802→                </StaggerContainer>
+   803→              </div>
+   804→
+   805→              {/* Quote */}
+   806→              <div className="relative">
+   807→                <div className="rounded-2xl bg-gradient-to-br from-[#065f46] to-[#0f172a] p-8 md:p-10 shadow-xl">
+   808→                  <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center">
+   809→                    <MessageSquare className="w-4 h-4 text-amber-900" />
+   810→                  </div>
+   811→                  <blockquote className="text-white/90 text-lg md:text-xl leading-relaxed mb-6">
+   812→                    &ldquo;The fireside chat format allows us to go beyond prepared statements.
+   813→                    It creates the space for the kind of honest, reflective conversation that
+   814→                    actually shifts policy thinking.&rdquo;
+   815→                  </blockquote>
+   816→                  <div className="flex items-center gap-3">
+   817→                    <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center">
+   818→                      <span className="text-white font-bold text-sm">AO</span>
+   819→                    </div>
+   820→                    <div>
+   821→                      <p className="text-white font-medium text-sm">Dr. Amina Osman</p>
+   822→                      <p className="text-emerald-300 text-xs">Gender Policy Researcher</p>
+   823→                    </div>
+   824→                  </div>
+   825→                </div>
+   826→                {/* Decorative */}
+   827→                <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-amber-500/15 blur-xl" />
+   828→              </div>
+   829→            </div>
+   830→          </AnimatedSection>
+   831→        </div>
+   832→      </section>
+   833→
+   834→      {/* ================================================================== */}
+   835→      {/* CTA SECTION */}
+   836→      {/* ================================================================== */}
+   837→      <section
+   838→        className="py-16 md:py-20 bg-[#0f172a] relative overflow-hidden"
+   839→        aria-label="Call to Action"
+   840→      >
+   841→        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+   842→          <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-[#059669]/10 blur-3xl" />
+   843→          <div className="absolute bottom-0 right-1/4 w-72 h-72 rounded-full bg-[#d97706]/8 blur-3xl" />
+   844→        </div>
+   845→
+   846→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+   847→          <AnimatedSection>
+   848→            <div className="text-center">
+   849→              <Flame className="w-12 h-12 text-amber-400 mx-auto mb-6" />
+   850→              <h2
+   851→                className="text-2xl md:text-3xl font-bold text-white"
+   852→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   853→              >
+   854→                Join the Conversation
+   855→              </h2>
+   856→              <p className="mt-3 text-[#94a3b8] max-w-2xl mx-auto text-base md:text-lg">
+   857→                Whether you&apos;re a policy researcher, government official, civil society
+   858→                leader, or simply passionate about Africa&apos;s development, we invite you
+   859→                to be part of our fireside chat community.
+   860→              </p>
+   861→              <div className="mt-8 flex flex-wrap justify-center gap-4">
+   862→                <Button
+   863→                  asChild
+   864→                  size="lg"
+   865→                  className="bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl"
+   866→                >
+   867→                  <a href="/contact">
+   868→                    <Calendar className="w-4 h-4 mr-2" />
+   869→                    Register for Next Chat
+   870→                  </a>
+   871→                </Button>
+   872→                <Button
+   873→                  asChild
+   874→                  size="lg"
+   875→                  variant="outline"
+   876→                  className="border-white/30 text-white hover:bg-white/10 rounded-xl"
+   877→                >
+   878→                  <a href="/what-we-do">
+   879→                    <ArrowRight className="w-4 h-4 mr-2" />
+   880→                    Explore Policy Engagement
+   881→                  </a>
+   882→                </Button>
+   883→              </div>
+   884→            </div>
+   885→          </AnimatedSection>
+   886→        </div>
+   887→      </section>
+   888→    </main>
+   889→  );
+   890→}
+   891→

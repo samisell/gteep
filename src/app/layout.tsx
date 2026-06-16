@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import ContentProtection from '@/components/security/ContentProtection';
 import { Toaster } from '@/components/ui/sonner';
-import { getSiteLogo } from '@/graphql/fetchers';
+import { getSiteLogo, getContactDetails } from '@/graphql/fetchers';
 import './globals.css';
 
 const inter = Inter({
@@ -100,6 +100,7 @@ export default async function RootLayout({
 
   // Fetch the site logo from WordPress backend (skip if maintenance mode)
   const logoUrl = isMaintenanceMode ? null : await getSiteLogo();
+  const contactDetails = isMaintenanceMode ? null : await getContactDetails();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -114,7 +115,7 @@ export default async function RootLayout({
               <div className="min-h-screen flex flex-col">
                 <Navbar logoUrl={logoUrl} />
                 <main className="flex-1">{children}</main>
-                <Footer logoUrl={logoUrl} />
+                <Footer logoUrl={logoUrl} contactDetails={contactDetails || undefined} />
               </div>
             )}
             <ScrollToTop />

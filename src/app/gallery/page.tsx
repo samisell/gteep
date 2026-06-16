@@ -1,5 +1,6 @@
-import { getMediaItems } from '@/graphql/fetchers';
+import { getMediaItems, isWordPressConnected } from '@/graphql/fetchers';
 import GalleryPageClient from '@/components/pages/GalleryPageClient';
+import OfflinePage from '@/components/shared/OfflinePage';
 import type { Metadata } from 'next';
 
 export const revalidate = 300;
@@ -10,6 +11,12 @@ export const metadata: Metadata = {
 };
 
 export default async function GalleryPage() {
+  const wpConnected = await isWordPressConnected();
+
+  if (!wpConnected) {
+    return <OfflinePage pageTitle="Gallery" />;
+  }
+
   const { mediaItems } = await getMediaItems();
   return <GalleryPageClient mediaItems={mediaItems} />;
 }

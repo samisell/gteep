@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import FiresideChatsPageClient from '@/components/pages/FiresideChatsPageClient';
-import { getEvents } from '@/graphql/fetchers';
+import OfflinePage from '@/components/shared/OfflinePage';
+import { getOutputDownloadables, isWordPressConnected } from '@/graphql/fetchers';
 
 export const revalidate = 300;
 
@@ -17,14 +18,17 @@ export const metadata: Metadata = {
 };
 
 export default async function FiresideChatsPage() {
-  const { events } = await getEvents();
-  // Filter to only fireside chat events
-  const firesideEvents = events.filter(
-    (e) =>
-      e.title.toLowerCase().includes('fireside') ||
-      e.slug.toLowerCase().includes('fireside') ||
-      e.acfEventFields?.eventType === 'panel'
+  const wpConnected = await isWordPressConnected();
+
+  if (!wpConnected) {
+    return <OfflinePage pageTitle="Fireside Chats" />;
+  }
+
+  // Fetch downloadables related to policy-firechat
+  const downloadables = await getOutputDownloadables();
+  const firechatOutputs = downloadables.filter(
+    (d) => d.relatedSubActivity === 'policy-firechat'
   );
 
-  return <FiresideChatsPageClient firesideEvents={firesideEvents} />;
+  return <FiresideChatsPageClient relatedOutputs={firechatOutputs} />;
 }

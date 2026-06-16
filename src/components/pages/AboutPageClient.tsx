@@ -15,6 +15,9 @@ import {
   Scale,
   ArrowRight,
   Mail,
+  Eye,
+  Target,
+  Crosshair,
 } from 'lucide-react';
 import Link from 'next/link';
 import type {
@@ -31,6 +34,12 @@ interface AboutPageClientProps {
   settings: WPSiteSettings;
   philosophy: GTEEPPhilosophy[];
   teamMembers: GTEEPTeamMember[];
+  aboutData: {
+    aboutSummary: string;
+    aboutVision: string;
+    aboutMission: string;
+    aboutGoal: string;
+  };
 }
 
 // =============================================================================
@@ -114,14 +123,18 @@ export default function AboutPageClient({
   settings,
   philosophy,
   teamMembers,
+  aboutData,
 }: AboutPageClientProps) {
   const executive = teamMembers.filter((m) => m.category === 'executive');
   const directors = teamMembers.filter((m) => m.category === 'director');
   const advisoryBoard = teamMembers.filter((m) => m.category === 'advisory-board');
   const trustees = teamMembers.filter((m) => m.category === 'board-of-trustees');
 
-  const missionDescription = settings.acfOptions?.aboutSummary ||
-    'GTEEP is a non-profit organization dedicated to advancing socially inclusive development in Africa through evidence-driven policy research, strategic engagement, and community empowerment. Founded on the belief that data speaks more than rhetoric, we work to ensure that policy decisions are grounded in rigorous analysis and that the voices of ordinary citizens are heard in the policy process.';
+  // Use WordPress ACF data from the about-us page
+  const aboutDescription = aboutData.aboutSummary;
+  const aboutVision = aboutData.aboutVision;
+  const aboutMission = aboutData.aboutMission;
+  const aboutGoal = aboutData.aboutGoal;
 
   return (
     <main className="pt-20">
@@ -134,27 +147,31 @@ export default function AboutPageClient({
       />
 
       {/* ================================================================== */}
-      {/* MISSION SECTION */}
+      {/* ABOUT SECTION */}
       {/* ================================================================== */}
-      <section className="py-16 md:py-24 bg-white" aria-label="Our Mission">
+      <section className="py-16 md:py-24 bg-white" aria-label="About GTEEP">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-2 items-center">
-            {/* Left: Mission Text */}
+            {/* Left: About Text */}
             <AnimatedSection>
               <div className="space-y-6">
                 <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1">
-                  Our Mission
+                  About Us
                 </Badge>
                 <h2
                   className="text-3xl sm:text-4xl font-bold text-[#0f172a]"
                   style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                 >
-                  Empowering Communities Through Evidence-Based Policy
+                  Gilead Trust Economic Empowerment Project
                 </h2>
                 <div className="h-1 w-20 rounded-full bg-gradient-to-r from-[#059669] to-[#d97706]" />
-                <p className="text-[#64748b] leading-relaxed text-base md:text-lg">
-                  {missionDescription}
-                </p>
+                <div className="space-y-4">
+                  {aboutDescription.split('\n\n').map((paragraph, i) => (
+                    <p key={i} className="text-[#64748b] leading-relaxed text-base md:text-lg">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
                 <div className="flex flex-wrap gap-4 pt-4">
                   <Button
                     asChild
@@ -210,6 +227,89 @@ export default function AboutPageClient({
                   <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[#d97706]/20 blur-2xl" />
                   <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-[#059669]/20 blur-2xl" />
                 </div>
+              </div>
+            </AnimatedSection>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================== */}
+      {/* VISION / MISSION / GOAL */}
+      {/* ================================================================== */}
+      <section className="py-16 md:py-24 bg-[#f8fafc]" aria-label="Vision, Mission & Goal">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedSection>
+            <div className="text-center mb-12">
+              <Badge className="bg-[#fef3c7] text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
+                Our Direction
+              </Badge>
+              <h2
+                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Vision, Mission &amp; Goal
+              </h2>
+              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+                Our activities will hopefully, one small successful bite at a time, contribute to the above through this legacy project.
+              </p>
+            </div>
+          </AnimatedSection>
+
+          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+            {/* Vision */}
+            <AnimatedSection delay={0}>
+              <div className="group p-8 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full text-center">
+                <div className="w-16 h-16 rounded-2xl bg-[#f0fdf4] flex items-center justify-center mx-auto mb-6 group-hover:bg-[#065f46] transition-colors">
+                  <Eye className="w-8 h-8 text-[#059669] group-hover:text-white transition-colors" />
+                </div>
+                <h3
+                  className="text-xl font-bold text-[#0f172a] mb-3"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  Our Vision
+                </h3>
+                <div className="h-1 w-12 rounded-full bg-[#059669] mx-auto mb-4" />
+                <p className="text-[#64748b] leading-relaxed">
+                  {aboutVision}
+                </p>
+              </div>
+            </AnimatedSection>
+
+            {/* Mission */}
+            <AnimatedSection delay={0.1}>
+              <div className="group p-8 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full text-center">
+                <div className="w-16 h-16 rounded-2xl bg-[#fef3c7] flex items-center justify-center mx-auto mb-6 group-hover:bg-[#d97706] transition-colors">
+                  <Target className="w-8 h-8 text-[#d97706] group-hover:text-white transition-colors" />
+                </div>
+                <h3
+                  className="text-xl font-bold text-[#0f172a] mb-3"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  Our Mission
+                </h3>
+                <div className="h-1 w-12 rounded-full bg-[#d97706] mx-auto mb-4" />
+                <p className="text-[#64748b] leading-relaxed">
+                  {aboutMission}
+                </p>
+              </div>
+            </AnimatedSection>
+
+            {/* Goal */}
+            <AnimatedSection delay={0.2}>
+              <div className="group p-8 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full text-center">
+                <div className="w-16 h-16 rounded-2xl bg-[#f0fdf4] flex items-center justify-center mx-auto mb-6 group-hover:bg-[#065f46] transition-colors">
+                  <Crosshair className="w-8 h-8 text-[#059669] group-hover:text-white transition-colors" />
+                </div>
+                <h3
+                  className="text-xl font-bold text-[#0f172a] mb-3"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  Our Goal
+                </h3>
+                <div className="h-1 w-12 rounded-full bg-[#059669] mx-auto mb-4" />
+                <p className="text-[#64748b] leading-relaxed">
+                  {aboutGoal}
+                </p>
               </div>
             </AnimatedSection>
           </div>

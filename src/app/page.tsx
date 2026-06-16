@@ -1,4 +1,5 @@
 import HomePageClient from '@/components/pages/HomePageClient';
+import OfflinePage from '@/components/shared/OfflinePage';
 import {
   getSiteSettings,
   getActivities,
@@ -7,15 +8,23 @@ import {
   getOutputs,
   getPartners,
   getBlogPosts,
+  getAboutPage,
+  isWordPressConnected,
 } from '@/graphql/fetchers';
 
 // Revalidate every 5 minutes so WordPress content stays fresh on Vercel
 export const revalidate = 300;
 
 export default async function HomePage() {
-  // Fetch all data in parallel - each fetcher tries WP GraphQL first,
-  // then falls back to mock data if WP is unavailable or returns empty results
-  const [settings, activities, philosophy, teamMembers, outputs, partners, blogPosts] =
+  // Check if WordPress is reachable first
+  const wpConnected = await isWordPressConnected();
+
+  if (!wpConnected) {
+    return <OfflinePage />;
+  }
+
+  // Fetch all data in parallel from WordPress
+  const [settings, activities, philosophy, teamMembers, outputs, partners, blogPosts, aboutData] =
     await Promise.all([
       getSiteSettings(),
       getActivities(),
@@ -24,6 +33,7 @@ export default async function HomePage() {
       getOutputs(),
       getPartners(),
       getBlogPosts(),
+      getAboutPage(),
     ]);
 
   return (
@@ -35,6 +45,7 @@ export default async function HomePage() {
       outputs={outputs}
       partners={partners}
       blogPosts={blogPosts}
+      aboutData={aboutData}
     />
   );
 }

@@ -2,10 +2,10 @@
 // GraphQL Client - Server-side fetch wrapper for WordPress GraphQL API
 //
 // Optimized for Vercel serverless:
-// - No module-level availability caching (doesn't work in serverless)
-// - Each request tries WordPress directly and falls back on failure
-// - Longer timeouts for cold starts
-// - Graceful fallback to mock data when WP is unreachable
+// - Connectivity check with 60-second cache to avoid redundant health checks
+// - Each request tries WordPress directly and returns errors on failure
+// - No mock data fallback — pages show OfflinePage when WP is unreachable
+// - 5s timeout for connectivity check, 15s for data fetches
 // =============================================================================
 
 import type { GraphQLResponse } from '@/types';
@@ -171,10 +171,19 @@ export async function fetchGraphQL<T = any>(
 /**
  * Check if the WordPress backend is reachable
  */
+// Cache connectivity result for 60 seconds to avoid hammering WP on every page load
+let connectivityCache: { result: boolean; timestamp: number } | null = null;
+const CONNECTIVITY_CACHE_TTL = 60_000; // 60 seconds
+
 export async function isWordPressConnected(): Promise<boolean> {
+  // Return cached result if still valid
+  if (connectivityCache && Date.now() - connectivityCache.timestamp < CONNECTIVITY_CACHE_TTL) {
+    return connectivityCache.result;
+  }
+
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const response = await fetch(WORDPRESS_GRAPHQL_URL, {
       method: 'POST',
@@ -188,11 +197,17 @@ export async function isWordPressConnected(): Promise<boolean> {
 
     clearTimeout(timeoutId);
 
-    if (!response.ok) return false;
+    if (!response.ok) {
+      connectivityCache = { result: false, timestamp: Date.now() };
+      return false;
+    }
 
     const json: GraphQLResponse = await response.json();
-    return !json.errors && !!json.data?.generalSettings;
+    const connected = !json.errors && !!json.data?.generalSettings;
+    connectivityCache = { result: connected, timestamp: Date.now() };
+    return connected;
   } catch {
+    connectivityCache = { result: false, timestamp: Date.now() };
     return false;
   }
 }
