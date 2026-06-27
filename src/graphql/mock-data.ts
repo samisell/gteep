@@ -43,8 +43,11 @@ export const mockSiteSettings: WPSiteSettings = {
     heroCtaText: 'Explore Our Work',
     heroCtaUrl: '/what-we-do',
     aboutSummary:
-      'GTEEP is a non-profit organization dedicated to advancing socially inclusive development in Africa through evidence-driven policy research, strategic engagement, and community empowerment. Founded on the belief that data speaks more than rhetoric, we work to ensure that policy decisions are grounded in rigorous analysis and that the voices of ordinary citizens are heard in the policy process.',
+      "Africa's economic transformation and the challenges and opportunities lie in the ability to learn, relearn and unlearn. This process is both integrative and intentional and be socially inclusive. This calls for continuous studying the root causes of Africa's terrain through research, dialogue and enlightenment of the citizens especially the more vulnerable ones who have been distanced from the heart of governance — the poor, majority of low income women and unpaid carers, the youth and aged who are either shut out of objective discourses by virtue of the culture of ageism, the rural dwellers who are locational disadvantaged and even the physiologically challenged. Liberating Africans to unleash untapped economic and human resources needs Africans to be all hands on (together) in addressing the challenges and digging into opportunities.\n\nGTEEP aims to contribute to meeting these needs through research (learning and applying knowledge), public enlightenment and continuous engagement with policy makers to reshape economic choices based on critical success factors and focused on the felt needs of different cohorts of its citizens.",
     aboutImage: null,
+    aboutVision: 'A socially and culturally inclusive economy where everyone is heard.',
+    aboutMission: 'To continually knowledge spaces and inform policies with data-driven evidence and empower the citizens with requisite tools to reshape their individual and collective economic choices.',
+    aboutGoal: 'To promote spaces that create more participatory and equitable access to resources and opportunities.',
     contactEmail: 'info@gteep.com',
     contactPhone: '+234 801 234 5678',
     contactAddress: 'Lagos, Nigeria',

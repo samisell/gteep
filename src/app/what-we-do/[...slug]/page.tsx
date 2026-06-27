@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ActivityDetailClient from '@/components/pages/ActivityDetailClient';
 import OfflinePage from '@/components/shared/OfflinePage';
-import { getActivityPage, getActivities, getOutputDownloadables, isWordPressConnected } from '@/graphql/fetchers';
+import { getActivityPage, getActivities, getOutputDownloadables, getVideoGallery, isWordPressConnected } from '@/graphql/fetchers';
 
 export const revalidate = 300;
 
@@ -70,9 +70,10 @@ export default async function ActivityPage({
     return <OfflinePage pageTitle="Activity" />;
   }
 
-  const [data, downloadables] = await Promise.all([
+  const [data, downloadables, videos] = await Promise.all([
     getActivityPage(slugPath),
     getOutputDownloadables(),
+    getVideoGallery(),
   ]);
 
   if (!data) {
@@ -91,6 +92,7 @@ export default async function ActivityPage({
       activity={data.activity}
       parentPage={data.parentPage}
       relatedOutputs={relatedOutputs}
+      videos={videos}
     />
   );
 }

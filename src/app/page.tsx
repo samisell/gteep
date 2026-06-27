@@ -6,6 +6,7 @@ import {
   getPhilosophy,
   getTeamMembers,
   getOutputs,
+  getOutputDownloadables,
   getPartners,
   getBlogPosts,
   getAboutPage,
@@ -24,17 +25,21 @@ export default async function HomePage() {
   }
 
   // Fetch all data in parallel from WordPress
-  const [settings, activities, philosophy, teamMembers, outputs, partners, blogPosts, aboutData] =
+  const [settings, activities, philosophy, teamMembers, outputs, downloadables, partners, blogPosts, aboutData] =
     await Promise.all([
       getSiteSettings(),
       getActivities(),
       getPhilosophy(),
       getTeamMembers(),
       getOutputs(),
+      getOutputDownloadables(),
       getPartners(),
       getBlogPosts(),
       getAboutPage(),
     ]);
+
+  // Merge downloadables into outputs
+  const allOutputs = [...downloadables, ...outputs];
 
   return (
     <HomePageClient
@@ -42,7 +47,7 @@ export default async function HomePage() {
       activities={activities}
       philosophy={philosophy}
       teamMembers={teamMembers}
-      outputs={outputs}
+      outputs={allOutputs}
       partners={partners}
       blogPosts={blogPosts}
       aboutData={aboutData}

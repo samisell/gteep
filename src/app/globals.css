@@ -167,6 +167,15 @@
   background: oklch(0.45 0.1 160);
 }
 
+/* Hide scrollbar utility for carousels */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* =============================================================================
    Glassmorphism Utilities
    ============================================================================= */

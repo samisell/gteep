@@ -308,3 +308,282 @@ Stage Summary:
 - Cross-linking: Activity page → /outputs?tab=concept-note, Fireside Chats → /outputs?tab=concept-note
 - URL deep-linking supported: /outputs?tab=concept-note opens directly to that tab
 - All download buttons link directly to the WordPress-hosted files
+
+---
+Task ID: 9
+Agent: Main Agent
+Task: Transfer the project to GLM-5.2 — Add AI chatbot powered by GLM-5.2 via z-ai-web-dev-sdk
+
+Work Log:
+- Explored project to understand existing AI/LLM integration status (none found — z-ai-web-dev-sdk was installed but unused)
+- Read z-ai-web-dev-sdk type definitions to understand API: CreateChatCompletionBody with optional model field, ChatMessage with role/content
+- Invoked LLM Skill for SDK usage documentation
+- Created backend API route at src/app/api/chat/route.ts:
+  - Uses z-ai-web-dev-sdk with model: 'glm-5.2'
+  - GTEEP-specific system prompt with domain knowledge about programmes, activities, research, fireside chats
+  - Conversation history support (last 10 messages for context)
+  - Rate limiting (20 messages per minute per IP)
+  - Input validation (required message, max 2000 chars)
+  - ZAI instance reuse (module-level cache)
+  - Error handling with user-friendly messages
+- Created AI Chat Widget component at src/components/features/AIChatWidget.tsx:
+  - Floating emerald-green chat button (bottom-right, all pages)
+  - Animated chat panel (540px height, 380px width)
+  - Welcome screen with bot avatar and 4 suggested prompts
+  - Message bubbles with user/assistant avatars
+  - Basic markdown rendering (bullet points, bold text, numbered lists)
+  - Loading indicator ("Thinking...")
+  - Scroll-to-bottom button for long conversations
+  - Clear chat button
+  - Textarea input with Enter-to-send, Shift+Enter for newline
+  - Disclaimer text ("AI responses may not always be accurate")
+  - Framer Motion animations for open/close
+- Integrated chat widget into root layout (src/app/layout.tsx):
+  - Added AIChatWidget import
+  - Placed component inside ContentProtection wrapper alongside ScrollToTop
+  - Appears on all pages (including maintenance mode bypass)
+- Lint passes cleanly (zero errors)
+- Browser verification: All 9 checks pass
+  - Homepage loads correctly
+  - Chat button visible (floating, green, bottom-right)
+  - Chat panel opens with "GTEEP Assistant" header and "Powered by GLM-5.2" subtitle
+  - 4 suggested prompts visible and functional
+  - AI responds with relevant GTEEP information when prompts clicked
+  - Chat works on /about page as well
+  - Homepage layout intact (navbar, hero, footer all present)
+
+Stage Summary:
+- GTEEP website now has an AI assistant powered by GLM-5.2
+- Chat widget appears on all pages via root layout integration
+- Backend uses z-ai-web-dev-sdk with model: 'glm-5.2' for chat completions
+- System prompt provides GTEEP-specific domain knowledge for contextual responses
+- Rate limiting protects against abuse (20 msgs/min/IP)
+- Conversation history maintained for multi-turn dialogue (last 10 messages)
+- All existing functionality preserved (no breaking changes)
+
+---
+Task ID: 10
+Agent: Main Agent
+Task: Remove non-WordPress content, redirect Firechat nav to /what-we-do/policy-engagement/policy-firechat
+
+Work Log:
+- Found FiresideChatsPageClient.tsx was entirely hardcoded (4 static episodes, "How It Works", "Why It Matters", stats, quotes) — none from WordPress API
+- The real WP-driven firechat page already existed at /what-we-do/policy-engagement/policy-firechat via ActivityDetailClient (renders ACF policyFirechat content)
+- Updated Navbar: Changed Firechat href from /fireside-chats to /what-we-do/policy-engagement/policy-firechat
+- Updated Footer: Changed Fireside Chats href from /fireside-chats to /what-we-do/policy-engagement/policy-firechat
+- Updated ActivityDetailClient: Changed "View Fireside Chats" button link from /fireside-chats to /what-we-do/policy-engagement/policy-firechat
+- Updated WhatWeDoPageClient: Changed "View Fireside Chats" button link from /fireside-chats to /what-we-do/policy-engagement/policy-firechat
+- Updated not-found.tsx: Changed Fireside Chats href from /fireside-chats to /what-we-do/policy-engagement/policy-firechat
+- Removed /src/app/fireside-chats/ directory (hardcoded standalone page)
+- Removed /src/components/pages/FiresideChatsPageClient.tsx (979 lines of hardcoded content)
+- Verified no remaining references to /fireside-chats in codebase
+- Lint passes cleanly
+- Browser verification: All 6 checks pass
+  - "Firechat" nav item links to /what-we-do/policy-engagement/policy-firechat
+  - Policy Firechat page loads with WordPress ACF content
+  - /fireside-chats returns 404 (old page removed)
+  - Footer links correctly updated
+  - What We Do page links correctly updated
+
+Stage Summary:
+- Removed all hardcoded fireside-chats content (was NOT from WordPress API)
+- Firechat in nav now links to /what-we-do/policy-engagement/policy-firechat (WP-driven)
+- 5 link references updated across: Navbar, Footer, ActivityDetailClient, WhatWeDoPageClient, not-found.tsx
+- Old /fireside-chats route removed entirely (979 lines of hardcoded content deleted)
+- All content now comes from WordPress API via ActivityDetailClient
+
+---
+Task ID: 11
+Agent: Main Agent
+Task: Make all documents on firechat and output pages view-only (no download)
+
+Work Log:
+- Created DocumentViewer component at src/components/features/DocumentViewer.tsx:
+  - Full-screen modal with iframe-based document rendering
+  - PDFs: rendered directly in browser iframe
+  - PPTX/DOCX/XLSX: rendered via Google Docs Viewer (embedded, read-only)
+  - Header bar with document title, file type badge, "Read Only" indicator
+  - Footer: "View Only — Downloading is not available"
+  - Loading state with spinner while document loads
+  - Close button in header + "Close Viewer" button in footer
+  - sandbox attribute on iframe for security
+- Created ViewDocumentButton component (same file) as reusable trigger:
+  - Two variants: full button (with "View DOCX" text) and icon-only (eye icon)
+  - Opens DocumentViewer modal on click
+  - Prevents event propagation (works inside clickable cards)
+- Updated OutputsPageClient.tsx:
+  - Replaced Download import with Eye import
+  - Added ViewDocumentButton import
+  - DownloadableCard: "Download PPTX" → "View PPTX" (ViewDocumentButton)
+  - OutputCard: "Download" link → "View" (ViewDocumentButton, size="sm")
+  - Empty state text: "No download available" → "No document available"
+- Updated ActivityDetailClient.tsx:
+  - Replaced Download import with Eye import
+  - Added ViewDocumentButton import
+  - Related Outputs section: Download icon button → Eye icon (ViewDocumentButton, iconOnly)
+  - Description: "Downloadable files" → "Documents"
+- Lint passes cleanly
+- Browser verification: All checks pass
+  - /outputs page: All 5 cards show "View DOCX/PPTX" buttons with eye icons
+  - Clicking View opens read-only document viewer (Google Docs Viewer iframe)
+  - Viewer shows "Read Only" and "View Only — Downloading is not available"
+  - /what-we-do/policy-engagement/policy-firechat: Related Outputs use eye icon view buttons
+  - No download buttons anywhere on these pages
+
+Stage Summary:
+- Documents on firechat and output pages are now view-only (cannot be downloaded)
+- DocumentViewer uses Google Docs Viewer for PPTX/DOCX, browser PDF viewer for PDFs
+- Replaced all Download buttons with View buttons (eye icon)
+- Both OutputsPageClient and ActivityDetailClient updated
+- 3 new components: DocumentViewer, ViewDocumentButton (full + iconOnly variants)
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Rename "Concept Notes" tab to "Knowledge Products" on Our Outputs page & Add team member lightbox modal on Home/About pages
+
+Work Log:
+- Read OutputsPageClient.tsx and identified the "Concept Notes" tab (value: 'concept-note') and the separate "Knowledge Products" tab (value: 'knowledge-product')
+- Removed 'concept-note' from tabDefs, keeping only 'knowledge-product' with label "Knowledge Products"
+- Updated filteredOutputs logic to merge concept-note items into knowledge-product tab when that tab is selected
+- Updated tabCounts to merge concept-note count into knowledge-product count
+- Updated getOutputTypeLabel('concept-note') to return 'Knowledge Product'
+- Updated getOutputTypeIcon('concept-note') to use BookOpen (matching knowledge-product)
+- Updated getOutputTypeBadgeColor('concept-note') and getOutputTypeBgGradient('concept-note') to match knowledge-product styling
+- Created /home/z/my-project/src/components/features/TeamMemberModal.tsx — lightbox-style popup with:
+  - Framer Motion AnimatePresence animation (fade + scale)
+  - Gradient header with decorative circles and category badge
+  - Large avatar overlapping header/content
+  - Full name, role, and complete bio (not truncated)
+  - Close via X button, overlay click, or Escape key
+  - Body scroll lock when modal is open
+- Updated HomePageClient.tsx:
+  - Added import for TeamMemberModal
+  - Added useState for selectedMember
+  - Added cursor-pointer and onClick handlers to all team cards (executive, directors, advisory board, trustees)
+  - Added "View profile →" hint text that appears on hover
+  - Added line-clamp to executive bio for consistency
+  - Added TeamMemberModal component at end of JSX
+- Updated AboutPageClient.tsx:
+  - Added useState import and TeamMemberModal import
+  - Added useState for selectedMember
+  - Added cursor-pointer and onClick handlers to all team cards (executive, directors, advisory board, trustees)
+  - Added "View profile →" hint text that appears on hover
+  - Added TeamMemberModal component at end of JSX
+- Ran lint — passed clean
+- Verified via Agent Browser: Knowledge Products tab works with 5 items, modal opens/closes correctly on both Home and About pages
+
+Stage Summary:
+- "Concept Notes" tab removed from Our Outputs page, items merged into "Knowledge Products"
+- Team member lightbox modal created and integrated on both Home and About pages
+- All team cards are now clickable with hover hints and open a beautiful modal showing full bio
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Multiple homepage and site-wide updates - Philosophy, Activities, Partners/Blog removal, Fireside Chat, About page
+
+Work Log:
+- Updated Our Philosophy section on home page to show Mission, Vision, Goal cards from WordPress ACF data (aboutMission, aboutVision, aboutGoal) with Target, Eye, TrendingUp icons
+- Added ACTIVITY_ORDER constant to enforce consistent ordering: Policy Research → Policy Engagement → Citizen Enlightenment → Data Speaks → Youth Mentoring → Women's Economic Livelihood → Our Publication
+- Added sortedActivities useMemo in HomePageClient and WhatWeDoPageClient
+- Added "Our Publication" to Navbar (under What We Do dropdown), Footer focus areas, and fetcher icon mappings
+- Added BookOpen icon mapping for 'our-publication' slug in fetchers.ts and activity icon maps
+- Removed "Our Partners" section (Section 8) entirely from home page
+- Removed "From Our Blog" section (Section 9) entirely from home page
+- Updated hero section CTAs: Primary → "Join Fireside Chat" (with Flame icon, links to /what-we-do/policy-engagement/policy-firechat), Secondary → "Explore Our Work" (links to /what-we-do)
+- Created new Fireside Chat section on home page with "Where Policy Meets Practice" heading, 3 feature highlights (Expert-Led Conversations, Actionable Insights, Inclusive Dialogue), gradient visual card, and CTA buttons
+- Changed "Our Leadership" to "Our Team" on About page (badge and heading)
+- Updated description text for the team section on About page
+- All lint checks passed, Agent Browser verified all 7 changes
+
+Stage Summary:
+- Philosophy section now shows Mission/Vision/Goal from ACF + additional WP philosophy items
+- Activities are consistently ordered across Home, What We Do, Navbar, and Footer
+- Partners and Blog sections removed from home page
+- Fireside Chat section added with engaging visual design
+- Hero CTAs now drive traffic to fireside chat page
+- About page uses "Our Team" instead of "Our Leadership"
+---
+Task ID: 1
+Agent: main
+Task: Multiple site restructuring changes - About page, Policy Engagement tabs, Video gallery move, Header menu restructure
+
+Work Log:
+- Removed "Our Direction" section from AboutPageClient.tsx (Vision, Mission, Goal cards)
+- Merged Vision, Mission, Goal content into "Our Philosophy" section on About page
+- Added id="philosophy" and id="team" anchor IDs to About page sections
+- Re-arranged Navbar menu to: Home, About Us, Our Philosophy (/about#philosophy), Who We Are (/about#team), What We Do (dropdown), Fireside Chat, Our Output, Contact Us (button)
+- Updated Footer quickLinks to match new menu structure
+- Removed Blog and Our Partners from nav and footer
+- Added event tabs (Overview | Events) to Policy Engagement page in ActivityDetailClient.tsx
+- Events tab shows Fireside Chat as a recurring event card with link to firechat page
+- Added video gallery to Policy Fireside Chat page (moved from Outputs page)
+- Removed Video Gallery tab from OutputsPageClient.tsx
+- Added VideoGallery and RelatedOutputs helper components to ActivityDetailClient.tsx
+- Updated activity page.tsx to fetch and pass videos data to ActivityDetailClient
+- Updated outputs/page.tsx to not fetch videos data anymore
+
+Stage Summary:
+- About page: "Our Direction" section removed, Vision/Mission/Goal merged into "Our Philosophy" section
+- About page: Added #philosophy and #team anchor IDs for nav linking
+- Policy Engagement page: Now has Overview/Events tabs, Events shows fireside chat event card
+- Policy Fireside Chat page: Now has video gallery with YouTube videos from WordPress ACF
+- Outputs page: Video Gallery tab removed
+- Navbar: New structure with Our Philosophy, Who We Are, Fireside Chat, Our Output
+- Footer: Updated quick links to match new nav structure
+- All lint checks pass, dev server running without errors
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix viewable files on fireside chat and outputs pages + add carousel to home page + rename Firechat to Fireside Chat
+
+Work Log:
+- Diagnosed why document files weren't showing: GraphQL query used `firechatDevelopmentConversationsWebsite` but WordPress ACF field is actually `whatIsFiresideChat`
+- Fixed `GET_OUTPUT_DOWNLOADABLES` query in `src/graphql/queries.ts` with correct field name
+- Updated `DOWNLOADABLE_FIELD_MAP` and `DownloadablesData` interface in `src/graphql/fetchers.ts`
+- Verified fireside chat page now shows 4 related outputs with View buttons
+- Verified outputs page now shows 5 documents in Knowledge Products tab
+- Replaced static "Featured Outputs" section on home page with carousel slider showing all output files
+- Added `OutputsCarousel` component with left/right arrow navigation, edge fade gradients, and mobile arrows
+- Added `getOutputDownloadables()` to home page data fetching (`src/app/page.tsx`)
+- Updated Outputs page: renamed "Firechat" badge to "Fireside Chat" and made it a clickable link to `/what-we-do/policy-engagement/policy-firechat`
+- Updated "Related: Policy Firechat" text to "Related: Policy Fireside Chat"
+- Added `.scrollbar-hide` CSS utility class for carousel
+- All lint checks pass, dev server running without errors
+
+Stage Summary:
+- Fireside chat page: Shows 4 related output documents (Development Conversations Website, Gender Backlash Architecture, Oluponna Gender Backlash Response, Policy Fireside Chat Outcomes & Next Steps)
+- Outputs page: Shows 5 documents with clickable "Fireside Chat" badges linking to firechat page
+- Home page: "Our Outputs" section replaced with horizontal carousel with arrow navigation showing all 5 output files
+- Badge labels changed from "Firechat" to "Fireside Chat" everywhere
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Restore viewable files - WordPress admin moved ACF field group from Post to Page type
+
+Work Log:
+- Investigated why viewable files disappeared from fireside chat and outputs pages
+- Checked WordPress GraphQL schema and found `ourOutputDownloadables` field was REMOVED from the `Post` type
+- Verified the field is now on the `Page` type (ACF field group location rule was changed from "Post Type = Post" to "Post Type = Page")
+- Confirmed the data still exists by querying the `/our-outputs/` page directly via GraphQL
+- Updated `GET_OUTPUT_DOWNLOADABLES` query in `src/graphql/queries.ts`:
+  - Changed from `posts(first: 1)` query to `page(id: "/our-outputs/", idType: URI)` query
+  - Removed `$first` variable parameter (no longer needed for single page query)
+- Updated `DownloadablesData` interface in `src/graphql/fetchers.ts`:
+  - Changed shape from `{ posts: { nodes: [...] } }` to `{ page: { ... } }`
+- Updated `getOutputDownloadables()` function:
+  - Removed the `first: 1` parameter from fetchGraphQL call
+  - Changed data access from `response.data.posts.nodes[0]` to `response.data.page`
+  - Updated error checks accordingly
+- Lint passes, dev server responding 200 on all routes
+- Verified via Agent Browser: All 3 pages now show viewable files again
+
+Stage Summary:
+- Root cause: WordPress admin changed the ACF "OurOutputDownloadables" field group location rule from Post type to Page type
+- Fix: Updated GraphQL query to fetch from `page(id: "/our-outputs/")` instead of `posts(first: 1)`
+- Fireside chat page: 4 related output documents restored with View buttons
+- Outputs page: 5 documents restored in Knowledge Products tab
+- Home page: 5 document cards in carousel section restored

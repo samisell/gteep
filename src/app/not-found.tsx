@@ -85,7 +85,7 @@ export default function NotFound() {
               { label: 'About Us', href: '/about' },
               { label: 'Our Partners', href: '/partners' },
               { label: 'Our Outputs', href: '/outputs' },
-              { label: 'Fireside Chats', href: '/fireside-chats' },
+              { label: 'Fireside Chats', href: '/what-we-do/policy-engagement/policy-firechat' },
               { label: 'Blog', href: '/blog' },
             ].map((link) => (
               <Link

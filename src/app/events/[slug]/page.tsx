@@ -1,5 +1,6 @@
-import { getEventBySlug, getEvents } from '@/graphql/fetchers';
+import { getEventBySlug, getEvents, isWordPressConnected } from '@/graphql/fetchers';
 import EventDetailClient from '@/components/pages/EventDetailClient';
+import OfflinePage from '@/components/shared/OfflinePage';
 import type { Metadata } from 'next';
 
 export const revalidate = 300;
@@ -23,6 +24,12 @@ export default async function EventDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const wpConnected = await isWordPressConnected();
+
+  if (!wpConnected) {
+    return <OfflinePage pageTitle="Event" />;
+  }
+
   const { slug } = await params;
   const event = await getEventBySlug(slug);
 

@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import ContentProtection from '@/components/security/ContentProtection';
+import AIChatWidget from '@/components/features/AIChatWidget';
 import { Toaster } from '@/components/ui/sonner';
 import { getSiteLogo, getContactDetails } from '@/graphql/fetchers';
 import './globals.css';
@@ -119,6 +120,7 @@ export default async function RootLayout({
               </div>
             )}
             <ScrollToTop />
+            <AIChatWidget />
           </ContentProtection>
           <Toaster
             position="bottom-right"

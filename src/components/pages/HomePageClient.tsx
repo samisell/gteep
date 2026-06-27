@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
@@ -26,6 +26,16 @@ import {
   ChevronDown,
   BookOpen,
   ExternalLink,
+  Flame,
+  Target,
+  Eye,
+  Sparkles,
+  MessageCircle,
+  ChevronLeft,
+  Presentation,
+  FileText,
+  FileSpreadsheet,
+  FileIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +50,8 @@ import type {
   GTEEPPartner,
   GTEEPBlogPost,
 } from '@/types';
+import { TeamMemberModal } from '@/components/features/TeamMemberModal';
+import { ViewDocumentButton } from '@/components/features/DocumentViewer';
 
 // =============================================================================
 // Props
@@ -150,6 +162,7 @@ function getActivityIcon(iconName: string) {
     BarChart3,
     GraduationCap,
     Heart,
+    BookOpen,
   };
   return iconMap[iconName] || FileSearch;
 }
@@ -165,9 +178,27 @@ function getPhilosophyIcon(iconName: string) {
     TrendingUp,
     UserCheck,
     Scale,
+    Target,
+    Eye,
+    BookOpen,
+    Users,
   };
   return iconMap[iconName] || Handshake;
 }
+
+// =============================================================================
+// Activity ordering — controls the display order of What We Do items
+// =============================================================================
+
+const ACTIVITY_ORDER = [
+  'policy-research',
+  'policy-engagement',
+  'citizen-enlightenment',
+  'data-speaks',
+  'youth-mentoring',
+  'womens-economic-livelihood',
+  'our-publication',
+];
 
 // =============================================================================
 // Helper: Partner icon mapping
@@ -199,6 +230,264 @@ function getOutputTypeLabel(type: string): string {
     'knowledge-product': 'Knowledge Product',
   };
   return labels[type] || 'Output';
+}
+
+// =============================================================================
+// Helper: File type icon for output cards
+// =============================================================================
+
+function getFileTypeIcon(ext: string): React.ElementType {
+  switch (ext) {
+    case 'pptx': case 'ppt': return Presentation;
+    case 'docx': case 'doc': return FileText;
+    case 'pdf': return FileText;
+    case 'xlsx': case 'xls': return FileSpreadsheet;
+    default: return FileIcon;
+  }
+}
+
+function getFileTypeLabel(ext: string): string {
+  switch (ext) {
+    case 'pptx': case 'ppt': return 'PowerPoint';
+    case 'docx': case 'doc': return 'Word Document';
+    case 'pdf': return 'PDF Document';
+    case 'xlsx': case 'xls': return 'Excel Spreadsheet';
+    default: return ext.toUpperCase() || 'File';
+  }
+}
+
+function getOutputTypeBgGradient(type: string): string {
+  switch (type) {
+    case 'concept-note': return 'from-[#065f46] to-[#047857]';
+    case 'policy-brief': return 'from-[#d97706] to-[#b45309]';
+    case 'data-stock': return 'from-[#1d4ed8] to-[#1e40af]';
+    case 'video': return 'from-[#7c3aed] to-[#6d28d9]';
+    case 'photo': return 'from-[#e11d48] to-[#be123c]';
+    case 'knowledge-product': return 'from-[#0d9488] to-[#0f766e]';
+    default: return 'from-[#065f46] to-[#0f172a]';
+  }
+}
+
+// =============================================================================
+// Outputs Carousel Component
+// =============================================================================
+
+function OutputsCarousel({ outputs }: { outputs: GTEEPOutput[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll);
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [checkScroll, outputs]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cardWidth = 320; // approximate card + gap
+    const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
+    el.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+  };
+
+  if (outputs.length === 0) return null;
+
+  return (
+    <section className="py-20 sm:py-28 bg-[#0f172a] relative overflow-hidden" id="outputs" aria-label="Our Outputs">
+      {/* Decorative elements */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div className="absolute top-0 right-1/4 w-72 h-72 rounded-full bg-[#059669]/8 blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-[#d97706]/8 blur-3xl" />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Section Header */}
+        <SectionReveal>
+          <div className="flex items-end justify-between mb-12">
+            <div>
+              <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-sm px-3 py-1 mb-4">
+                <BookOpen className="w-3.5 h-3.5 mr-1" />
+                Our Work
+              </Badge>
+              <h2
+                className="text-3xl sm:text-4xl font-bold text-white mt-2"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Our Outputs
+              </h2>
+              <p className="mt-3 text-[#94a3b8] max-w-xl">
+                Browse our research outputs, concept notes, and knowledge products.
+              </p>
+            </div>
+            {/* Navigation arrows */}
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                onClick={() => scroll('left')}
+                disabled={!canScrollLeft}
+                className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-[#d97706] hover:bg-[#d97706]/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-white/20 disabled:hover:bg-transparent disabled:hover:text-white/60"
+                aria-label="Scroll left"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => scroll('right')}
+                disabled={!canScrollRight}
+                className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-[#d97706] hover:bg-[#d97706]/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-white/20 disabled:hover:bg-transparent disabled:hover:text-white/60"
+                aria-label="Scroll right"
+              >
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </SectionReveal>
+
+        {/* Carousel */}
+        <div className="relative">
+          {/* Left fade + mobile arrow */}
+          {canScrollLeft && (
+            <>
+              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-[#0f172a] to-transparent z-10 pointer-events-none hidden sm:block" />
+              <button
+                onClick={() => scroll('left')}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#0f172a]/80 border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:border-[#d97706] sm:hidden z-10"
+                aria-label="Scroll left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </>
+          )}
+
+          {/* Scrollable container */}
+          <div
+            ref={scrollRef}
+            className="flex gap-5 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {outputs.map((output) => {
+              const ext = output.fileType || '';
+              const FileIconComp = getFileTypeIcon(ext);
+              const isFirechatRelated = output.relatedSubActivity === 'policy-firechat';
+
+              return (
+                <div
+                  key={output.id}
+                  className="group flex-shrink-0 w-[280px] sm:w-[300px] snap-start"
+                >
+                  <div className="rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full flex flex-col overflow-hidden">
+                    {/* Gradient header with file icon */}
+                    <div className={`h-32 bg-gradient-to-br ${getOutputTypeBgGradient(output.type)} relative flex items-center justify-center`}>
+                      <div className="text-center text-white/80">
+                        <FileIconComp className="w-10 h-10 mx-auto mb-2 opacity-70" />
+                        <p className="text-xs font-medium">{getFileTypeLabel(ext)}</p>
+                      </div>
+                      {/* Type badge */}
+                      <Badge className="absolute top-3 left-3 bg-white/20 text-white text-[10px] border-white/30 backdrop-blur-sm">
+                        {getOutputTypeLabel(output.type)}
+                      </Badge>
+                      {/* File extension badge */}
+                      {ext && (
+                        <Badge className="absolute top-3 right-3 bg-white/90 text-[#0f172a] text-[10px] font-mono border-0">
+                          .{ext}
+                        </Badge>
+                      )}
+                      {/* Fireside Chat indicator */}
+                      {isFirechatRelated && (
+                        <Link
+                          href="/what-we-do/policy-engagement/policy-firechat"
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute bottom-3 left-3"
+                        >
+                          <Badge className="bg-[#d97706]/90 text-white text-[10px] border-0 hover:bg-[#d97706] transition-colors cursor-pointer">
+                            <Flame className="w-3 h-3 mr-1" />
+                            Fireside Chat
+                          </Badge>
+                        </Link>
+                      )}
+                    </div>
+
+                    {/* Card body */}
+                    <div className="p-5 flex flex-col flex-grow">
+                      <h3
+                        className="text-sm font-semibold text-white mb-2 leading-snug line-clamp-2 group-hover:text-[#f59e0b] transition-colors"
+                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                      >
+                        {output.title}
+                      </h3>
+                      <p className="text-xs text-[#94a3b8] leading-relaxed mb-4 line-clamp-2 flex-grow">
+                        {output.description || output.excerpt}
+                      </p>
+                      {/* View button */}
+                      <div className="pt-3 border-t border-white/10">
+                        {output.downloadUrl ? (
+                          <ViewDocumentButton
+                            documentUrl={output.downloadUrl}
+                            documentTitle={output.title}
+                            fileType={ext}
+                            size="sm"
+                            className="text-[#f59e0b] hover:text-[#d97706]"
+                          />
+                        ) : (
+                          <Link
+                            href="/outputs"
+                            className="text-xs text-[#94a3b8] hover:text-[#f59e0b] transition-colors flex items-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" />
+                            View Details
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Right fade + mobile arrow */}
+          {canScrollRight && (
+            <>
+              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#0f172a] to-transparent z-10 pointer-events-none hidden sm:block" />
+              <button
+                onClick={() => scroll('right')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#0f172a]/80 border border-white/20 flex items-center justify-center text-white/70 hover:text-white hover:border-[#d97706] sm:hidden z-10"
+                aria-label="Scroll right"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* View all button */}
+        <div className="text-center mt-10">
+          <Button
+            variant="outline"
+            className="border-[#d97706] text-[#f59e0b] hover:bg-[#d97706] hover:text-white px-8 rounded-xl transition-all"
+            asChild
+          >
+            <a href="/outputs">
+              View All Outputs
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </a>
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 // =============================================================================
@@ -288,11 +577,23 @@ export default function HomePageClient({
   const advisoryBoard = teamMembers.filter((m) => m.category === 'advisory-board');
   const trustees = teamMembers.filter((m) => m.category === 'board-of-trustees');
 
-  // Get featured outputs: first policy brief, first data stock, first knowledge product
-  const firstPolicyBrief = outputs.find((o) => o.type === 'policy-brief');
-  const firstDataStock = outputs.find((o) => o.type === 'data-stock');
-  const firstKnowledgeProduct = outputs.find((o) => o.type === 'knowledge-product');
-  const featuredOutputs = [firstPolicyBrief, firstDataStock, firstKnowledgeProduct].filter(Boolean) as GTEEPOutput[];
+  // Team member modal state
+  const [selectedMember, setSelectedMember] = useState<GTEEPTeamMember | null>(null);
+
+  // Sort activities by the defined order
+  const sortedActivities = useMemo(() => {
+    return [...activities].sort((a, b) => {
+      const aIdx = ACTIVITY_ORDER.indexOf(a.slug);
+      const bIdx = ACTIVITY_ORDER.indexOf(b.slug);
+      // Items not in the order list go to the end
+      const aOrder = aIdx === -1 ? 999 : aIdx;
+      const bOrder = bIdx === -1 ? 999 : bIdx;
+      return aOrder - bOrder;
+    });
+  }, [activities]);
+
+  // All outputs for the carousel (downloadable files from ACF)
+  const allOutputs = outputs;
 
   return (
     <main>
@@ -302,10 +603,10 @@ export default function HomePageClient({
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero">
         {/* Background image */}
         <Image
-          src="/images/policy-engagement.jpg"
-          alt="GTEEP - Gilead Trust Economic Empowerment Project - Building Knowledge, Transforming Lives, Empowering Communities"
+          src="/images/hero-africa-communities.png"
+          alt="GTEEP - Building Knowledge, Transforming Lives, Empowering Communities across Africa"
           fill
-          className="object-cover"
+          className="object-cover object-center"
           priority
           sizes="100vw"
         />
@@ -389,9 +690,9 @@ export default function HomePageClient({
                 className="bg-[#d97706] hover:bg-[#b45309] text-white px-8 py-6 text-base font-semibold rounded-xl shadow-lg shadow-[#d97706]/25 transition-all hover:shadow-xl hover:shadow-[#d97706]/30 hover:-translate-y-0.5"
                 asChild
               >
-                <a href="/what-we-do">
-                  <BookOpen className="w-5 h-5 mr-2" />
-                  Explore Our Work
+                <a href="/what-we-do/policy-engagement/policy-firechat">
+                  <Flame className="w-5 h-5 mr-2" />
+                  Join Fireside Chat
                 </a>
               </Button>
               <Button
@@ -400,8 +701,8 @@ export default function HomePageClient({
                 className="border-white/30 text-white hover:bg-white/10 px-8 py-6 text-base font-semibold rounded-xl backdrop-blur-sm transition-all hover:-translate-y-0.5"
                 asChild
               >
-                <a href="#about">
-                  Learn More
+                <a href="/what-we-do">
+                  Explore Our Work
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </a>
               </Button>
@@ -449,7 +750,7 @@ export default function HomePageClient({
             </div>
 
             {/* Activity cards */}
-            {activities.length > 0 ? (
+            {sortedActivities.length > 0 ? (
               <motion.div
                 variants={staggerContainer}
                 initial="hidden"
@@ -457,7 +758,7 @@ export default function HomePageClient({
                 viewport={{ once: true, margin: '-50px' }}
                 className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {activities.map((activity) => {
+                {sortedActivities.map((activity) => {
                   const IconComponent = getActivityIcon(activity.icon);
                   // Use description if available, otherwise extract snippet from content
                   const description = activity.description || activity.content
@@ -495,7 +796,7 @@ export default function HomePageClient({
             )}
 
             {/* View all button */}
-            {activities.length > 0 && (
+            {sortedActivities.length > 0 && (
               <div className="text-center mt-12">
                 <Button
                   variant="outline"
@@ -514,7 +815,7 @@ export default function HomePageClient({
       </SectionReveal>
 
       {/* ================================================================== */}
-      {/* SECTION 3: OUR PHILOSOPHY */}
+      {/* SECTION 3: OUR PHILOSOPHY — Mission, Vision, Goal */}
       {/* ================================================================== */}
       <section className="py-20 sm:py-28 bg-[#0f172a] relative overflow-hidden" id="philosophy" aria-label="Our Philosophy">
         {/* Decorative blurred circles */}
@@ -542,7 +843,62 @@ export default function HomePageClient({
             </div>
           </SectionReveal>
 
-          {philosophy.length > 0 ? (
+          {/* Mission, Vision, Goal Cards from ACF */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-50px' }}
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10"
+          >
+            {/* Our Mission */}
+            <motion.div variants={staggerItem}>
+              <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+                <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+                  <Target className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                  Our Mission
+                </h3>
+                <p className="text-sm text-[#94a3b8] leading-relaxed">
+                  {aboutData.aboutMission || 'To continually knowledge spaces and inform policies with data-driven evidence and empower the citizens with requisite tools to reshape their individual and collective economic choices.'}
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Our Vision */}
+            <motion.div variants={staggerItem}>
+              <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+                <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+                  <Eye className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                  Our Vision
+                </h3>
+                <p className="text-sm text-[#94a3b8] leading-relaxed">
+                  {aboutData.aboutVision || 'A socially inclusive Africa where evidence-based policy drives sustainable economic transformation and gender equity.'}
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Our Goal */}
+            <motion.div variants={staggerItem}>
+              <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+                <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+                  <TrendingUp className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                  Our Goal
+                </h3>
+                <p className="text-sm text-[#94a3b8] leading-relaxed">
+                  {aboutData.aboutGoal || 'To champion partnerships for African development, people-centered growth, and gender equitable economic transformation.'}
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Additional philosophy items from WordPress ACF (if any) */}
+          {philosophy.length > 0 && (
             <motion.div
               variants={staggerContainer}
               initial="hidden"
@@ -550,16 +906,10 @@ export default function HomePageClient({
               viewport={{ once: true, margin: '-50px' }}
               className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {philosophy.map((item, index) => {
+              {philosophy.map((item) => {
                 const IconComponent = getPhilosophyIcon(item.icon);
-                // Make the first item span 2 columns on lg for visual interest
-                const isLarge = index === 0;
                 return (
-                  <motion.div
-                    key={item.id}
-                    variants={staggerItem}
-                    className={isLarge ? 'sm:col-span-2 lg:col-span-2' : ''}
-                  >
+                  <motion.div key={item.id} variants={staggerItem}>
                     <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
                       <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
                         <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
@@ -573,10 +923,6 @@ export default function HomePageClient({
                 );
               })}
             </motion.div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-[#94a3b8] text-base">Our philosophy is being updated. Check back soon!</p>
-            </div>
           )}
         </div>
       </section>
@@ -613,7 +959,10 @@ export default function HomePageClient({
                 transition={{ duration: 0.6 }}
                 className="mb-12"
               >
-                <div className="group max-w-4xl mx-auto p-8 rounded-2xl border border-[#e2e8f0] hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-[#f0fdf4] to-white">
+                <div
+                  className="group max-w-4xl mx-auto p-8 rounded-2xl border border-[#e2e8f0] hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-[#f0fdf4] to-white cursor-pointer"
+                  onClick={() => setSelectedMember(member)}
+                >
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                     <TeamAvatar name={member.name} size="lg" imageUrl={member.image} />
                     <div className="text-center sm:text-left flex-1">
@@ -621,13 +970,16 @@ export default function HomePageClient({
                         Executive Director
                       </Badge>
                       <h3
-                        className="text-2xl font-bold text-[#0f172a] mb-1"
+                        className="text-2xl font-bold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
                         style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                       >
                         {member.name}
                       </h3>
                       <p className="text-[#059669] font-medium mb-3">{member.role}</p>
-                      <p className="text-sm text-[#64748b] leading-relaxed">{member.bio}</p>
+                      <p className="text-sm text-[#64748b] leading-relaxed line-clamp-3">{member.bio}</p>
+                      <span className="inline-flex items-center gap-1 text-xs text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Click to view full profile →
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -644,7 +996,10 @@ export default function HomePageClient({
             >
               {directors.map((member) => (
                 <motion.div key={member.id} variants={staggerItem}>
-                  <div className="group p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white text-center">
+                  <div
+                    className="group p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white text-center cursor-pointer"
+                    onClick={() => setSelectedMember(member)}
+                  >
                     <div className="flex justify-center mb-4">
                       <TeamAvatar name={member.name} size="md" imageUrl={member.image} />
                     </div>
@@ -652,13 +1007,16 @@ export default function HomePageClient({
                       Director
                     </Badge>
                     <h3
-                      className="text-lg font-semibold text-[#0f172a] mb-1"
+                      className="text-lg font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
                       style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                     >
                       {member.name}
                     </h3>
                     <p className="text-[#059669] font-medium text-sm mb-3">{member.role}</p>
                     <p className="text-sm text-[#64748b] leading-relaxed line-clamp-4">{member.bio}</p>
+                    <span className="inline-flex items-center gap-1 text-xs text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      View full profile →
+                    </span>
                   </div>
                 </motion.div>
               ))}
@@ -698,17 +1056,23 @@ export default function HomePageClient({
             >
               {advisoryBoard.map((member) => (
                 <motion.div key={member.id} variants={staggerItem}>
-                  <div className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center">
+                  <div
+                    className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center cursor-pointer"
+                    onClick={() => setSelectedMember(member)}
+                  >
                     <div className="flex justify-center mb-3">
                       <TeamAvatar name={member.name} size="sm" imageUrl={member.image} />
                     </div>
                     <h3
-                      className="text-sm font-semibold text-[#0f172a] mb-1"
+                      className="text-sm font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
                       style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-    >
+                    >
                       {member.name}
                     </h3>
                     <p className="text-xs text-[#059669] font-medium">{member.role}</p>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      View profile →
+                    </span>
                   </div>
                 </motion.div>
               ))}
@@ -748,17 +1112,23 @@ export default function HomePageClient({
             >
               {trustees.map((member) => (
                 <motion.div key={member.id} variants={staggerItem}>
-                  <div className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center">
+                  <div
+                    className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center cursor-pointer"
+                    onClick={() => setSelectedMember(member)}
+                  >
                     <div className="flex justify-center mb-3">
                       <TeamAvatar name={member.name} size="sm" imageUrl={member.image} />
                     </div>
                     <h3
-                      className="text-sm font-semibold text-[#0f172a] mb-1"
+                      className="text-sm font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
                       style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                     >
                       {member.name}
                     </h3>
                     <p className="text-xs text-[#059669] font-medium">{member.role}</p>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      View profile →
+                    </span>
                   </div>
                 </motion.div>
               ))}
@@ -768,299 +1138,136 @@ export default function HomePageClient({
       </SectionReveal>
 
       {/* ================================================================== */}
-      {/* SECTION 7: FEATURED OUTPUTS */}
+      {/* SECTION 7: OUR OUTPUTS (Carousel) */}
       {/* ================================================================== */}
-      <section className="py-20 sm:py-28 bg-[#0f172a] relative overflow-hidden" id="outputs" aria-label="Featured Outputs">
-        {/* Decorative elements */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div className="absolute top-0 right-1/4 w-72 h-72 rounded-full bg-[#059669]/8 blur-3xl" />
-          <div className="absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-[#d97706]/8 blur-3xl" />
-        </div>
+      <OutputsCarousel outputs={allOutputs} />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <SectionReveal>
-            <div className="text-center mb-16">
-              <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-sm px-3 py-1 mb-4">
-                Our Work
-              </Badge>
-              <h2
-                className="text-3xl sm:text-4xl font-bold text-white mt-2"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-              >
-                Featured Outputs
-              </h2>
-              <p className="mt-4 text-[#94a3b8] max-w-2xl mx-auto">
-                Key research outputs spanning policy briefs, data resources, and knowledge products.
-              </p>
-            </div>
-          </SectionReveal>
+      {/* ================================================================== */}
+      {/* SECTION 8: FIRESIDE CHAT */}
+      {/* ================================================================== */}
+      <SectionReveal>
+        <section className="py-20 sm:py-28 bg-gradient-to-br from-[#f0fdf4] via-white to-[#fef3c7]/30 relative overflow-hidden" id="fireside-chat" aria-label="Fireside Chat">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+              {/* Left: Content */}
+              <div>
+                <Badge className="bg-[#d97706]/10 text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
+                  <Flame className="w-3.5 h-3.5 mr-1" />
+                  Fireside Chat
+                </Badge>
+                <h2
+                  className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2 mb-4"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  Where Policy Meets Practice
+                </h2>
+                <p className="text-[#64748b] leading-relaxed mb-6">
+                  Our Policy Fireside Chat brings together leading experts, policymakers, and practitioners for candid conversations about Africa&apos;s most pressing development challenges. Each session bridges the gap between research evidence and real-world policy impact.
+                </p>
 
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-50px' }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {featuredOutputs.map((output) => (
-              <motion.div key={output.id} variants={staggerItem}>
-                <div className="group rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full flex flex-col overflow-hidden">
-                  {output.image && (
-                    <div className="relative h-40 overflow-hidden">
-                      <Image
-                        src={output.image}
-                        alt={output.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/80 to-transparent" />
-                      <Badge className="absolute top-3 left-3 bg-[#d97706]/80 text-[#f59e0b] border-[#d97706]/30 text-xs backdrop-blur-sm hover:bg-[#d97706]/90">
-                        {getOutputTypeLabel(output.type)}
-                      </Badge>
+                {/* Feature highlights */}
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <MessageCircle className="w-5 h-5 text-[#065f46]" />
                     </div>
-                  )}
-                  {!output.image && (
-                    <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-xs w-fit m-6 mb-0 hover:bg-[#d97706]/30">
-                      {getOutputTypeLabel(output.type)}
-                    </Badge>
-                  )}
-                  <div className="p-6 flex flex-col flex-grow">
-                    <h3
-                      className="text-lg font-semibold text-white mb-3 leading-snug group-hover:text-[#f59e0b] transition-colors"
-                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                    >
-                      {output.title}
-                    </h3>
-                    <p className="text-sm text-[#94a3b8] leading-relaxed mb-4 flex-grow">{output.excerpt}</p>
-                    <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                      {output.date && (
-                        <span className="text-xs text-[#64748b]">
-                          {new Date(output.date + 'T00:00:00').toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
-                      )}
-                      <Button
-                        variant="link"
-                        className="text-[#f59e0b] hover:text-[#d97706] p-0 h-auto text-sm group/link ml-auto"
-                      >
-                        Read More
-                        <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
-                      </Button>
+                    <div>
+                      <h4 className="font-semibold text-[#0f172a] text-sm">Expert-Led Conversations</h4>
+                      <p className="text-sm text-[#64748b]">Moderated dialogues with thought leaders shaping Africa&apos;s policy landscape</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-[#d97706]/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <Sparkles className="w-5 h-5 text-[#d97706]" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-[#0f172a] text-sm">Actionable Insights</h4>
+                      <p className="text-sm text-[#64748b]">Every session produces concrete takeaways that inform policy and practice</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <Users className="w-5 h-5 text-[#065f46]" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-[#0f172a] text-sm">Inclusive Dialogue</h4>
+                      <p className="text-sm text-[#64748b]">Amplifying diverse voices — from grassroots advocates to senior policymakers</p>
                     </div>
                   </div>
                 </div>
-              </motion.div>
-            ))}
-          </motion.div>
 
-          {/* View all button */}
-          <div className="text-center mt-12">
-            <Button
-              variant="outline"
-              className="border-[#d97706] text-[#f59e0b] hover:bg-[#d97706] hover:text-white px-8 rounded-xl transition-all"
-              asChild
-            >
-              <a href="/outputs">
-                View All Outputs
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </a>
-            </Button>
-          </div>
-        </div>
-      </section>
+                <div className="flex flex-wrap gap-4">
+                  <Button
+                    size="lg"
+                    className="bg-[#d97706] hover:bg-[#b45309] text-white px-8 rounded-xl shadow-lg shadow-[#d97706]/20 transition-all hover:shadow-xl"
+                    asChild
+                  >
+                    <a href="/what-we-do/policy-engagement/policy-firechat">
+                      <Flame className="w-5 h-5 mr-2" />
+                      Explore Fireside Chat
+                    </a>
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+                    asChild
+                  >
+                    <a href="/outputs">
+                      View Our Outputs
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </a>
+                  </Button>
+                </div>
+              </div>
 
-      {/* ================================================================== */}
-      {/* SECTION 8: PARTNERS */}
-      {/* ================================================================== */}
-      <SectionReveal>
-        <section className="py-20 sm:py-28 bg-[#f8fafc]" id="partners" aria-label="Our Partners">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Section header */}
-            <div className="text-center mb-16">
-              <Badge className="bg-[#fef3c7] text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
-                Collaborations
-              </Badge>
-              <h2
-                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-              >
-                Our Partners
-              </h2>
-              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                Working alongside leading institutions across Africa and globally to drive evidence-based policy change.
-              </p>
-            </div>
+              {/* Right: Visual */}
+              <div className="relative">
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                  {/* Gradient background with decorative elements */}
+                  <div className="bg-gradient-to-br from-[#065f46] via-[#047857] to-[#0d9488] p-8 sm:p-10 min-h-[400px] flex flex-col items-center justify-center text-center">
+                    {/* Decorative circles */}
+                    <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-1/2 translate-x-1/4" />
+                    <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-[#d97706]/10 translate-y-1/3 -translate-x-1/4" />
 
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-50px' }}
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
-            >
-              {partners.map((partner) => {
-                const IconComponent = getPartnerIcon(partner.type);
-                return (
-                  <motion.div key={partner.id} variants={staggerItem}>
-                    <div className="group p-6 rounded-2xl bg-white border border-[#e2e8f0] hover:border-[#065f46]/20 hover:shadow-md transition-all duration-300 text-center h-full flex flex-col items-center justify-center hover:-translate-y-1">
-                      <div className="w-14 h-14 rounded-xl bg-[#f0fdf4] flex items-center justify-center mb-3 group-hover:bg-[#065f46]/10 transition-colors">
-                        <IconComponent className="w-7 h-7 text-[#059669]" />
+                    <div className="relative z-10">
+                      <div className="w-20 h-20 rounded-full bg-[#d97706]/20 flex items-center justify-center mx-auto mb-6">
+                        <Flame className="w-10 h-10 text-[#f59e0b]" />
                       </div>
-                      <h3 className="text-sm font-semibold text-[#0f172a] mb-2 group-hover:text-[#065f46] transition-colors">
-                        {partner.name}
-                      </h3>
-                      {partner.country && (
-                        <Badge variant="secondary" className="text-xs bg-[#f1f5f9] text-[#64748b]">
-                          {partner.country}
-                        </Badge>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-
-            {/* View all button */}
-            <div className="text-center mt-12">
-              <Button
-                variant="outline"
-                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
-                asChild
-              >
-                <a href="/partners">
-                  View All Partners
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </a>
-              </Button>
-            </div>
-          </div>
-        </section>
-      </SectionReveal>
-
-      {/* ================================================================== */}
-      {/* SECTION 9: BLOG / LATEST INSIGHTS */}
-      {/* ================================================================== */}
-      <SectionReveal>
-        <section className="py-20 sm:py-28 bg-white" id="blog" aria-label="Latest Insights">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Section header */}
-            <div className="text-center mb-16">
-              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
-                Latest Insights
-              </Badge>
-              <h2
-                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-              >
-                From Our Blog
-              </h2>
-              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                Analysis, commentary, and insights on African trade policy, economic development, and social inclusion.
-              </p>
-            </div>
-
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-50px' }}
-              className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              {blogPosts.slice(0, 3).map((post) => (
-                <motion.div key={post.id} variants={staggerItem}>
-                  <Card className="group h-full overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-[#e2e8f0]">
-                    {/* Image area */}
-                    <div className="h-48 relative overflow-hidden">
-                      {post.image ? (
-                        <>
-                          <Image
-                            src={post.image}
-                            alt={post.title}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#065f46]/40 to-transparent" />
-                        </>
-                      ) : (
-                        <div className="h-full bg-gradient-to-br from-[#065f46] to-[#047857] flex items-center justify-center">
-                          <div className="text-center text-white/80">
-                            <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-60" />
-                            <p className="text-sm font-medium">GTEEP Insights</p>
-                          </div>
-                        </div>
-                      )}
-                      {/* Category badge */}
-                      {post.categories.length > 0 && (
-                        <Badge className="absolute top-4 left-4 bg-white/20 text-white backdrop-blur-sm border-white/30 hover:bg-white/30">
-                          {post.categories[0]}
-                        </Badge>
-                      )}
-                    </div>
-
-                    <CardContent className="p-6 flex flex-col flex-1">
-                      {/* Date */}
-                      <p className="text-xs text-[#94a3b8] mb-2">
-                        {new Date(post.date + 'T00:00:00').toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-
-                      {/* Title */}
                       <h3
-                        className="text-base font-semibold text-[#0f172a] mb-3 leading-snug line-clamp-2 group-hover:text-[#065f46] transition-colors"
+                        className="text-2xl sm:text-3xl font-bold text-white mb-3"
                         style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                       >
-                        {post.title}
+                        Policy Fireside Chat
                       </h3>
-
-                      {/* Excerpt */}
-                      <p className="text-sm text-[#64748b] leading-relaxed mb-4 line-clamp-3 flex-grow">
-                        {post.excerpt}
+                      <p className="text-white/80 text-sm max-w-sm mx-auto mb-6">
+                        Bridging evidence and action through moderated policy dialogue with Africa&apos;s foremost thinkers.
                       </p>
-
-                      {/* Author & Read More */}
-                      <div className="flex items-center justify-between pt-4 border-t border-[#f1f5f9]">
-                        <span className="text-xs text-[#94a3b8]">By {post.author}</span>
-                        <Button
-                          variant="link"
-                          className="text-[#059669] hover:text-[#047857] p-0 h-auto text-sm group/link"
-                        >
-                          Read More
-                          <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
-                        </Button>
+                      <div className="flex items-center justify-center gap-6 text-white/60 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <MessageCircle className="w-4 h-4" />
+                          <span>Live Dialogue</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4" />
+                          <span>Expert Panels</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Eye className="w-4 h-4" />
+                          <span>Policy Impact</span>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </motion.div>
-
-            {/* View all button */}
-            <div className="text-center mt-12">
-              <Button
-                variant="outline"
-                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
-                asChild
-              >
-                <a href="/blog">
-                  View All Posts
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </a>
-              </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
       </SectionReveal>
 
       {/* ================================================================== */}
-      {/* SECTION 10: NEWSLETTER + CONTACT CTA */}
+      {/* SECTION 9: NEWSLETTER + CONTACT CTA */}
       {/* ================================================================== */}
       <section
         className="py-20 sm:py-28 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] relative overflow-hidden"
@@ -1149,6 +1356,13 @@ export default function HomePageClient({
           </SectionReveal>
         </div>
       </section>
+
+      {/* Team Member Modal */}
+      <TeamMemberModal
+        member={selectedMember}
+        isOpen={!!selectedMember}
+        onClose={() => setSelectedMember(null)}
+      />
     </main>
   );
 }

@@ -1,5 +1,6 @@
-import { getPublicationBySlug, getPublications } from '@/graphql/fetchers';
+import { getPublicationBySlug, getPublications, isWordPressConnected } from '@/graphql/fetchers';
 import PublicationDetailClient from '@/components/pages/PublicationDetailClient';
+import OfflinePage from '@/components/shared/OfflinePage';
 import type { Metadata } from 'next';
 
 export const revalidate = 300;
@@ -23,6 +24,12 @@ export default async function PublicationDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const wpConnected = await isWordPressConnected();
+
+  if (!wpConnected) {
+    return <OfflinePage pageTitle="Publication" />;
+  }
+
   const { slug } = await params;
   const publication = await getPublicationBySlug(slug);
 

@@ -11,7 +11,7 @@
 import type { GraphQLResponse } from '@/types';
 
 const WORDPRESS_GRAPHQL_URL =
-  process.env.WORDPRESS_GRAPHQL_URL || 'https://gteep.jileadtrust.com/graphql';
+  process.env.WORDPRESS_GRAPHQL_URL || 'https://backend.gileadtrust.com/graphql';
 
 const WP_AUTH_USER = process.env.WORDPRESS_AUTH_USER || '';
 const WP_AUTH_PASS = process.env.WORDPRESS_AUTH_PASS || '';

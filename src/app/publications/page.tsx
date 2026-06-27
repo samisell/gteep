@@ -1,5 +1,6 @@
-import { getPublications } from '@/graphql/fetchers';
+import { getPublications, isWordPressConnected } from '@/graphql/fetchers';
 import PublicationsPageClient from '@/components/pages/PublicationsPageClient';
+import OfflinePage from '@/components/shared/OfflinePage';
 import type { Metadata } from 'next';
 
 export const revalidate = 300;
@@ -11,6 +12,12 @@ export const metadata: Metadata = {
 };
 
 export default async function PublicationsPage() {
+  const wpConnected = await isWordPressConnected();
+
+  if (!wpConnected) {
+    return <OfflinePage pageTitle="Publications" />;
+  }
+
   const { publications } = await getPublications();
   return <PublicationsPageClient publications={publications} />;
 }
