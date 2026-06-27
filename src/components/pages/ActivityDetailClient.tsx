@@ -363,8 +363,8 @@ export default function ActivityDetailClient({ activity, parentPage, relatedOutp
       {/* Page Header */}
       <PageHeader
         title={activity.title}
-        subtitle="What We Do"
-        description={`GTEEP's ${activity.title} programme — driving evidence-based policy change across Africa.`}
+        subtitle="*******"
+        description="*********"
         breadcrumb={breadcrumb}
         backgroundImage="/images/policy-engagement.jpg"
       />
