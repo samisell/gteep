@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import PageHeader from '@/components/shared/PageHeader';
@@ -32,6 +32,20 @@ interface WhatWeDoPageClientProps {
 }
 
 // =============================================================================
+// Activity ordering — consistent across the site
+// =============================================================================
+
+const ACTIVITY_ORDER = [
+  'policy-research',
+  'policy-engagement',
+  'citizen-enlightenment',
+  'data-speaks',
+  'youth-mentoring',
+  'womens-economic-livelihood',
+  'our-publication',
+];
+
+// =============================================================================
 // Icon Map - Direct mapping object (avoids creating components during render)
 // =============================================================================
 
@@ -42,6 +56,7 @@ const activityIcons: Record<string, React.ElementType> = {
   BarChart3,
   GraduationCap,
   Heart,
+  BookOpen,
 };
 
 // =============================================================================
@@ -160,7 +175,7 @@ function PolicyFirechatSection({ firechatContent, childPage }: { firechatContent
               size="sm"
               className="bg-gradient-to-r from-[#d97706] to-[#b45309] hover:from-[#b45309] hover:to-[#92400e] text-white rounded-lg"
             >
-              <Link href="/fireside-chats">
+              <Link href="/what-we-do/policy-engagement/policy-firechat">
                 <Flame className="w-4 h-4 mr-1.5" />
                 View Fireside Chats
               </Link>
@@ -383,6 +398,17 @@ function ActivitySection({
 // =============================================================================
 
 export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientProps) {
+  // Sort activities by the defined order
+  const sortedActivities = useMemo(() => {
+    return [...activities].sort((a, b) => {
+      const aIdx = ACTIVITY_ORDER.indexOf(a.slug);
+      const bIdx = ACTIVITY_ORDER.indexOf(b.slug);
+      const aOrder = aIdx === -1 ? 999 : aIdx;
+      const bOrder = bIdx === -1 ? 999 : bIdx;
+      return aOrder - bOrder;
+    });
+  }, [activities]);
+
   // Smooth scroll to hash anchor on page load & highlight the section
   useEffect(() => {
     if (window.location.hash) {
@@ -414,7 +440,7 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
       {/* ================================================================== */}
       {/* ACTIVITIES OVERVIEW - Quick navigation cards */}
       {/* ================================================================== */}
-      {activities.length > 0 && (
+      {sortedActivities.length > 0 && (
         <section className="py-12 md:py-16 bg-white border-b border-[#e2e8f0]" aria-label="Activities Overview">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <AnimatedSection>
@@ -432,7 +458,7 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
             </AnimatedSection>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {activities.map((activity, index) => {
+              {sortedActivities.map((activity, index) => {
                 const color = activityColors[index % activityColors.length];
                 return (
                   <Link
@@ -462,7 +488,7 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
       {/* ================================================================== */}
       {/* ACTIVITY SECTIONS - Full detail for each activity */}
       {/* ================================================================== */}
-      {activities.length === 0 && (
+      {sortedActivities.length === 0 && (
         <section className="py-16 md:py-24 bg-white" aria-label="Activities Coming Soon">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <AnimatedSection>
@@ -506,7 +532,7 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
         </section>
       )}
 
-      {activities.map((activity, index) => (
+      {sortedActivities.map((activity, index) => (
         <ActivitySection key={activity.id} activity={activity} index={index} />
       ))}
 

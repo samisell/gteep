@@ -134,7 +134,7 @@ function extractPageInfo(
 const defaultSiteSettings: WPSiteSettings = {
   siteTitle: 'GTEEP',
   siteDescription: 'Gender, Trade, Economics and Empowerment Programme',
-  siteUrl: 'https://gteep.jileadtrust.com',
+  siteUrl: 'https://backend.gileadtrust.com',
   siteLogo: null,
   favicon: null,
   acfOptions: {
@@ -481,6 +481,7 @@ export async function getActivities(): Promise<import('@/types').GTEEPActivity[]
       'data-speaks': 'BarChart3',
       'youth-mentoring': 'GraduationCap',
       'womens-economic-livelihood': 'Heart',
+      'our-publication': 'BookOpen',
     };
 
     return childNodes.map((child: any, index: number) => {
@@ -543,6 +544,7 @@ export async function getActivityPage(slug: string): Promise<{
       'data-speaks': 'BarChart3',
       'youth-mentoring': 'GraduationCap',
       'womens-economic-livelihood': 'Heart',
+      'our-publication': 'BookOpen',
     };
 
     // Parse nested children
@@ -1015,7 +1017,7 @@ const DOWNLOADABLE_FIELD_MAP: Record<string, {
   relatedActivity?: string;
   relatedSubActivity?: string;
 }> = {
-  firechatDevelopmentConversationsWebsite: {
+  whatIsFiresideChat: {
     outputType: 'concept-note',
     title: 'Development Conversations Website',
     relatedActivity: 'policy-engagement',
@@ -1067,31 +1069,28 @@ function getFileTypeIcon(ext: string): string {
 }
 
 interface DownloadablesData {
-  posts: {
-    nodes: Array<{
-      id: string;
-      ourOutputDownloadables: {
-        firechatDevelopmentConversationsWebsite: string | null;
-        genderBacklashArchitecture: string | null;
-        graphicsOnBookTalk: string | null;
-        oluponnaGenderBacklashResponse60: string | null;
-        thePolicyFiresideChatOutcomesAndNextSteps0323: string | null;
-      } | null;
-    }>;
-  };
+  page: {
+    id: string;
+    ourOutputDownloadables: {
+      whatIsFiresideChat: string | null;
+      genderBacklashArchitecture: string | null;
+      graphicsOnBookTalk: string | null;
+      oluponnaGenderBacklashResponse60: string | null;
+      thePolicyFiresideChatOutcomesAndNextSteps0323: string | null;
+    } | null;
+  } | null;
 }
 
 export async function getOutputDownloadables(): Promise<GTEEPOutput[]> {
   try {
-    const response = await fetchGraphQL<DownloadablesData>(GET_OUTPUT_DOWNLOADABLES, { first: 1 });
+    const response = await fetchGraphQL<DownloadablesData>(GET_OUTPUT_DOWNLOADABLES);
 
-    if (response.errors || !response.data?.posts?.nodes?.length) {
+    if (response.errors || !response.data?.page) {
       return [];
     }
 
-    // Get the first post that has downloadables data (they're all the same due to ACF global location)
-    const post = response.data.posts.nodes[0];
-    const downloadables = post.ourOutputDownloadables;
+    // Get the downloadables ACF data from the "Our Outputs" page
+    const downloadables = response.data.page.ourOutputDownloadables;
     if (!downloadables) return [];
 
     const outputs: GTEEPOutput[] = [];

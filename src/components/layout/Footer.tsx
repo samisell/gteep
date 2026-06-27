@@ -20,11 +20,11 @@ import { toast } from 'sonner';
 const quickLinks = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About Us' },
+  { href: '/about#philosophy', label: 'Our Philosophy' },
+  { href: '/about#team', label: 'Who We Are' },
   { href: '/what-we-do', label: 'What We Do' },
-  { href: '/outputs', label: 'Our Outputs' },
-  { href: '/fireside-chats', label: 'Fireside Chats' },
-  { href: '/blog', label: 'Blog' },
-  { href: '/partners', label: 'Our Partners' },
+  { href: '/what-we-do/policy-engagement/policy-firechat', label: 'Fireside Chat' },
+  { href: '/outputs', label: 'Our Output' },
   { href: '/contact', label: 'Contact Us' },
 ];
 
@@ -35,6 +35,7 @@ const focusAreas = [
   { label: 'Data Speaks', href: '/what-we-do/data-speaks' },
   { label: 'Youth Mentoring', href: '/what-we-do/youth-mentoring' },
   { label: "Women's Economic Livelihood", href: '/what-we-do/womens-economic-livelihood' },
+  { label: 'Our Publication', href: '/publications' },
 ];
 
 const socialLinks = [

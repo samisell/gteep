@@ -1,0 +1,710 @@
+   500→   500→   500→                {sortedActivities.map((activity) => {
+   501→   501→   501→                  const IconComponent = getActivityIcon(activity.icon);
+   502→   502→   502→                  // Use description if available, otherwise extract snippet from content
+   503→   503→   503→                  const description = activity.description || activity.content
+   504→   504→   504→                    ? activity.description || activity.content.replace(/<[^>]*>/g, '').trim().substring(0, 150) + '...'
+   505→   505→   505→                    : 'Learn more about our ' + activity.title.toLowerCase() + ' programme.';
+   506→   506→   506→                  return (
+   507→   507→   507→                    <motion.div key={activity.id} variants={staggerItem}>
+   508→   508→   508→                      <Link
+   509→   509→   509→                        href={`/what-we-do/${activity.slug}`}
+   510→   510→   510→                        className="group block p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white cursor-pointer"
+   511→   511→   511→                      >
+   512→   512→   512→                        <div className="w-12 h-12 rounded-xl bg-[#f0fdf4] flex items-center justify-center mb-4 group-hover:bg-[#065f46] transition-colors">
+   513→   513→   513→                          <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-white transition-colors" />
+   514→   514→   514→                        </div>
+   515→   515→   515→                        <h3 className="text-lg font-semibold text-[#0f172a] mb-2 group-hover:text-[#065f46] transition-colors" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+   516→   516→   516→                          {activity.title}
+   517→   517→   517→                        </h3>
+   518→   518→   518→                        <p className="text-sm text-[#64748b] leading-relaxed">{description}</p>
+   519→   519→   519→                        <span className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-[#065f46] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+   520→   520→   520→                          Learn more
+   521→   521→   521→                          <ArrowRight className="w-3.5 h-3.5" />
+   522→   522→   522→                        </span>
+   523→   523→   523→                      </Link>
+   524→   524→   524→                    </motion.div>
+   525→   525→   525→                  );
+   526→   526→   526→                })}
+   527→   527→   527→              </motion.div>
+   528→   528→   528→            ) : (
+   529→   529→   529→              <div className="text-center py-12">
+   530→   530→   530→                <div className="w-16 h-16 rounded-2xl bg-[#f0fdf4] flex items-center justify-center mx-auto mb-4">
+   531→   531→   531→                  <FileSearch className="w-8 h-8 text-[#059669]" />
+   532→   532→   532→                </div>
+   533→   533→   533→                <p className="text-[#64748b] text-base">Our activities are being updated. Check back soon!</p>
+   534→   534→   534→              </div>
+   535→   535→   535→            )}
+   536→   536→   536→
+   537→   537→   537→            {/* View all button */}
+   538→   538→   538→            {sortedActivities.length > 0 && (
+   539→   539→   539→              <div className="text-center mt-12">
+   540→   540→   540→                <Button
+   541→   541→   541→                  variant="outline"
+   542→   542→   542→                  className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+   543→   543→   543→                  asChild
+   544→   544→   544→                >
+   545→   545→   545→                  <a href="/what-we-do">
+   546→   546→   546→                    View All Activities
+   547→   547→   547→                    <ArrowRight className="w-4 h-4 ml-2" />
+   548→   548→   548→                  </a>
+   549→   549→   549→                </Button>
+   550→   550→   550→              </div>
+   551→   551→   551→            )}
+   552→   552→   552→          </div>
+   553→   553→   553→        </section>
+   554→   554→   554→      </SectionReveal>
+   555→   555→   555→
+   556→   556→   556→      {/* ================================================================== */}
+   557→   557→   557→      {/* SECTION 3: OUR PHILOSOPHY — Mission, Vision, Goal */}
+   558→   558→   558→      {/* ================================================================== */}
+   559→   559→   559→      <section className="py-20 sm:py-28 bg-[#0f172a] relative overflow-hidden" id="philosophy" aria-label="Our Philosophy">
+   560→   560→   560→        {/* Decorative blurred circles */}
+   561→   561→   561→        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+   562→   562→   562→          <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-[#059669]/10 blur-3xl" />
+   563→   563→   563→          <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-[#d97706]/8 blur-3xl" />
+   564→   564→   564→          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#047857]/5 blur-3xl" />
+   565→   565→   565→        </div>
+   566→   566→   566→
+   567→   567→   567→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+   568→   568→   568→          <SectionReveal>
+   569→   569→   569→            <div className="text-center mb-16">
+   570→   570→   570→              <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-sm px-3 py-1 mb-4">
+   571→   571→   571→                Our Philosophy
+   572→   572→   572→              </Badge>
+   573→   573→   573→              <h2
+   574→   574→   574→                className="text-3xl sm:text-4xl font-bold text-white mt-2"
+   575→   575→   575→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   576→   576→   576→              >
+   577→   577→   577→                Our Philosophy
+   578→   578→   578→              </h2>
+   579→   579→   579→              <p className="mt-4 text-[#94a3b8] max-w-2xl mx-auto">
+   580→   580→   580→                The core principles that guide our work and shape our approach to development in Africa.
+   581→   581→   581→              </p>
+   582→   582→   582→            </div>
+   583→   583→   583→          </SectionReveal>
+   584→   584→   584→
+   585→   585→   585→          {/* Mission, Vision, Goal Cards from ACF */}
+   586→   586→   586→          <motion.div
+   587→   587→   587→            variants={staggerContainer}
+   588→   588→   588→            initial="hidden"
+   589→   589→   589→            whileInView="visible"
+   590→   590→   590→            viewport={{ once: true, margin: '-50px' }}
+   591→   591→   591→            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10"
+   592→   592→   592→          >
+   593→   593→   593→            {/* Our Mission */}
+   594→   594→   594→            <motion.div variants={staggerItem}>
+   595→   595→   595→              <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+   596→   596→   596→                <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+   597→   597→   597→                  <Target className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+   598→   598→   598→                </div>
+   599→   599→   599→                <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+   600→   600→   600→                  Our Mission
+   601→   601→   601→                </h3>
+   602→   602→   602→                <p className="text-sm text-[#94a3b8] leading-relaxed">
+   603→   603→   603→                  {aboutData.aboutMission || 'To continually knowledge spaces and inform policies with data-driven evidence and empower the citizens with requisite tools to reshape their individual and collective economic choices.'}
+   604→   604→   604→                </p>
+   605→   605→   605→              </div>
+   606→   606→   606→            </motion.div>
+   607→   607→   607→
+   608→   608→   608→            {/* Our Vision */}
+   609→   609→   609→            <motion.div variants={staggerItem}>
+   610→   610→   610→              <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+   611→   611→   611→                <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+   612→   612→   612→                  <Eye className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+   613→   613→   613→                </div>
+   614→   614→   614→                <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+   615→   615→   615→                  Our Vision
+   616→   616→   616→                </h3>
+   617→   617→   617→                <p className="text-sm text-[#94a3b8] leading-relaxed">
+   618→   618→   618→                  {aboutData.aboutVision || 'A socially inclusive Africa where evidence-based policy drives sustainable economic transformation and gender equity.'}
+   619→   619→   619→                </p>
+   620→   620→   620→              </div>
+   621→   621→   621→            </motion.div>
+   622→   622→   622→
+   623→   623→   623→            {/* Our Goal */}
+   624→   624→   624→            <motion.div variants={staggerItem}>
+   625→   625→   625→              <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+   626→   626→   626→                <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+   627→   627→   627→                  <TrendingUp className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+   628→   628→   628→                </div>
+   629→   629→   629→                <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+   630→   630→   630→                  Our Goal
+   631→   631→   631→                </h3>
+   632→   632→   632→                <p className="text-sm text-[#94a3b8] leading-relaxed">
+   633→   633→   633→                  {aboutData.aboutGoal || 'To champion partnerships for African development, people-centered growth, and gender equitable economic transformation.'}
+   634→   634→   634→                </p>
+   635→   635→   635→              </div>
+   636→   636→   636→            </motion.div>
+   637→   637→   637→          </motion.div>
+   638→   638→   638→
+   639→   639→   639→          {/* Additional philosophy items from WordPress ACF (if any) */}
+   640→   640→   640→          {philosophy.length > 0 && (
+   641→   641→   641→            <motion.div
+   642→   642→   642→              variants={staggerContainer}
+   643→   643→   643→              initial="hidden"
+   644→   644→   644→              whileInView="visible"
+   645→   645→   645→              viewport={{ once: true, margin: '-50px' }}
+   646→   646→   646→              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+   647→   647→   647→            >
+   648→   648→   648→              {philosophy.map((item) => {
+   649→   649→   649→                const IconComponent = getPhilosophyIcon(item.icon);
+   650→   650→   650→                return (
+   651→   651→   651→                  <motion.div key={item.id} variants={staggerItem}>
+   652→   652→   652→                    <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+   653→   653→   653→                      <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+   654→   654→   654→                        <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+   655→   655→   655→                      </div>
+   656→   656→   656→                      <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+   657→   657→   657→                        {item.title}
+   658→   658→   658→                      </h3>
+   659→   659→   659→                      <p className="text-sm text-[#94a3b8] leading-relaxed">{item.description}</p>
+   660→   660→   660→                    </div>
+   661→   661→   661→                  </motion.div>
+   662→   662→   662→                );
+   663→   663→   663→              })}
+   664→   664→   664→            </motion.div>
+   665→   665→   665→          )}
+   666→   666→   666→        </div>
+   667→   667→   667→      </section>
+   668→   668→   668→
+   669→   669→   669→      {/* ================================================================== */}
+   670→   670→   670→      {/* SECTION 4: WHO WE ARE */}
+   671→   671→   671→      {/* ================================================================== */}
+   672→   672→   672→      <SectionReveal>
+   673→   673→   673→        <section className="py-20 sm:py-28 bg-white" id="about" aria-label="Who We Are">
+   674→   674→   674→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   675→   675→   675→            {/* Section header */}
+   676→   676→   676→            <div className="text-center mb-16">
+   677→   677→   677→              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+   678→   678→   678→                Our Team
+   679→   679→   679→              </Badge>
+   680→   680→   680→              <h2
+   681→   681→   681→                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+   682→   682→   682→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   683→   683→   683→              >
+   684→   684→   684→                Who We Are
+   685→   685→   685→              </h2>
+   686→   686→   686→              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+   687→   687→   687→                A dedicated team of researchers, policy analysts, and development practitioners committed to Africa&apos;s transformation.
+   688→   688→   688→              </p>
+   689→   689→   689→            </div>
+   690→   690→   690→
+   691→   691→   691→            {/* Executive Director - Featured Card */}
+   692→   692→   692→            {executive.map((member) => (
+   693→   693→   693→              <motion.div
+   694→   694→   694→                key={member.id}
+   695→   695→   695→                initial={{ opacity: 0, y: 30 }}
+   696→   696→   696→                whileInView={{ opacity: 1, y: 0 }}
+   697→   697→   697→                viewport={{ once: true }}
+   698→   698→   698→                transition={{ duration: 0.6 }}
+   699→   699→   699→                className="mb-12"
+   700→   700→   700→              >
+   701→   701→   701→                <div
+   702→   702→   702→                  className="group max-w-4xl mx-auto p-8 rounded-2xl border border-[#e2e8f0] hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-[#f0fdf4] to-white cursor-pointer"
+   703→   703→   703→                  onClick={() => setSelectedMember(member)}
+   704→   704→   704→                >
+   705→   705→   705→                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+   706→   706→   706→                    <TeamAvatar name={member.name} size="lg" imageUrl={member.image} />
+   707→   707→   707→                    <div className="text-center sm:text-left flex-1">
+   708→   708→   708→                      <Badge className="bg-[#065f46] text-white text-xs mb-2 hover:bg-[#065f46]">
+   709→   709→   709→                        Executive Director
+   710→   710→   710→                      </Badge>
+   711→   711→   711→                      <h3
+   712→   712→   712→                        className="text-2xl font-bold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
+   713→   713→   713→                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   714→   714→   714→                      >
+   715→   715→   715→                        {member.name}
+   716→   716→   716→                      </h3>
+   717→   717→   717→                      <p className="text-[#059669] font-medium mb-3">{member.role}</p>
+   718→   718→   718→                      <p className="text-sm text-[#64748b] leading-relaxed line-clamp-3">{member.bio}</p>
+   719→   719→   719→                      <span className="inline-flex items-center gap-1 text-xs text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+   720→   720→   720→                        Click to view full profile →
+   721→   721→   721→                      </span>
+   722→   722→   722→                    </div>
+   723→   723→   723→                  </div>
+   724→   724→   724→                </div>
+   725→   725→   725→              </motion.div>
+   726→   726→   726→            ))}
+   727→   727→   727→
+   728→   728→   728→            {/* Directors - 3-column grid */}
+   729→   729→   729→            <motion.div
+   730→   730→   730→              variants={staggerContainer}
+   731→   731→   731→              initial="hidden"
+   732→   732→   732→              whileInView="visible"
+   733→   733→   733→              viewport={{ once: true, margin: '-50px' }}
+   734→   734→   734→              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+   735→   735→   735→            >
+   736→   736→   736→              {directors.map((member) => (
+   737→   737→   737→                <motion.div key={member.id} variants={staggerItem}>
+   738→   738→   738→                  <div
+   739→   739→   739→                    className="group p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white text-center cursor-pointer"
+   740→   740→   740→                    onClick={() => setSelectedMember(member)}
+   741→   741→   741→                  >
+   742→   742→   742→                    <div className="flex justify-center mb-4">
+   743→   743→   743→                      <TeamAvatar name={member.name} size="md" imageUrl={member.image} />
+   744→   744→   744→                    </div>
+   745→   745→   745→                    <Badge variant="secondary" className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-xs mb-2">
+   746→   746→   746→                      Director
+   747→   747→   747→                    </Badge>
+   748→   748→   748→                    <h3
+   749→   749→   749→                      className="text-lg font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
+   750→   750→   750→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   751→   751→   751→                    >
+   752→   752→   752→                      {member.name}
+   753→   753→   753→                    </h3>
+   754→   754→   754→                    <p className="text-[#059669] font-medium text-sm mb-3">{member.role}</p>
+   755→   755→   755→                    <p className="text-sm text-[#64748b] leading-relaxed line-clamp-4">{member.bio}</p>
+   756→   756→   756→                    <span className="inline-flex items-center gap-1 text-xs text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+   757→   757→   757→                      View full profile →
+   758→   758→   758→                    </span>
+   759→   759→   759→                  </div>
+   760→   760→   760→                </motion.div>
+   761→   761→   761→              ))}
+   762→   762→   762→            </motion.div>
+   763→   763→   763→          </div>
+   764→   764→   764→        </section>
+   765→   765→   765→      </SectionReveal>
+   766→   766→   766→
+   767→   767→   767→      {/* ================================================================== */}
+   768→   768→   768→      {/* SECTION 5: ADVISORY BOARD */}
+   769→   769→   769→      {/* ================================================================== */}
+   770→   770→   770→      <SectionReveal>
+   771→   771→   771→        <section className="py-20 sm:py-28 bg-[#f8fafc]" id="advisory-board" aria-label="Advisory Board">
+   772→   772→   772→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   773→   773→   773→            {/* Section header */}
+   774→   774→   774→            <div className="text-center mb-16">
+   775→   775→   775→              <Badge className="bg-[#fef3c7] text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
+   776→   776→   776→                Advisory Board
+   777→   777→   777→              </Badge>
+   778→   778→   778→              <h2
+   779→   779→   779→                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+   780→   780→   780→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   781→   781→   781→              >
+   782→   782→   782→                Our Advisory Board
+   783→   783→   783→              </h2>
+   784→   784→   784→              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+   785→   785→   785→                Distinguished experts who provide strategic guidance and direction to our work.
+   786→   786→   786→              </p>
+   787→   787→   787→            </div>
+   788→   788→   788→
+   789→   789→   789→            <motion.div
+   790→   790→   790→              variants={staggerContainer}
+   791→   791→   791→              initial="hidden"
+   792→   792→   792→              whileInView="visible"
+   793→   793→   793→              viewport={{ once: true, margin: '-50px' }}
+   794→   794→   794→              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
+   795→   795→   795→            >
+   796→   796→   796→              {advisoryBoard.map((member) => (
+   797→   797→   797→                <motion.div key={member.id} variants={staggerItem}>
+   798→   798→   798→                  <div
+   799→   799→   799→                    className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center cursor-pointer"
+   800→   800→   800→                    onClick={() => setSelectedMember(member)}
+   801→   801→   801→                  >
+   802→   802→   802→                    <div className="flex justify-center mb-3">
+   803→   803→   803→                      <TeamAvatar name={member.name} size="sm" imageUrl={member.image} />
+   804→   804→   804→                    </div>
+   805→   805→   805→                    <h3
+   806→   806→   806→                      className="text-sm font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
+   807→   807→   807→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   808→   808→   808→                    >
+   809→   809→   809→                      {member.name}
+   810→   810→   810→                    </h3>
+   811→   811→   811→                    <p className="text-xs text-[#059669] font-medium">{member.role}</p>
+   812→   812→   812→                    <span className="inline-flex items-center gap-1 text-[10px] text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+   813→   813→   813→                      View profile →
+   814→   814→   814→                    </span>
+   815→   815→   815→                  </div>
+   816→   816→   816→                </motion.div>
+   817→   817→   817→              ))}
+   818→   818→   818→            </motion.div>
+   819→   819→   819→          </div>
+   820→   820→   820→        </section>
+   821→   821→   821→      </SectionReveal>
+   822→   822→   822→
+   823→   823→   823→      {/* ================================================================== */}
+   824→   824→   824→      {/* SECTION 6: BOARD OF TRUSTEES */}
+   825→   825→   825→      {/* ================================================================== */}
+   826→   826→   826→      <SectionReveal>
+   827→   827→   827→        <section className="py-20 sm:py-28 bg-white" id="trustees" aria-label="Board of Trustees">
+   828→   828→   828→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   829→   829→   829→            {/* Section header */}
+   830→   830→   830→            <div className="text-center mb-16">
+   831→   831→   831→              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+   832→   832→   832→                Board of Trustees
+   833→   833→   833→              </Badge>
+   834→   834→   834→              <h2
+   835→   835→   835→                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+   836→   836→   836→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   837→   837→   837→              >
+   838→   838→   838→                Board of Trustees
+   839→   839→   839→              </h2>
+   840→   840→   840→              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+   841→   841→   841→                Providing governance oversight and strategic direction for GTEEP&apos;s mission.
+   842→   842→   842→              </p>
+   843→   843→   843→            </div>
+   844→   844→   844→
+   845→   845→   845→            <motion.div
+   846→   846→   846→              variants={staggerContainer}
+   847→   847→   847→              initial="hidden"
+   848→   848→   848→              whileInView="visible"
+   849→   849→   849→              viewport={{ once: true, margin: '-50px' }}
+   850→   850→   850→              className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto"
+   851→   851→   851→            >
+   852→   852→   852→              {trustees.map((member) => (
+   853→   853→   853→                <motion.div key={member.id} variants={staggerItem}>
+   854→   854→   854→                  <div
+   855→   855→   855→                    className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center cursor-pointer"
+   856→   856→   856→                    onClick={() => setSelectedMember(member)}
+   857→   857→   857→                  >
+   858→   858→   858→                    <div className="flex justify-center mb-3">
+   859→   859→   859→                      <TeamAvatar name={member.name} size="sm" imageUrl={member.image} />
+   860→   860→   860→                    </div>
+   861→   861→   861→                    <h3
+   862→   862→   862→                      className="text-sm font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
+   863→   863→   863→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   864→   864→   864→                    >
+   865→   865→   865→                      {member.name}
+   866→   866→   866→                    </h3>
+   867→   867→   867→                    <p className="text-xs text-[#059669] font-medium">{member.role}</p>
+   868→   868→   868→                    <span className="inline-flex items-center gap-1 text-[10px] text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+   869→   869→   869→                      View profile →
+   870→   870→   870→                    </span>
+   871→   871→   871→                  </div>
+   872→   872→   872→                </motion.div>
+   873→   873→   873→              ))}
+   874→   874→   874→            </motion.div>
+   875→   875→   875→          </div>
+   876→   876→   876→        </section>
+   877→   877→   877→      </SectionReveal>
+   878→   878→   878→
+   879→   879→   879→      {/* ================================================================== */}
+   880→   880→   880→      {/* SECTION 7: FEATURED OUTPUTS */}
+   881→   881→   881→      {/* ================================================================== */}
+   882→   882→   882→      <section className="py-20 sm:py-28 bg-[#0f172a] relative overflow-hidden" id="outputs" aria-label="Featured Outputs">
+   883→   883→   883→        {/* Decorative elements */}
+   884→   884→   884→        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+   885→   885→   885→          <div className="absolute top-0 right-1/4 w-72 h-72 rounded-full bg-[#059669]/8 blur-3xl" />
+   886→   886→   886→          <div className="absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-[#d97706]/8 blur-3xl" />
+   887→   887→   887→        </div>
+   888→   888→   888→
+   889→   889→   889→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+   890→   890→   890→          <SectionReveal>
+   891→   891→   891→            <div className="text-center mb-16">
+   892→   892→   892→              <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-sm px-3 py-1 mb-4">
+   893→   893→   893→                Our Work
+   894→   894→   894→              </Badge>
+   895→   895→   895→              <h2
+   896→   896→   896→                className="text-3xl sm:text-4xl font-bold text-white mt-2"
+   897→   897→   897→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   898→   898→   898→              >
+   899→   899→   899→                Featured Outputs
+   900→   900→   900→              </h2>
+   901→   901→   901→              <p className="mt-4 text-[#94a3b8] max-w-2xl mx-auto">
+   902→   902→   902→                Key research outputs spanning policy briefs, data resources, and knowledge products.
+   903→   903→   903→              </p>
+   904→   904→   904→            </div>
+   905→   905→   905→          </SectionReveal>
+   906→   906→   906→
+   907→   907→   907→          <motion.div
+   908→   908→   908→            variants={staggerContainer}
+   909→   909→   909→            initial="hidden"
+   910→   910→   910→            whileInView="visible"
+   911→   911→   911→            viewport={{ once: true, margin: '-50px' }}
+   912→   912→   912→            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+   913→   913→   913→          >
+   914→   914→   914→            {featuredOutputs.map((output) => (
+   915→   915→   915→              <motion.div key={output.id} variants={staggerItem}>
+   916→   916→   916→                <div className="group rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full flex flex-col overflow-hidden">
+   917→   917→   917→                  {output.image && (
+   918→   918→   918→                    <div className="relative h-40 overflow-hidden">
+   919→   919→   919→                      <Image
+   920→   920→   920→                        src={output.image}
+   921→   921→   921→                        alt={output.title}
+   922→   922→   922→                        fill
+   923→   923→   923→                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+   924→   924→   924→                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+   925→   925→   925→                      />
+   926→   926→   926→                      <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/80 to-transparent" />
+   927→   927→   927→                      <Badge className="absolute top-3 left-3 bg-[#d97706]/80 text-[#f59e0b] border-[#d97706]/30 text-xs backdrop-blur-sm hover:bg-[#d97706]/90">
+   928→   928→   928→                        {getOutputTypeLabel(output.type)}
+   929→   929→   929→                      </Badge>
+   930→   930→   930→                    </div>
+   931→   931→   931→                  )}
+   932→   932→   932→                  {!output.image && (
+   933→   933→   933→                    <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-xs w-fit m-6 mb-0 hover:bg-[#d97706]/30">
+   934→   934→   934→                      {getOutputTypeLabel(output.type)}
+   935→   935→   935→                    </Badge>
+   936→   936→   936→                  )}
+   937→   937→   937→                  <div className="p-6 flex flex-col flex-grow">
+   938→   938→   938→                    <h3
+   939→   939→   939→                      className="text-lg font-semibold text-white mb-3 leading-snug group-hover:text-[#f59e0b] transition-colors"
+   940→   940→   940→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   941→   941→   941→                    >
+   942→   942→   942→                      {output.title}
+   943→   943→   943→                    </h3>
+   944→   944→   944→                    <p className="text-sm text-[#94a3b8] leading-relaxed mb-4 flex-grow">{output.excerpt}</p>
+   945→   945→   945→                    <div className="flex items-center justify-between pt-4 border-t border-white/10">
+   946→   946→   946→                      {output.date && (
+   947→   947→   947→                        <span className="text-xs text-[#64748b]">
+   948→   948→   948→                          {new Date(output.date + 'T00:00:00').toLocaleDateString('en-US', {
+   949→   949→   949→                            year: 'numeric',
+   950→   950→   950→                            month: 'short',
+   951→   951→   951→                            day: 'numeric',
+   952→   952→   952→                          })}
+   953→   953→   953→                        </span>
+   954→   954→   954→                      )}
+   955→   955→   955→                      <Button
+   956→   956→   956→                        variant="link"
+   957→   957→   957→                        className="text-[#f59e0b] hover:text-[#d97706] p-0 h-auto text-sm group/link ml-auto"
+   958→   958→   958→                      >
+   959→   959→   959→                        Read More
+   960→   960→   960→                        <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
+   961→   961→   961→                      </Button>
+   962→   962→   962→                    </div>
+   963→   963→   963→                  </div>
+   964→   964→   964→                </div>
+   965→   965→   965→              </motion.div>
+   966→   966→   966→            ))}
+   967→   967→   967→          </motion.div>
+   968→   968→   968→
+   969→   969→   969→          {/* View all button */}
+   970→   970→   970→          <div className="text-center mt-12">
+   971→   971→   971→            <Button
+   972→   972→   972→              variant="outline"
+   973→   973→   973→              className="border-[#d97706] text-[#f59e0b] hover:bg-[#d97706] hover:text-white px-8 rounded-xl transition-all"
+   974→   974→   974→              asChild
+   975→   975→   975→            >
+   976→   976→   976→              <a href="/outputs">
+   977→   977→   977→                View All Outputs
+   978→   978→   978→                <ArrowRight className="w-4 h-4 ml-2" />
+   979→   979→   979→              </a>
+   980→   980→   980→            </Button>
+   981→   981→   981→          </div>
+   982→   982→   982→        </div>
+   983→   983→   983→      </section>
+   984→   984→   984→
+   985→   985→   985→      {/* ================================================================== */}
+   986→   986→   986→      {/* SECTION 8: FIRESIDE CHAT */}
+   987→   987→   987→      {/* ================================================================== */}
+   988→   988→   988→      <SectionReveal>
+   989→   989→   989→        <section className="py-20 sm:py-28 bg-gradient-to-br from-[#f0fdf4] via-white to-[#fef3c7]/30 relative overflow-hidden" id="fireside-chat" aria-label="Fireside Chat">
+   990→   990→   990→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   991→   991→   991→            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+   992→   992→   992→              {/* Left: Content */}
+   993→   993→   993→              <div>
+   994→   994→   994→                <Badge className="bg-[#d97706]/10 text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
+   995→   995→   995→                  <Flame className="w-3.5 h-3.5 mr-1" />
+   996→   996→   996→                  Fireside Chat
+   997→   997→   997→                </Badge>
+   998→   998→   998→                <h2
+   999→   999→   999→                  className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2 mb-4"
+  1000→  1000→  1000→                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+  1001→  1001→  1001→                >
+  1002→  1002→  1002→                  Where Policy Meets Practice
+  1003→  1003→  1003→                </h2>
+  1004→  1004→  1004→                <p className="text-[#64748b] leading-relaxed mb-6">
+  1005→  1005→  1005→                  Our Policy Fireside Chat brings together leading experts, policymakers, and practitioners for candid conversations about Africa&apos;s most pressing development challenges. Each session bridges the gap between research evidence and real-world policy impact.
+  1006→  1006→  1006→                </p>
+  1007→  1007→  1007→
+  1008→  1008→  1008→                {/* Feature highlights */}
+  1009→  1009→  1009→                <div className="space-y-4 mb-8">
+  1010→  1010→  1010→                  <div className="flex items-start gap-3">
+  1011→  1011→  1011→                    <div className="w-10 h-10 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0 mt-0.5">
+  1012→  1012→  1012→                      <MessageCircle className="w-5 h-5 text-[#065f46]" />
+  1013→  1013→  1013→                    </div>
+  1014→  1014→  1014→                    <div>
+  1015→  1015→  1015→                      <h4 className="font-semibold text-[#0f172a] text-sm">Expert-Led Conversations</h4>
+  1016→  1016→  1016→                      <p className="text-sm text-[#64748b]">Moderated dialogues with thought leaders shaping Africa&apos;s policy landscape</p>
+  1017→  1017→  1017→                    </div>
+  1018→  1018→  1018→                  </div>
+  1019→  1019→  1019→                  <div className="flex items-start gap-3">
+  1020→  1020→  1020→                    <div className="w-10 h-10 rounded-lg bg-[#d97706]/10 flex items-center justify-center shrink-0 mt-0.5">
+  1021→  1021→  1021→                      <Sparkles className="w-5 h-5 text-[#d97706]" />
+  1022→  1022→  1022→                    </div>
+  1023→  1023→  1023→                    <div>
+  1024→  1024→  1024→                      <h4 className="font-semibold text-[#0f172a] text-sm">Actionable Insights</h4>
+  1025→  1025→  1025→                      <p className="text-sm text-[#64748b]">Every session produces concrete takeaways that inform policy and practice</p>
+  1026→  1026→  1026→                    </div>
+  1027→  1027→  1027→                  </div>
+  1028→  1028→  1028→                  <div className="flex items-start gap-3">
+  1029→  1029→  1029→                    <div className="w-10 h-10 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0 mt-0.5">
+  1030→  1030→  1030→                      <Users className="w-5 h-5 text-[#065f46]" />
+  1031→  1031→  1031→                    </div>
+  1032→  1032→  1032→                    <div>
+  1033→  1033→  1033→                      <h4 className="font-semibold text-[#0f172a] text-sm">Inclusive Dialogue</h4>
+  1034→  1034→  1034→                      <p className="text-sm text-[#64748b]">Amplifying diverse voices — from grassroots advocates to senior policymakers</p>
+  1035→  1035→  1035→                    </div>
+  1036→  1036→  1036→                  </div>
+  1037→  1037→  1037→                </div>
+  1038→  1038→  1038→
+  1039→  1039→  1039→                <div className="flex flex-wrap gap-4">
+  1040→  1040→  1040→                  <Button
+  1041→  1041→  1041→                    size="lg"
+  1042→  1042→  1042→                    className="bg-[#d97706] hover:bg-[#b45309] text-white px-8 rounded-xl shadow-lg shadow-[#d97706]/20 transition-all hover:shadow-xl"
+  1043→  1043→  1043→                    asChild
+  1044→  1044→  1044→                  >
+  1045→  1045→  1045→                    <a href="/what-we-do/policy-engagement/policy-firechat">
+  1046→  1046→  1046→                      <Flame className="w-5 h-5 mr-2" />
+  1047→  1047→  1047→                      Explore Fireside Chat
+  1048→  1048→  1048→                    </a>
+  1049→  1049→  1049→                  </Button>
+  1050→  1050→  1050→                  <Button
+  1051→  1051→  1051→                    size="lg"
+  1052→  1052→  1052→                    variant="outline"
+  1053→  1053→  1053→                    className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+  1054→  1054→  1054→                    asChild
+  1055→  1055→  1055→                  >
+  1056→  1056→  1056→                    <a href="/outputs">
+  1057→  1057→  1057→                      View Our Outputs
+  1058→  1058→  1058→                      <ArrowRight className="w-4 h-4 ml-2" />
+  1059→  1059→  1059→                    </a>
+  1060→  1060→  1060→                  </Button>
+  1061→  1061→  1061→                </div>
+  1062→  1062→  1062→              </div>
+  1063→  1063→  1063→
+  1064→  1064→  1064→              {/* Right: Visual */}
+  1065→  1065→  1065→              <div className="relative">
+  1066→  1066→  1066→                <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+  1067→  1067→  1067→                  {/* Gradient background with decorative elements */}
+  1068→  1068→  1068→                  <div className="bg-gradient-to-br from-[#065f46] via-[#047857] to-[#0d9488] p-8 sm:p-10 min-h-[400px] flex flex-col items-center justify-center text-center">
+  1069→  1069→  1069→                    {/* Decorative circles */}
+  1070→  1070→  1070→                    <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-1/2 translate-x-1/4" />
+  1071→  1071→  1071→                    <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-[#d97706]/10 translate-y-1/3 -translate-x-1/4" />
+  1072→  1072→  1072→
+  1073→  1073→  1073→                    <div className="relative z-10">
+  1074→  1074→  1074→                      <div className="w-20 h-20 rounded-full bg-[#d97706]/20 flex items-center justify-center mx-auto mb-6">
+  1075→  1075→  1075→                        <Flame className="w-10 h-10 text-[#f59e0b]" />
+  1076→  1076→  1076→                      </div>
+  1077→  1077→  1077→                      <h3
+  1078→  1078→  1078→                        className="text-2xl sm:text-3xl font-bold text-white mb-3"
+  1079→  1079→  1079→                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+  1080→  1080→  1080→                      >
+  1081→  1081→  1081→                        Policy Fireside Chat
+  1082→  1082→  1082→                      </h3>
+  1083→  1083→  1083→                      <p className="text-white/80 text-sm max-w-sm mx-auto mb-6">
+  1084→  1084→  1084→                        Bridging evidence and action through moderated policy dialogue with Africa&apos;s foremost thinkers.
+  1085→  1085→  1085→                      </p>
+  1086→  1086→  1086→                      <div className="flex items-center justify-center gap-6 text-white/60 text-xs">
+  1087→  1087→  1087→                        <div className="flex items-center gap-1.5">
+  1088→  1088→  1088→                          <MessageCircle className="w-4 h-4" />
+  1089→  1089→  1089→                          <span>Live Dialogue</span>
+  1090→  1090→  1090→                        </div>
+  1091→  1091→  1091→                        <div className="flex items-center gap-1.5">
+  1092→  1092→  1092→                          <Sparkles className="w-4 h-4" />
+  1093→  1093→  1093→                          <span>Expert Panels</span>
+  1094→  1094→  1094→                        </div>
+  1095→  1095→  1095→                        <div className="flex items-center gap-1.5">
+  1096→  1096→  1096→                          <Eye className="w-4 h-4" />
+  1097→  1097→  1097→                          <span>Policy Impact</span>
+  1098→  1098→  1098→                        </div>
+  1099→  1099→  1099→                      </div>
+  1100→  1100→  1100→                    </div>
+  1101→  1101→  1101→                  </div>
+  1102→  1102→  1102→                </div>
+  1103→  1103→  1103→              </div>
+  1104→  1104→  1104→            </div>
+  1105→  1105→  1105→          </div>
+  1106→  1106→  1106→        </section>
+  1107→  1107→  1107→      </SectionReveal>
+  1108→  1108→  1108→
+  1109→  1109→  1109→      {/* ================================================================== */}
+  1110→  1110→  1110→      {/* SECTION 9: NEWSLETTER + CONTACT CTA */}
+  1111→  1111→  1111→      {/* ================================================================== */}
+  1112→  1112→  1112→      <section
+  1113→  1113→  1113→        className="py-20 sm:py-28 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] relative overflow-hidden"
+  1114→  1114→  1114→        id="contact"
+  1115→  1115→  1115→        aria-label="Stay Connected"
+  1116→  1116→  1116→      >
+  1117→  1117→  1117→        {/* Decorative elements */}
+  1118→  1118→  1118→        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+  1119→  1119→  1119→          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#065f46]/10 blur-3xl" />
+  1120→  1120→  1120→          <div className="absolute bottom-0 right-0 w-72 h-72 rounded-full bg-[#d97706]/8 blur-3xl" />
+  1121→  1121→  1121→        </div>
+  1122→  1122→  1122→
+  1123→  1123→  1123→        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+  1124→  1124→  1124→          <SectionReveal>
+  1125→  1125→  1125→            <div className="text-center mb-12">
+  1126→  1126→  1126→              <div className="w-16 h-16 mx-auto rounded-2xl bg-[#d97706]/20 flex items-center justify-center mb-6">
+  1127→  1127→  1127→                <Mail className="w-8 h-8 text-[#f59e0b]" />
+  1128→  1128→  1128→              </div>
+  1129→  1129→  1129→              <h2
+  1130→  1130→  1130→                className="text-3xl sm:text-4xl font-bold text-white mb-4"
+  1131→  1131→  1131→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+  1132→  1132→  1132→              >
+  1133→  1133→  1133→                Stay Connected
+  1134→  1134→  1134→              </h2>
+  1135→  1135→  1135→              <p className="text-[#94a3b8] max-w-xl mx-auto">
+  1136→  1136→  1136→                Subscribe to our newsletter for the latest research insights, policy analysis, and updates on our work across Africa.
+  1137→  1137→  1137→              </p>
+  1138→  1138→  1138→            </div>
+  1139→  1139→  1139→
+  1140→  1140→  1140→            {/* Newsletter form */}
+  1141→  1141→  1141→            <div className="max-w-md mx-auto mb-16">
+  1142→  1142→  1142→              <div className="flex gap-3">
+  1143→  1143→  1143→                <Input
+  1144→  1144→  1144→                  type="email"
+  1145→  1145→  1145→                  placeholder="Enter your email address"
+  1146→  1146→  1146→                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-[#d97706] focus:ring-[#d97706]/20 h-12 rounded-xl"
+  1147→  1147→  1147→                  aria-label="Email address for newsletter"
+  1148→  1148→  1148→                />
+  1149→  1149→  1149→                <Button className="bg-[#d97706] hover:bg-[#b45309] text-white px-6 h-12 rounded-xl font-semibold shadow-lg shadow-[#d97706]/25 shrink-0 transition-all hover:shadow-xl hover:shadow-[#d97706]/30">
+  1150→  1150→  1150→                  Subscribe
+  1151→  1151→  1151→                </Button>
+  1152→  1152→  1152→              </div>
+  1153→  1153→  1153→              <p className="text-xs text-[#64748b] mt-3 text-center">
+  1154→  1154→  1154→                We respect your privacy. Unsubscribe at any time.
+  1155→  1155→  1155→              </p>
+  1156→  1156→  1156→            </div>
+  1157→  1157→  1157→
+  1158→  1158→  1158→            {/* Contact info */}
+  1159→  1159→  1159→            <div className="grid sm:grid-cols-3 gap-8 text-center">
+  1160→  1160→  1160→              <div className="flex flex-col items-center gap-2">
+  1161→  1161→  1161→                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+  1162→  1162→  1162→                  <Mail className="w-5 h-5 text-[#f59e0b]" />
+  1163→  1163→  1163→                </div>
+  1164→  1164→  1164→                <p className="text-white font-medium text-sm">Email</p>
+  1165→  1165→  1165→                <a
+  1166→  1166→  1166→                  href={`mailto:${settings.acfOptions?.contactEmail || 'info@gteep.gileadtrust.com'}`}
+  1167→  1167→  1167→                  className="text-[#94a3b8] text-sm hover:text-[#f59e0b] transition-colors"
+  1168→  1168→  1168→                >
+  1169→  1169→  1169→                  {settings.acfOptions?.contactEmail || 'info@gteep.gileadtrust.com'}
+  1170→  1170→  1170→                </a>
+  1171→  1171→  1171→              </div>
+  1172→  1172→  1172→
+  1173→  1173→  1173→              <div className="flex flex-col items-center gap-2">
+  1174→  1174→  1174→                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+  1175→  1175→  1175→                  <MapPin className="w-5 h-5 text-[#f59e0b]" />
+  1176→  1176→  1176→                </div>
+  1177→  1177→  1177→                <p className="text-white font-medium text-sm">Address</p>
+  1178→  1178→  1178→                <p className="text-[#94a3b8] text-sm">
+  1179→  1179→  1179→                  {settings.acfOptions?.contactAddress || 'Lagos, Nigeria'}
+  1180→  1180→  1180→                </p>
+  1181→  1181→  1181→              </div>
+  1182→  1182→  1182→
+  1183→  1183→  1183→              <div className="flex flex-col items-center gap-2">
+  1184→  1184→  1184→                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+  1185→  1185→  1185→                  <Phone className="w-5 h-5 text-[#f59e0b]" />
+  1186→  1186→  1186→                </div>
+  1187→  1187→  1187→                <p className="text-white font-medium text-sm">Phone</p>
+  1188→  1188→  1188→                <a
+  1189→  1189→  1189→                  href={`tel:${settings.acfOptions?.contactPhone || '+234 801 234 5678'}`}
+  1190→  1190→  1190→                  className="text-[#94a3b8] text-sm hover:text-[#f59e0b] transition-colors"
+  1191→  1191→  1191→                >
+  1192→  1192→  1192→                  {settings.acfOptions?.contactPhone || '+234 801 234 5678'}
+  1193→  1193→  1193→                </a>
+  1194→  1194→  1194→              </div>
+  1195→  1195→  1195→            </div>
+  1196→  1196→  1196→          </SectionReveal>
+  1197→  1197→  1197→        </div>
+  1198→  1198→  1198→      </section>
+  1199→  1199→  1199→
+  1200→  1200→  1200→      {/* Team Member Modal */}
+  1201→  1201→  1201→      <TeamMemberModal
+  1202→  1202→  1202→        member={selectedMember}
+  1203→  1203→  1203→        isOpen={!!selectedMember}
+  1204→  1204→  1204→        onClose={() => setSelectedMember(null)}
+  1205→  1205→  1205→      />
+  1206→  1206→  1206→    </main>
+  1207→  1207→  1207→  );
+  1208→  1208→  1208→}
+  1209→  1209→  1209→

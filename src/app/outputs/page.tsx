@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import OutputsPageClient from '@/components/pages/OutputsPageClient';
 import OfflinePage from '@/components/shared/OfflinePage';
-import { getOutputs, getOutputDownloadables, getVideoGallery, isWordPressConnected } from '@/graphql/fetchers';
+import { getOutputs, getOutputDownloadables, isWordPressConnected } from '@/graphql/fetchers';
 
 export const revalidate = 300;
 
@@ -19,10 +19,9 @@ export default async function OutputsPage() {
     return <OfflinePage pageTitle="Our Outputs" />;
   }
 
-  const [outputs, downloadables, videos] = await Promise.all([
+  const [outputs, downloadables] = await Promise.all([
     getOutputs(),
     getOutputDownloadables(),
-    getVideoGallery(),
   ]);
 
   // Merge downloadables into outputs (downloadables come from ACF, outputs from other sources)
@@ -32,7 +31,6 @@ export default async function OutputsPage() {
     <Suspense>
       <OutputsPageClient
         outputs={allOutputs}
-        videos={videos}
       />
     </Suspense>
   );

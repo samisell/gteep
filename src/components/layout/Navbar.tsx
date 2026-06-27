@@ -29,6 +29,8 @@ interface NavLink {
 const navLinks: NavLink[] = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About Us' },
+  { href: '/about#philosophy', label: 'Our Philosophy' },
+  { href: '/about#team', label: 'Who We Are' },
   {
     href: '/what-we-do',
     label: 'What We Do',
@@ -40,20 +42,11 @@ const navLinks: NavLink[] = [
       { href: '/what-we-do/data-speaks', label: 'Data Speaks' },
       { href: '/what-we-do/youth-mentoring', label: 'Youth Mentoring' },
       { href: '/what-we-do/womens-economic-livelihood', label: "Women's Economic Livelihood" },
+      { href: '/publications', label: 'Our Publication' },
     ],
   },
-  {
-    href: '/outputs',
-    label: 'Our Outputs',
-    children: [
-      { href: '/outputs', label: 'All Outputs' },
-      { href: '/fireside-chats', label: 'Fireside Chats' },
-      { href: '/gallery', label: 'Gallery' },
-    ],
-  },
-  { href: '/blog', label: 'Blog' },
-  { href: '/partners', label: 'Our Partners' },
-  { href: '/contact', label: 'Contact Us' },
+  { href: '/what-we-do/policy-engagement/policy-firechat', label: 'Fireside Chat' },
+  { href: '/outputs', label: 'Our Output' },
 ];
 
 // =============================================================================
@@ -94,6 +87,8 @@ export default function Navbar({ logoUrl }: NavbarProps) {
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
+    // Anchor links (e.g., /about#philosophy) should not be highlighted as "active"
+    if (href.includes('#')) return false;
     return pathname.startsWith(href);
   };
 

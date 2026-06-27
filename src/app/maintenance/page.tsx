@@ -80,10 +80,10 @@ export default function MaintenancePage() {
         <p className="text-slate-400 text-sm">
           Need to reach us?{' '}
           <a
-            href="mailto:info@gteep.com"
+            href="mailto:info@gteep.gileadtrust.com"
             className="text-amber-400 hover:text-amber-300 underline underline-offset-4 transition-colors"
           >
-            info@gteep.com
+            info@gteep.gileadtrust.com
           </a>
         </p>
       </div>

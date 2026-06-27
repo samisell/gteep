@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import PageHeader from '@/components/shared/PageHeader';
@@ -25,6 +26,7 @@ import type {
   GTEEPPhilosophy,
   GTEEPTeamMember,
 } from '@/types';
+import { TeamMemberModal } from '@/components/features/TeamMemberModal';
 
 // =============================================================================
 // Props
@@ -130,6 +132,9 @@ export default function AboutPageClient({
   const advisoryBoard = teamMembers.filter((m) => m.category === 'advisory-board');
   const trustees = teamMembers.filter((m) => m.category === 'board-of-trustees');
 
+  // Team member modal state
+  const [selectedMember, setSelectedMember] = useState<GTEEPTeamMember | null>(null);
+
   // Use WordPress ACF data from the about-us page
   const aboutDescription = aboutData.aboutSummary;
   const aboutVision = aboutData.aboutVision;
@@ -234,92 +239,9 @@ export default function AboutPageClient({
       </section>
 
       {/* ================================================================== */}
-      {/* VISION / MISSION / GOAL */}
+      {/* PHILOSOPHY SECTION — Vision, Mission, Goal + Philosophy Items */}
       {/* ================================================================== */}
-      <section className="py-16 md:py-24 bg-[#f8fafc]" aria-label="Vision, Mission & Goal">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection>
-            <div className="text-center mb-12">
-              <Badge className="bg-[#fef3c7] text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
-                Our Direction
-              </Badge>
-              <h2
-                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-              >
-                Vision, Mission &amp; Goal
-              </h2>
-              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                Our activities will hopefully, one small successful bite at a time, contribute to the above through this legacy project.
-              </p>
-            </div>
-          </AnimatedSection>
-
-          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-            {/* Vision */}
-            <AnimatedSection delay={0}>
-              <div className="group p-8 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full text-center">
-                <div className="w-16 h-16 rounded-2xl bg-[#f0fdf4] flex items-center justify-center mx-auto mb-6 group-hover:bg-[#065f46] transition-colors">
-                  <Eye className="w-8 h-8 text-[#059669] group-hover:text-white transition-colors" />
-                </div>
-                <h3
-                  className="text-xl font-bold text-[#0f172a] mb-3"
-                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                >
-                  Our Vision
-                </h3>
-                <div className="h-1 w-12 rounded-full bg-[#059669] mx-auto mb-4" />
-                <p className="text-[#64748b] leading-relaxed">
-                  {aboutVision}
-                </p>
-              </div>
-            </AnimatedSection>
-
-            {/* Mission */}
-            <AnimatedSection delay={0.1}>
-              <div className="group p-8 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full text-center">
-                <div className="w-16 h-16 rounded-2xl bg-[#fef3c7] flex items-center justify-center mx-auto mb-6 group-hover:bg-[#d97706] transition-colors">
-                  <Target className="w-8 h-8 text-[#d97706] group-hover:text-white transition-colors" />
-                </div>
-                <h3
-                  className="text-xl font-bold text-[#0f172a] mb-3"
-                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                >
-                  Our Mission
-                </h3>
-                <div className="h-1 w-12 rounded-full bg-[#d97706] mx-auto mb-4" />
-                <p className="text-[#64748b] leading-relaxed">
-                  {aboutMission}
-                </p>
-              </div>
-            </AnimatedSection>
-
-            {/* Goal */}
-            <AnimatedSection delay={0.2}>
-              <div className="group p-8 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full text-center">
-                <div className="w-16 h-16 rounded-2xl bg-[#f0fdf4] flex items-center justify-center mx-auto mb-6 group-hover:bg-[#065f46] transition-colors">
-                  <Crosshair className="w-8 h-8 text-[#059669] group-hover:text-white transition-colors" />
-                </div>
-                <h3
-                  className="text-xl font-bold text-[#0f172a] mb-3"
-                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                >
-                  Our Goal
-                </h3>
-                <div className="h-1 w-12 rounded-full bg-[#059669] mx-auto mb-4" />
-                <p className="text-[#64748b] leading-relaxed">
-                  {aboutGoal}
-                </p>
-              </div>
-            </AnimatedSection>
-          </div>
-        </div>
-      </section>
-
-      {/* ================================================================== */}
-      {/* PHILOSOPHY SECTION */}
-      {/* ================================================================== */}
-      <section className="py-16 md:py-24 bg-[#0f172a] relative overflow-hidden" aria-label="Our Philosophy">
+      <section className="py-16 md:py-24 bg-[#0f172a] relative overflow-hidden" id="philosophy" aria-label="Our Philosophy">
         {/* Decorative elements */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-[#059669]/10 blur-3xl" />
@@ -339,64 +261,125 @@ export default function AboutPageClient({
                 Our Philosophy
               </h2>
               <p className="mt-4 text-[#94a3b8] max-w-2xl mx-auto">
-                The core principles that guide our work and shape our approach to development in Africa.
+                Our vision, mission, goal and the core principles that guide our work and shape our approach to development in Africa.
               </p>
             </div>
           </AnimatedSection>
 
+          {/* Vision, Mission, Goal Cards */}
           <motion.div
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-50px' }}
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10"
           >
-            {philosophy.map((item, index) => {
-              const IconComponent = getPhilosophyIcon(item.icon);
-              const isLarge = index === 0;
-              return (
-                <motion.div
-                  key={item.id}
-                  variants={staggerItem}
-                  className={isLarge ? 'sm:col-span-2 lg:col-span-2' : ''}
+            {/* Vision */}
+            <motion.div variants={staggerItem}>
+              <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#059669]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+                <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+                  <Eye className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+                </div>
+                <h3
+                  className="text-lg font-semibold text-white mb-2"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                 >
-                  <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
-                    <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
-                      <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
-                    </div>
-                    <h3
-                      className="text-lg font-semibold text-white mb-2"
-                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                    >
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-[#94a3b8] leading-relaxed">{item.description}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  Our Vision
+                </h3>
+                <p className="text-sm text-[#94a3b8] leading-relaxed">
+                  {aboutVision}
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Mission */}
+            <motion.div variants={staggerItem}>
+              <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+                <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+                  <Target className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+                </div>
+                <h3
+                  className="text-lg font-semibold text-white mb-2"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  Our Mission
+                </h3>
+                <p className="text-sm text-[#94a3b8] leading-relaxed">
+                  {aboutMission}
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Goal */}
+            <motion.div variants={staggerItem}>
+              <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#059669]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+                <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+                  <Crosshair className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+                </div>
+                <h3
+                  className="text-lg font-semibold text-white mb-2"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  Our Goal
+                </h3>
+                <p className="text-sm text-[#94a3b8] leading-relaxed">
+                  {aboutGoal}
+                </p>
+              </div>
+            </motion.div>
           </motion.div>
+
+          {/* Additional philosophy items from WordPress ACF */}
+          {philosophy.length > 0 && (
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-50px' }}
+              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {philosophy.map((item) => {
+                const IconComponent = getPhilosophyIcon(item.icon);
+                return (
+                  <motion.div key={item.id} variants={staggerItem}>
+                    <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+                      <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+                        <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+                      </div>
+                      <h3
+                        className="text-lg font-semibold text-white mb-2"
+                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                      >
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-[#94a3b8] leading-relaxed">{item.description}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
         </div>
       </section>
 
       {/* ================================================================== */}
       {/* LEADERSHIP: EXECUTIVE DIRECTOR */}
       {/* ================================================================== */}
-      <section className="py-16 md:py-24 bg-white" aria-label="Leadership">
+      <section className="py-16 md:py-24 bg-white" id="team" aria-label="Our Team">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimatedSection>
             <div className="text-center mb-16">
               <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
-                Leadership
+                Our Team
               </Badge>
               <h2
                 className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
-                Our Leadership
+                Our Team
               </h2>
               <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                Experienced leaders driving GTEEP&apos;s mission for evidence-based, inclusive policy across Africa.
+                A dedicated team of researchers, policy analysts, and development practitioners committed to Africa&apos;s transformation.
               </p>
             </div>
           </AnimatedSection>
@@ -411,7 +394,10 @@ export default function AboutPageClient({
               transition={{ duration: 0.6 }}
               className="mb-12"
             >
-              <div className="group max-w-4xl mx-auto p-8 rounded-2xl border border-[#e2e8f0] hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-[#f0fdf4] to-white">
+              <div
+                className="group max-w-4xl mx-auto p-8 rounded-2xl border border-[#e2e8f0] hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-[#f0fdf4] to-white cursor-pointer"
+                onClick={() => setSelectedMember(member)}
+              >
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                   <TeamAvatar name={member.name} size="lg" imageUrl={member.image} />
                   <div className="text-center sm:text-left flex-1">
@@ -419,13 +405,16 @@ export default function AboutPageClient({
                       Executive Director
                     </Badge>
                     <h3
-                      className="text-2xl font-bold text-[#0f172a] mb-1"
+                      className="text-2xl font-bold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
                       style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                     >
                       {member.name}
                     </h3>
                     <p className="text-[#059669] font-medium mb-3">{member.role}</p>
-                    <p className="text-sm text-[#64748b] leading-relaxed">{member.bio}</p>
+                    <p className="text-sm text-[#64748b] leading-relaxed line-clamp-3">{member.bio}</p>
+                    <span className="inline-flex items-center gap-1 text-xs text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Click to view full profile →
+                    </span>
                   </div>
                 </div>
               </div>
@@ -442,7 +431,10 @@ export default function AboutPageClient({
           >
             {directors.map((member) => (
               <motion.div key={member.id} variants={staggerItem}>
-                <div className="group p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white text-center">
+                <div
+                  className="group p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white text-center cursor-pointer"
+                  onClick={() => setSelectedMember(member)}
+                >
                   <div className="flex justify-center mb-4">
                     <TeamAvatar name={member.name} size="md" imageUrl={member.image} />
                   </div>
@@ -450,13 +442,16 @@ export default function AboutPageClient({
                     Director
                   </Badge>
                   <h3
-                    className="text-lg font-semibold text-[#0f172a] mb-1"
+                    className="text-lg font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
                     style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                   >
                     {member.name}
                   </h3>
                   <p className="text-[#059669] font-medium text-sm mb-3">{member.role}</p>
                   <p className="text-sm text-[#64748b] leading-relaxed line-clamp-4">{member.bio}</p>
+                  <span className="inline-flex items-center gap-1 text-xs text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    View full profile →
+                  </span>
                 </div>
               </motion.div>
             ))}
@@ -494,13 +489,16 @@ export default function AboutPageClient({
             >
               {advisoryBoard.map((member) => (
                 <motion.div key={member.id} variants={staggerItem}>
-                  <Card className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center">
+                  <Card
+                    className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center cursor-pointer"
+                    onClick={() => setSelectedMember(member)}
+                  >
                     <CardContent className="p-0">
                       <div className="flex justify-center mb-3">
                         <TeamAvatar name={member.name} size="sm" imageUrl={member.image} />
                       </div>
                       <h3
-                        className="text-sm font-semibold text-[#0f172a] mb-1"
+                        className="text-sm font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
                         style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                       >
                         {member.name}
@@ -509,6 +507,9 @@ export default function AboutPageClient({
                       <p className="text-xs text-[#64748b] leading-relaxed mt-2 line-clamp-3">
                         {member.bio}
                       </p>
+                      <span className="inline-flex items-center gap-1 text-[10px] text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        View profile →
+                      </span>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -548,13 +549,16 @@ export default function AboutPageClient({
             >
               {trustees.map((member) => (
                 <motion.div key={member.id} variants={staggerItem}>
-                  <Card className="group p-6 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center">
+                  <Card
+                    className="group p-6 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center cursor-pointer"
+                    onClick={() => setSelectedMember(member)}
+                  >
                     <CardContent className="p-0">
                       <div className="flex justify-center mb-3">
                         <TeamAvatar name={member.name} size="md" imageUrl={member.image} />
                       </div>
                       <h3
-                        className="text-base font-semibold text-[#0f172a] mb-1"
+                        className="text-base font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
                         style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
                       >
                         {member.name}
@@ -563,6 +567,9 @@ export default function AboutPageClient({
                       <p className="text-xs text-[#64748b] leading-relaxed mt-2 line-clamp-3">
                         {member.bio}
                       </p>
+                      <span className="inline-flex items-center gap-1 text-[10px] text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        View profile →
+                      </span>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -623,6 +630,13 @@ export default function AboutPageClient({
           </AnimatedSection>
         </div>
       </section>
+
+      {/* Team Member Modal */}
+      <TeamMemberModal
+        member={selectedMember}
+        isOpen={!!selectedMember}
+        onClose={() => setSelectedMember(null)}
+      />
     </main>
   );
 }

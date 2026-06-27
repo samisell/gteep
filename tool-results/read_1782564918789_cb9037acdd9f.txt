@@ -1,0 +1,580 @@
+     1→'use client';
+     2→
+     3→import { useState } from 'react';
+     4→import { motion } from 'framer-motion';
+     5→import Image from 'next/image';
+     6→import PageHeader from '@/components/shared/PageHeader';
+     7→import { AnimatedSection } from '@/components/shared/AnimatedSection';
+     8→import { Button } from '@/components/ui/button';
+     9→import { Badge } from '@/components/ui/badge';
+    10→import {
+    11→  Tabs,
+    12→  TabsList,
+    13→  TabsTrigger,
+    14→  TabsContent,
+    15→} from '@/components/ui/tabs';
+    16→import {
+    17→  FileSearch,
+    18→  Users,
+    19→  Lightbulb,
+    20→  BarChart3,
+    21→  GraduationCap,
+    22→  Heart,
+    23→  ArrowRight,
+    24→  BookOpen,
+    25→  Mail,
+    26→  ChevronRight,
+    27→  Flame,
+    28→  Home,
+    29→  Presentation,
+    30→  FileText,
+    31→  Eye,
+    32→  Video,
+    33→  Calendar,
+    34→  Plus,
+    35→} from 'lucide-react';
+    36→import Link from 'next/link';
+    37→import type { GTEEPActivity, GTEEPActivityChild, GTEEPOutput, YouTubeVideo } from '@/types';
+    38→import { ViewDocumentButton } from '@/components/features/DocumentViewer';
+    39→
+    40→// =============================================================================
+    41→// Props
+    42→// =============================================================================
+    43→
+    44→interface ActivityDetailClientProps {
+    45→  activity: GTEEPActivity;
+    46→  parentPage?: {
+    47→    id: string;
+    48→    title: string;
+    49→    slug: string;
+    50→    uri: string;
+    51→  };
+    52→  relatedOutputs?: GTEEPOutput[];
+    53→  videos?: YouTubeVideo[];
+    54→}
+    55→
+    56→// =============================================================================
+    57→// Icon Map - Direct mapping object
+    58→// =============================================================================
+    59→
+    60→const activityIcons: Record<string, React.ElementType> = {
+    61→  FileSearch,
+    62→  Users,
+    63→  Lightbulb,
+    64→  BarChart3,
+    65→  GraduationCap,
+    66→  Heart,
+    67→};
+    68→
+    69→// =============================================================================
+    70→// ActivityIcon Component
+    71→// =============================================================================
+    72→
+    73→function ActivityIcon({ name, className }: { name: string; className?: string }) {
+    74→  const Icon = activityIcons[name] || FileSearch;
+    75→  return <Icon className={className} />;
+    76→}
+    77→
+    78→// =============================================================================
+    79→// Helper Functions for Related Outputs
+    80→// =============================================================================
+    81→
+    82→function getOutputTypeLabel(type: string): string {
+    83→  const labels: Record<string, string> = {
+    84→    'concept-note': 'Concept Note',
+    85→    'policy-brief': 'Policy Brief',
+    86→    'data-stock': 'Data Stock',
+    87→    'video': 'Video Gallery',
+    88→    'photo': 'Photo Gallery',
+    89→    'knowledge-product': 'Knowledge Product',
+    90→  };
+    91→  return labels[type] || 'Output';
+    92→}
+    93→
+    94→function getOutputTypeBadgeColor(type: string): string {
+    95→  switch (type) {
+    96→    case 'concept-note': return 'bg-[#f0fdf4] text-[#059669] border-[#065f46]/20';
+    97→    case 'policy-brief': return 'bg-[#fef3c7] text-[#d97706] border-[#d97706]/20';
+    98→    case 'data-stock': return 'bg-[#eff6ff] text-[#2563eb] border-[#2563eb]/20';
+    99→    case 'video': return 'bg-[#faf5ff] text-[#7c3aed] border-[#7c3aed]/20';
+   100→    case 'photo': return 'bg-[#fff1f2] text-[#e11d48] border-[#e11d48]/20';
+   101→    case 'knowledge-product': return 'bg-[#f0fdfa] text-[#0d9488] border-[#0d9488]/20';
+   102→    default: return 'bg-[#f1f5f9] text-[#64748b] border-[#64748b]/20';
+   103→  }
+   104→}
+   105→
+   106→function getOutputTypeBgGradient(type: string): string {
+   107→  switch (type) {
+   108→    case 'concept-note': return 'from-[#065f46] to-[#047857]';
+   109→    case 'policy-brief': return 'from-[#d97706] to-[#b45309]';
+   110→    case 'data-stock': return 'from-[#1d4ed8] to-[#1e40af]';
+   111→    case 'video': return 'from-[#7c3aed] to-[#6d28d9]';
+   112→    case 'photo': return 'from-[#e11d48] to-[#be123c]';
+   113→    case 'knowledge-product': return 'from-[#0d9488] to-[#0f766e]';
+   114→    default: return 'from-[#065f46] to-[#0f172a]';
+   115→  }
+   116→}
+   117→
+   118→// =============================================================================
+   119→// Color Map
+   120→// =============================================================================
+   121→
+   122→const activityColors: Record<string, {
+   123→  iconBg: string;
+   124→  iconText: string;
+   125→  accent: string;
+   126→  gradient: string;
+   127→}> = {
+   128→  'policy-research': {
+   129→    iconBg: 'bg-[#f0fdf4]',
+   130→    iconText: 'text-[#059669]',
+   131→    accent: 'bg-[#065f46]',
+   132→    gradient: 'from-[#065f46] to-[#047857]',
+   133→  },
+   134→  'policy-engagement': {
+   135→    iconBg: 'bg-[#fef3c7]',
+   136→    iconText: 'text-[#d97706]',
+   137→    accent: 'bg-[#d97706]',
+   138→    gradient: 'from-[#d97706] to-[#b45309]',
+   139→  },
+   140→  'citizen-enlightenment': {
+   141→    iconBg: 'bg-[#f0fdf4]',
+   142→    iconText: 'text-[#059669]',
+   143→    accent: 'bg-[#059669]',
+   144→    gradient: 'from-[#059669] to-[#047857]',
+   145→  },
+   146→  'data-speaks': {
+   147→    iconBg: 'bg-[#fef3c7]',
+   148→    iconText: 'text-[#d97706]',
+   149→    accent: 'bg-[#d97706]',
+   150→    gradient: 'from-[#d97706] to-[#b45309]',
+   151→  },
+   152→  'youth-mentoring': {
+   153→    iconBg: 'bg-[#f0fdf4]',
+   154→    iconText: 'text-[#059669]',
+   155→    accent: 'bg-[#065f46]',
+   156→    gradient: 'from-[#065f46] to-[#047857]',
+   157→  },
+   158→  'womens-economic-livelihood': {
+   159→    iconBg: 'bg-[#fef3c7]',
+   160→    iconText: 'text-[#d97706]',
+   161→    accent: 'bg-[#d97706]',
+   162→    gradient: 'from-[#d97706] to-[#b45309]',
+   163→  },
+   164→};
+   165→
+   166→// =============================================================================
+   167→// HTML Content Renderer
+   168→// =============================================================================
+   169→
+   170→function WpContent({ html, className }: { html: string; className?: string }) {
+   171→  if (!html || html.trim() === '') return null;
+   172→  return (
+   173→    <div
+   174→      className={`prose prose-slate max-w-none text-[#475569] leading-relaxed [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-[#0f172a] [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-[#0f172a] [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-[#0f172a] [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-1 [&_a]:text-[#059669] [&_a]:underline [&_a:hover]:text-[#047857] [&_strong]:text-[#0f172a] [&_blockquote]:border-l-4 [&_blockquote]:border-[#065f46] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-[#64748b] ${className || ''}`}
+   175→      dangerouslySetInnerHTML={{ __html: html }}
+   176→    />
+   177→  );
+   178→}
+   179→
+   180→// =============================================================================
+   181→// Main Component
+   182→// =============================================================================
+   183→
+   184→export default function ActivityDetailClient({ activity, parentPage, relatedOutputs = [], videos = [] }: ActivityDetailClientProps) {
+   185→  const color = activityColors[activity.slug] || activityColors['policy-research'];
+   186→  const hasChildren = activity.children && activity.children.length > 0;
+   187→
+   188→  // Build breadcrumb (PageHeader already adds "Home" as the first item)
+   189→  const breadcrumb: { label: string; href?: string }[] = [
+   190→    { label: 'What We Do', href: '/what-we-do' },
+   191→  ];
+   192→  if (parentPage && parentPage.slug !== 'what-we-do') {
+   193→    breadcrumb.push({ label: parentPage.title, href: `/what-we-do/${parentPage.slug}` });
+   194→  }
+   195→  breadcrumb.push({ label: activity.title });
+   196→
+   197→  return (
+   198→    <main className="pt-20 scroll-smooth">
+   199→      {/* Page Header */}
+   200→      <PageHeader
+   201→        title={activity.title}
+   202→        subtitle="What We Do"
+   203→        description={`GTEEP's ${activity.title} programme — driving evidence-based policy change across Africa.`}
+   204→        breadcrumb={breadcrumb}
+   205→        backgroundImage="/images/policy-engagement.jpg"
+   206→      />
+   207→
+   208→      {/* Main Content */}
+   209→      <section className="py-12 md:py-20 bg-white" aria-label={activity.title}>
+   210→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   211→          <div className="grid gap-12 lg:grid-cols-3">
+   212→            {/* Sidebar */}
+   213→            <div className="lg:col-span-1 order-2 lg:order-1">
+   214→              <AnimatedSection>
+   215→                <div className="sticky top-24 space-y-6">
+   216→                  {/* Activity Icon Card */}
+   217→                  <div className="rounded-2xl border border-[#e2e8f0] p-6 bg-[#f8fafc]">
+   218→                    <div className={`w-16 h-16 rounded-xl ${color.iconBg} flex items-center justify-center mb-4`}>
+   219→                      <ActivityIcon name={activity.icon} className={`w-8 h-8 ${color.iconText}`} />
+   220→                    </div>
+   221→                    <h3
+   222→                      className="text-lg font-bold text-[#0f172a] mb-2"
+   223→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   224→                    >
+   225→                      {activity.title}
+   226→                    </h3>
+   227→                    <Badge className={`${color.iconBg} ${color.iconText} border-0 text-xs px-2 py-0.5`}>
+   228→                      GTEEP Programme
+   229→                    </Badge>
+   230→                  </div>
+   231→
+   232→                  {/* Sub-Programmes */}
+   233→                  {hasChildren && (
+   234→                    <div className="rounded-2xl border border-[#e2e8f0] p-6 bg-white">
+   235→                      <h4 className="text-sm font-semibold text-[#0f172a] uppercase tracking-wider mb-3 flex items-center gap-2">
+   236→                        <div className={`w-1.5 h-1.5 rounded-full ${color.accent}`} />
+   237→                        Sub-Programmes
+   238→                      </h4>
+   239→                      <ul className="space-y-2">
+   240→                        {activity.children!.map((child) => (
+   241→                          <li key={child.id}>
+   242→                            <Link
+   243→                              href={`/what-we-do/${activity.slug}/${child.slug}`}
+   244→                              className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#065f46] transition-colors group"
+   245→                            >
+   246→                              {child.slug === 'policy-firechat' ? (
+   247→                                <Flame className="w-4 h-4 text-[#d97706] shrink-0" />
+   248→                              ) : (
+   249→                                <ChevronRight className="w-4 h-4 text-[#94a3b8] shrink-0 group-hover:text-[#065f46] transition-colors" />
+   250→                              )}
+   251→                              {child.title}
+   252→                            </Link>
+   253→                          </li>
+   254→                        ))}
+   255→                      </ul>
+   256→                    </div>
+   257→                  )}
+   258→
+   259→                  {/* Quick Links */}
+   260→                  <div className="rounded-2xl border border-[#e2e8f0] p-6 bg-white">
+   261→                    <h4 className="text-sm font-semibold text-[#0f172a] uppercase tracking-wider mb-3 flex items-center gap-2">
+   262→                      <div className={`w-1.5 h-1.5 rounded-full ${color.accent}`} />
+   263→                      Explore
+   264→                    </h4>
+   265→                    <ul className="space-y-2">
+   266→                      <li>
+   267→                        <Link
+   268→                          href="/what-we-do"
+   269→                          className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#065f46] transition-colors"
+   270→                        >
+   271→                          <BookOpen className="w-4 h-4 text-[#94a3b8] shrink-0" />
+   272→                          All Activities
+   273→                        </Link>
+   274→                      </li>
+   275→                      <li>
+   276→                        <Link
+   277→                          href="/outputs"
+   278→                          className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#065f46] transition-colors"
+   279→                        >
+   280→                          <BookOpen className="w-4 h-4 text-[#94a3b8] shrink-0" />
+   281→                          Our Outputs
+   282→                        </Link>
+   283→                      </li>
+   284→                      <li>
+   285→                        <Link
+   286→                          href="/contact"
+   287→                          className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#065f46] transition-colors"
+   288→                        >
+   289→                          <Mail className="w-4 h-4 text-[#94a3b8] shrink-0" />
+   290→                          Contact Us
+   291→                        </Link>
+   292→                      </li>
+   293→                    </ul>
+   294→                  </div>
+   295→
+   296→                  {/* CTA */}
+   297→                  <Button
+   298→                    asChild
+   299→                    className={`w-full bg-gradient-to-r ${color.gradient} text-white rounded-xl shadow-md`}
+   300→                  >
+   301→                    <Link href="/contact">
+   302→                      <Mail className="w-4 h-4 mr-2" />
+   303→                      Get In Touch
+   304→                    </Link>
+   305→                  </Button>
+   306→                </div>
+   307→              </AnimatedSection>
+   308→            </div>
+   309→
+   310→            {/* Main Content Area */}
+   311→            <div className="lg:col-span-2 order-1 lg:order-2">
+   312→              <AnimatedSection>
+   313→                <div className="space-y-8">
+   314→                  {/* Featured Image */}
+   315→                  {activity.image && (
+   316→                    <div className="relative aspect-video rounded-2xl overflow-hidden shadow-xl">
+   317→                      <Image
+   318→                        src={activity.image}
+   319→                        alt={activity.title}
+   320→                        fill
+   321→                        className="object-cover"
+   322→                      />
+   323→                      <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/30 to-transparent" />
+   324→                    </div>
+   325→                  )}
+   326→
+   327→                  {/* Content - use policyFirechat ACF content as fallback if standard content is empty */}
+   328→                  {activity.content || activity.policyFirechat ? (
+   329→                    <WpContent html={activity.content || activity.policyFirechat || ''} />
+   330→                  ) : (
+   331→                    <div className="text-center py-12">
+   332→                      <div className={`w-16 h-16 rounded-xl ${color.iconBg} flex items-center justify-center mx-auto mb-4`}>
+   333→                        <ActivityIcon name={activity.icon} className={`w-8 h-8 ${color.iconText}`} />
+   334→                      </div>
+   335→                      <h3
+   336→                        className="text-xl font-bold text-[#0f172a] mb-3"
+   337→                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   338→                      >
+   339→                        Content Coming Soon
+   340→                      </h3>
+   341→                      <p className="text-[#64748b] max-w-md mx-auto">
+   342→                        Detailed information about our {activity.title.toLowerCase()} programme is being developed. Check back soon for updates.
+   343→                      </p>
+   344→                    </div>
+   345→                  )}
+   346→
+   347→                  {/* Policy Firechat (only on Policy Engagement parent page, not on the firechat page itself) */}
+   348→                  {activity.slug === 'policy-engagement' && activity.policyFirechat && (
+   349→                    <div className="bg-gradient-to-br from-[#fef3c7]/50 to-[#f0fdf4]/30 rounded-2xl p-6 md:p-8 border border-[#d97706]/20">
+   350→                      <div className="flex items-center gap-3 mb-6">
+   351→                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d97706] to-[#b45309] flex items-center justify-center shadow-lg">
+   352→                          <Flame className="w-6 h-6 text-white" />
+   353→                        </div>
+   354→                        <div>
+   355→                          <h3
+   356→                            className="text-xl font-bold text-[#0f172a]"
+   357→                            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   358→                          >
+   359→                            Policy Firechat
+   360→                          </h3>
+   361→                          <p className="text-sm text-[#d97706] font-medium">
+   362→                            Development Conversations
+   363→                          </p>
+   364→                        </div>
+   365→                      </div>
+   366→                      <WpContent html={activity.policyFirechat} />
+   367→                      <div className="mt-6 flex flex-wrap gap-3">
+   368→                        <Button
+   369→                          asChild
+   370→                          className="bg-gradient-to-r from-[#d97706] to-[#b45309] text-white rounded-xl"
+   371→                        >
+   372→                          <Link href="/what-we-do/policy-engagement/policy-firechat">
+   373→                            <Flame className="w-4 h-4 mr-2" />
+   374→                            View Fireside Chats
+   375→                          </Link>
+   376→                        </Button>
+   377→                        {relatedOutputs.length > 0 && (
+   378→                          <Button
+   379→                            asChild
+   380→                            variant="outline"
+   381→                            className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white rounded-xl"
+   382→                          >
+   383→                            <Link href="/outputs?tab=concept-note">
+   384→                              <BookOpen className="w-4 h-4 mr-2" />
+   385→                              View Related Outputs ({relatedOutputs.length})
+   386→                            </Link>
+   387→                          </Button>
+   388→                        )}
+   389→                      </div>
+   390→                    </div>
+   391→                  )}
+   392→
+   393→                  {/* Related Outputs Section */}
+   394→                  {relatedOutputs.length > 0 && (
+   395→                    <div className="mt-8 pt-8 border-t border-[#e2e8f0]">
+   396→                      <div className="flex items-center gap-3 mb-6">
+   397→                        <div className="w-10 h-10 rounded-lg bg-[#f0fdf4] flex items-center justify-center">
+   398→                          <BookOpen className="w-5 h-5 text-[#059669]" />
+   399→                        </div>
+   400→                        <div>
+   401→                          <h3
+   402→                            className="text-lg font-bold text-[#0f172a]"
+   403→                            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   404→                          >
+   405→                            Related Outputs
+   406→                          </h3>
+   407→                          <p className="text-sm text-[#64748b]">
+   408→                            Documents related to this programme
+   409→                          </p>
+   410→                        </div>
+   411→                      </div>
+   412→                      <div className="grid sm:grid-cols-2 gap-4">
+   413→                        {relatedOutputs.map((output) => (
+   414→                          <div
+   415→                            key={output.id}
+   416→                            className="flex items-center gap-4 p-4 rounded-xl border border-[#e2e8f0] hover:border-[#065f46]/30 hover:shadow-md transition-all duration-200 group"
+   417→                          >
+   418→                            {/* File icon */}
+   419→                            <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${getOutputTypeBgGradient(output.type)} flex items-center justify-center shrink-0`}>
+   420→                              {output.fileType === 'pptx' || output.fileType === 'ppt' ? (
+   421→                                <Presentation className="w-6 h-6 text-white/90" />
+   422→                              ) : (
+   423→                                <FileText className="w-6 h-6 text-white/90" />
+   424→                              )}
+   425→                            </div>
+   426→                            {/* File info */}
+   427→                            <div className="min-w-0 flex-1">
+   428→                              <h4 className="text-sm font-semibold text-[#0f172a] leading-snug group-hover:text-[#065f46] transition-colors line-clamp-1">
+   429→                                {output.title}
+   430→                              </h4>
+   431→                              <div className="flex items-center gap-2 mt-1">
+   432→                                <Badge className={`${getOutputTypeBadgeColor(output.type)} text-[10px] px-1.5 py-0`}>
+   433→                                  {output.fileType?.toUpperCase()}
+   434→                                </Badge>
+   435→                                <span className="text-xs text-[#94a3b8]">{getOutputTypeLabel(output.type)}</span>
+   436→                              </div>
+   437→                            </div>
+   438→                            {/* View button (read-only) */}
+   439→                            {output.downloadUrl && (
+   440→                              <ViewDocumentButton
+   441→                                documentUrl={output.downloadUrl}
+   442→                                documentTitle={output.title}
+   443→                                fileType={output.fileType || ''}
+   444→                                iconOnly
+   445→                              />
+   446→                            )}
+   447→                          </div>
+   448→                        ))}
+   449→                      </div>
+   450→                      <div className="mt-4">
+   451→                        <Link
+   452→                          href="/outputs?tab=concept-note"
+   453→                          className="text-sm text-[#059669] hover:text-[#047857] font-medium flex items-center gap-1 transition-colors"
+   454→                        >
+   455→                          View all outputs
+   456→                          <ArrowRight className="w-4 h-4" />
+   457→                        </Link>
+   458→                      </div>
+   459→                    </div>
+   460→                  )}
+   461→                </div>
+   462→              </AnimatedSection>
+   463→
+   464→              {/* Children Sub-Pages */}
+   465→              {hasChildren && (
+   466→                <AnimatedSection>
+   467→                  <div className="mt-12 pt-10 border-t border-[#e2e8f0]">
+   468→                    <h3
+   469→                      className="text-xl font-bold text-[#0f172a] mb-6"
+   470→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   471→                    >
+   472→                      Sub-Programmes under {activity.title}
+   473→                    </h3>
+   474→                    <div className="grid sm:grid-cols-2 gap-6">
+   475→                      {activity.children!.map((child) => (
+   476→                        <Link
+   477→                          key={child.id}
+   478→                          href={`/what-we-do/${activity.slug}/${child.slug}`}
+   479→                          className="group rounded-xl border border-[#e2e8f0] hover:border-[#065f46]/30 bg-white overflow-hidden hover:shadow-lg transition-all duration-300"
+   480→                        >
+   481→                          {child.image && (
+   482→                            <div className="relative aspect-video bg-[#0f172a]">
+   483→                              <Image
+   484→                                src={child.image}
+   485→                                alt={child.title}
+   486→                                fill
+   487→                                className="object-cover"
+   488→                              />
+   489→                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+   490→                              <div className="absolute bottom-3 left-3">
+   491→                                <Badge className="bg-white/90 text-[#0f172a] text-xs">
+   492→                                  {child.slug === 'policy-firechat' ? '🔥 Firechat' : 'Sub-Programme'}
+   493→                                </Badge>
+   494→                              </div>
+   495→                            </div>
+   496→                          )}
+   497→                          <div className="p-5">
+   498→                            <div className="flex items-start gap-3">
+   499→                              <div className={`w-10 h-10 rounded-lg ${color.iconBg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+   500→                                {child.slug === 'policy-firechat' ? (
+   501→                                  <Flame className={`w-5 h-5 ${color.iconText}`} />
+   502→                                ) : (
+   503→                                  <ActivityIcon name={activity.icon} className={`w-5 h-5 ${color.iconText}`} />
+   504→                                )}
+   505→                              </div>
+   506→                              <div className="min-w-0 flex-1">
+   507→                                <h4 className="text-base font-semibold text-[#0f172a] leading-tight mb-2 group-hover:text-[#065f46] transition-colors">
+   508→                                  {child.title}
+   509→                                </h4>
+   510→                                {child.content && (
+   511→                                  <p className="text-sm text-[#64748b] leading-relaxed line-clamp-3">
+   512→                                    {child.content.replace(/<[^>]*>/g, '').trim().substring(0, 200)}...
+   513→                                  </p>
+   514→                                )}
+   515→                              </div>
+   516→                            </div>
+   517→                            <div className="mt-3 flex items-center text-sm font-medium text-[#059669] group-hover:text-[#047857]">
+   518→                              View details
+   519→                              <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+   520→                            </div>
+   521→                          </div>
+   522→                        </Link>
+   523→                      ))}
+   524→                    </div>
+   525→                  </div>
+   526→                </AnimatedSection>
+   527→              )}
+   528→            </div>
+   529→          </div>
+   530→        </div>
+   531→      </section>
+   532→
+   533→      {/* CTA */}
+   534→      <section className="py-16 md:py-20 bg-[#0f172a] relative overflow-hidden" aria-label="Call to Action">
+   535→        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+   536→          <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-[#059669]/10 blur-3xl" />
+   537→        </div>
+   538→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+   539→          <AnimatedSection>
+   540→            <div className="text-center">
+   541→              <h2
+   542→                className="text-2xl md:text-3xl font-bold text-white"
+   543→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   544→              >
+   545→                Interested in Our Work?
+   546→              </h2>
+   547→              <p className="mt-3 text-[#94a3b8] max-w-2xl mx-auto">
+   548→                Get in touch to learn more about our {activity.title.toLowerCase()} programme and how you can collaborate with us.
+   549→              </p>
+   550→              <div className="mt-8 flex flex-wrap justify-center gap-4">
+   551→                <Button
+   552→                  asChild
+   553→                  size="lg"
+   554→                  className="bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl"
+   555→                >
+   556→                  <Link href="/contact">
+   557→                    <Mail className="w-4 h-4 mr-2" />
+   558→                    Contact Us
+   559→                  </Link>
+   560→                </Button>
+   561→                <Button
+   562→                  asChild
+   563→                  size="lg"
+   564→                  variant="outline"
+   565→                  className="border-white/30 text-white hover:bg-white/10 rounded-xl"
+   566→                >
+   567→                  <Link href="/what-we-do">
+   568→                    <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+   569→                    All Activities
+   570→                  </Link>
+   571→                </Button>
+   572→              </div>
+   573→            </div>
+   574→          </AnimatedSection>
+   575→        </div>
+   576→      </section>
+   577→    </main>
+   578→  );
+   579→}
+   580→

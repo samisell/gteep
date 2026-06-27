@@ -1,5 +1,6 @@
-import { getProjectBySlug, getProjects } from '@/graphql/fetchers';
+import { getProjectBySlug, getProjects, isWordPressConnected } from '@/graphql/fetchers';
 import ProjectDetailClient from '@/components/pages/ProjectDetailClient';
+import OfflinePage from '@/components/shared/OfflinePage';
 import type { Metadata } from 'next';
 
 export const revalidate = 300;
@@ -23,6 +24,12 @@ export default async function ProjectDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const wpConnected = await isWordPressConnected();
+
+  if (!wpConnected) {
+    return <OfflinePage pageTitle="Project" />;
+  }
+
   const { slug } = await params;
   const project = await getProjectBySlug(slug);
 

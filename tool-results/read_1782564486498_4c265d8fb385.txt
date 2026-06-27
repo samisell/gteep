@@ -1,0 +1,569 @@
+     1→'use client';
+     2→
+     3→import { motion } from 'framer-motion';
+     4→import Image from 'next/image';
+     5→import PageHeader from '@/components/shared/PageHeader';
+     6→import { AnimatedSection } from '@/components/shared/AnimatedSection';
+     7→import { Button } from '@/components/ui/button';
+     8→import { Badge } from '@/components/ui/badge';
+     9→import {
+    10→  FileSearch,
+    11→  Users,
+    12→  Lightbulb,
+    13→  BarChart3,
+    14→  GraduationCap,
+    15→  Heart,
+    16→  ArrowRight,
+    17→  BookOpen,
+    18→  Mail,
+    19→  ChevronRight,
+    20→  Flame,
+    21→  Home,
+    22→  Presentation,
+    23→  FileText,
+    24→  Eye,
+    25→} from 'lucide-react';
+    26→import Link from 'next/link';
+    27→import type { GTEEPActivity, GTEEPActivityChild, GTEEPOutput } from '@/types';
+    28→import { ViewDocumentButton } from '@/components/features/DocumentViewer';
+    29→
+    30→// =============================================================================
+    31→// Props
+    32→// =============================================================================
+    33→
+    34→interface ActivityDetailClientProps {
+    35→  activity: GTEEPActivity;
+    36→  parentPage?: {
+    37→    id: string;
+    38→    title: string;
+    39→    slug: string;
+    40→    uri: string;
+    41→  };
+    42→  relatedOutputs?: GTEEPOutput[];
+    43→}
+    44→
+    45→// =============================================================================
+    46→// Icon Map - Direct mapping object
+    47→// =============================================================================
+    48→
+    49→const activityIcons: Record<string, React.ElementType> = {
+    50→  FileSearch,
+    51→  Users,
+    52→  Lightbulb,
+    53→  BarChart3,
+    54→  GraduationCap,
+    55→  Heart,
+    56→};
+    57→
+    58→// =============================================================================
+    59→// ActivityIcon Component
+    60→// =============================================================================
+    61→
+    62→function ActivityIcon({ name, className }: { name: string; className?: string }) {
+    63→  const Icon = activityIcons[name] || FileSearch;
+    64→  return <Icon className={className} />;
+    65→}
+    66→
+    67→// =============================================================================
+    68→// Helper Functions for Related Outputs
+    69→// =============================================================================
+    70→
+    71→function getOutputTypeLabel(type: string): string {
+    72→  const labels: Record<string, string> = {
+    73→    'concept-note': 'Concept Note',
+    74→    'policy-brief': 'Policy Brief',
+    75→    'data-stock': 'Data Stock',
+    76→    'video': 'Video Gallery',
+    77→    'photo': 'Photo Gallery',
+    78→    'knowledge-product': 'Knowledge Product',
+    79→  };
+    80→  return labels[type] || 'Output';
+    81→}
+    82→
+    83→function getOutputTypeBadgeColor(type: string): string {
+    84→  switch (type) {
+    85→    case 'concept-note': return 'bg-[#f0fdf4] text-[#059669] border-[#065f46]/20';
+    86→    case 'policy-brief': return 'bg-[#fef3c7] text-[#d97706] border-[#d97706]/20';
+    87→    case 'data-stock': return 'bg-[#eff6ff] text-[#2563eb] border-[#2563eb]/20';
+    88→    case 'video': return 'bg-[#faf5ff] text-[#7c3aed] border-[#7c3aed]/20';
+    89→    case 'photo': return 'bg-[#fff1f2] text-[#e11d48] border-[#e11d48]/20';
+    90→    case 'knowledge-product': return 'bg-[#f0fdfa] text-[#0d9488] border-[#0d9488]/20';
+    91→    default: return 'bg-[#f1f5f9] text-[#64748b] border-[#64748b]/20';
+    92→  }
+    93→}
+    94→
+    95→function getOutputTypeBgGradient(type: string): string {
+    96→  switch (type) {
+    97→    case 'concept-note': return 'from-[#065f46] to-[#047857]';
+    98→    case 'policy-brief': return 'from-[#d97706] to-[#b45309]';
+    99→    case 'data-stock': return 'from-[#1d4ed8] to-[#1e40af]';
+   100→    case 'video': return 'from-[#7c3aed] to-[#6d28d9]';
+   101→    case 'photo': return 'from-[#e11d48] to-[#be123c]';
+   102→    case 'knowledge-product': return 'from-[#0d9488] to-[#0f766e]';
+   103→    default: return 'from-[#065f46] to-[#0f172a]';
+   104→  }
+   105→}
+   106→
+   107→// =============================================================================
+   108→// Color Map
+   109→// =============================================================================
+   110→
+   111→const activityColors: Record<string, {
+   112→  iconBg: string;
+   113→  iconText: string;
+   114→  accent: string;
+   115→  gradient: string;
+   116→}> = {
+   117→  'policy-research': {
+   118→    iconBg: 'bg-[#f0fdf4]',
+   119→    iconText: 'text-[#059669]',
+   120→    accent: 'bg-[#065f46]',
+   121→    gradient: 'from-[#065f46] to-[#047857]',
+   122→  },
+   123→  'policy-engagement': {
+   124→    iconBg: 'bg-[#fef3c7]',
+   125→    iconText: 'text-[#d97706]',
+   126→    accent: 'bg-[#d97706]',
+   127→    gradient: 'from-[#d97706] to-[#b45309]',
+   128→  },
+   129→  'citizen-enlightenment': {
+   130→    iconBg: 'bg-[#f0fdf4]',
+   131→    iconText: 'text-[#059669]',
+   132→    accent: 'bg-[#059669]',
+   133→    gradient: 'from-[#059669] to-[#047857]',
+   134→  },
+   135→  'data-speaks': {
+   136→    iconBg: 'bg-[#fef3c7]',
+   137→    iconText: 'text-[#d97706]',
+   138→    accent: 'bg-[#d97706]',
+   139→    gradient: 'from-[#d97706] to-[#b45309]',
+   140→  },
+   141→  'youth-mentoring': {
+   142→    iconBg: 'bg-[#f0fdf4]',
+   143→    iconText: 'text-[#059669]',
+   144→    accent: 'bg-[#065f46]',
+   145→    gradient: 'from-[#065f46] to-[#047857]',
+   146→  },
+   147→  'womens-economic-livelihood': {
+   148→    iconBg: 'bg-[#fef3c7]',
+   149→    iconText: 'text-[#d97706]',
+   150→    accent: 'bg-[#d97706]',
+   151→    gradient: 'from-[#d97706] to-[#b45309]',
+   152→  },
+   153→};
+   154→
+   155→// =============================================================================
+   156→// HTML Content Renderer
+   157→// =============================================================================
+   158→
+   159→function WpContent({ html, className }: { html: string; className?: string }) {
+   160→  if (!html || html.trim() === '') return null;
+   161→  return (
+   162→    <div
+   163→      className={`prose prose-slate max-w-none text-[#475569] leading-relaxed [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-[#0f172a] [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-[#0f172a] [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-[#0f172a] [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-1 [&_a]:text-[#059669] [&_a]:underline [&_a:hover]:text-[#047857] [&_strong]:text-[#0f172a] [&_blockquote]:border-l-4 [&_blockquote]:border-[#065f46] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-[#64748b] ${className || ''}`}
+   164→      dangerouslySetInnerHTML={{ __html: html }}
+   165→    />
+   166→  );
+   167→}
+   168→
+   169→// =============================================================================
+   170→// Main Component
+   171→// =============================================================================
+   172→
+   173→export default function ActivityDetailClient({ activity, parentPage, relatedOutputs = [] }: ActivityDetailClientProps) {
+   174→  const color = activityColors[activity.slug] || activityColors['policy-research'];
+   175→  const hasChildren = activity.children && activity.children.length > 0;
+   176→
+   177→  // Build breadcrumb (PageHeader already adds "Home" as the first item)
+   178→  const breadcrumb: { label: string; href?: string }[] = [
+   179→    { label: 'What We Do', href: '/what-we-do' },
+   180→  ];
+   181→  if (parentPage && parentPage.slug !== 'what-we-do') {
+   182→    breadcrumb.push({ label: parentPage.title, href: `/what-we-do/${parentPage.slug}` });
+   183→  }
+   184→  breadcrumb.push({ label: activity.title });
+   185→
+   186→  return (
+   187→    <main className="pt-20 scroll-smooth">
+   188→      {/* Page Header */}
+   189→      <PageHeader
+   190→        title={activity.title}
+   191→        subtitle="What We Do"
+   192→        description={`GTEEP's ${activity.title} programme — driving evidence-based policy change across Africa.`}
+   193→        breadcrumb={breadcrumb}
+   194→        backgroundImage="/images/policy-engagement.jpg"
+   195→      />
+   196→
+   197→      {/* Main Content */}
+   198→      <section className="py-12 md:py-20 bg-white" aria-label={activity.title}>
+   199→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   200→          <div className="grid gap-12 lg:grid-cols-3">
+   201→            {/* Sidebar */}
+   202→            <div className="lg:col-span-1 order-2 lg:order-1">
+   203→              <AnimatedSection>
+   204→                <div className="sticky top-24 space-y-6">
+   205→                  {/* Activity Icon Card */}
+   206→                  <div className="rounded-2xl border border-[#e2e8f0] p-6 bg-[#f8fafc]">
+   207→                    <div className={`w-16 h-16 rounded-xl ${color.iconBg} flex items-center justify-center mb-4`}>
+   208→                      <ActivityIcon name={activity.icon} className={`w-8 h-8 ${color.iconText}`} />
+   209→                    </div>
+   210→                    <h3
+   211→                      className="text-lg font-bold text-[#0f172a] mb-2"
+   212→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   213→                    >
+   214→                      {activity.title}
+   215→                    </h3>
+   216→                    <Badge className={`${color.iconBg} ${color.iconText} border-0 text-xs px-2 py-0.5`}>
+   217→                      GTEEP Programme
+   218→                    </Badge>
+   219→                  </div>
+   220→
+   221→                  {/* Sub-Programmes */}
+   222→                  {hasChildren && (
+   223→                    <div className="rounded-2xl border border-[#e2e8f0] p-6 bg-white">
+   224→                      <h4 className="text-sm font-semibold text-[#0f172a] uppercase tracking-wider mb-3 flex items-center gap-2">
+   225→                        <div className={`w-1.5 h-1.5 rounded-full ${color.accent}`} />
+   226→                        Sub-Programmes
+   227→                      </h4>
+   228→                      <ul className="space-y-2">
+   229→                        {activity.children!.map((child) => (
+   230→                          <li key={child.id}>
+   231→                            <Link
+   232→                              href={`/what-we-do/${activity.slug}/${child.slug}`}
+   233→                              className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#065f46] transition-colors group"
+   234→                            >
+   235→                              {child.slug === 'policy-firechat' ? (
+   236→                                <Flame className="w-4 h-4 text-[#d97706] shrink-0" />
+   237→                              ) : (
+   238→                                <ChevronRight className="w-4 h-4 text-[#94a3b8] shrink-0 group-hover:text-[#065f46] transition-colors" />
+   239→                              )}
+   240→                              {child.title}
+   241→                            </Link>
+   242→                          </li>
+   243→                        ))}
+   244→                      </ul>
+   245→                    </div>
+   246→                  )}
+   247→
+   248→                  {/* Quick Links */}
+   249→                  <div className="rounded-2xl border border-[#e2e8f0] p-6 bg-white">
+   250→                    <h4 className="text-sm font-semibold text-[#0f172a] uppercase tracking-wider mb-3 flex items-center gap-2">
+   251→                      <div className={`w-1.5 h-1.5 rounded-full ${color.accent}`} />
+   252→                      Explore
+   253→                    </h4>
+   254→                    <ul className="space-y-2">
+   255→                      <li>
+   256→                        <Link
+   257→                          href="/what-we-do"
+   258→                          className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#065f46] transition-colors"
+   259→                        >
+   260→                          <BookOpen className="w-4 h-4 text-[#94a3b8] shrink-0" />
+   261→                          All Activities
+   262→                        </Link>
+   263→                      </li>
+   264→                      <li>
+   265→                        <Link
+   266→                          href="/outputs"
+   267→                          className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#065f46] transition-colors"
+   268→                        >
+   269→                          <BookOpen className="w-4 h-4 text-[#94a3b8] shrink-0" />
+   270→                          Our Outputs
+   271→                        </Link>
+   272→                      </li>
+   273→                      <li>
+   274→                        <Link
+   275→                          href="/contact"
+   276→                          className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#065f46] transition-colors"
+   277→                        >
+   278→                          <Mail className="w-4 h-4 text-[#94a3b8] shrink-0" />
+   279→                          Contact Us
+   280→                        </Link>
+   281→                      </li>
+   282→                    </ul>
+   283→                  </div>
+   284→
+   285→                  {/* CTA */}
+   286→                  <Button
+   287→                    asChild
+   288→                    className={`w-full bg-gradient-to-r ${color.gradient} text-white rounded-xl shadow-md`}
+   289→                  >
+   290→                    <Link href="/contact">
+   291→                      <Mail className="w-4 h-4 mr-2" />
+   292→                      Get In Touch
+   293→                    </Link>
+   294→                  </Button>
+   295→                </div>
+   296→              </AnimatedSection>
+   297→            </div>
+   298→
+   299→            {/* Main Content Area */}
+   300→            <div className="lg:col-span-2 order-1 lg:order-2">
+   301→              <AnimatedSection>
+   302→                <div className="space-y-8">
+   303→                  {/* Featured Image */}
+   304→                  {activity.image && (
+   305→                    <div className="relative aspect-video rounded-2xl overflow-hidden shadow-xl">
+   306→                      <Image
+   307→                        src={activity.image}
+   308→                        alt={activity.title}
+   309→                        fill
+   310→                        className="object-cover"
+   311→                      />
+   312→                      <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/30 to-transparent" />
+   313→                    </div>
+   314→                  )}
+   315→
+   316→                  {/* Content - use policyFirechat ACF content as fallback if standard content is empty */}
+   317→                  {activity.content || activity.policyFirechat ? (
+   318→                    <WpContent html={activity.content || activity.policyFirechat || ''} />
+   319→                  ) : (
+   320→                    <div className="text-center py-12">
+   321→                      <div className={`w-16 h-16 rounded-xl ${color.iconBg} flex items-center justify-center mx-auto mb-4`}>
+   322→                        <ActivityIcon name={activity.icon} className={`w-8 h-8 ${color.iconText}`} />
+   323→                      </div>
+   324→                      <h3
+   325→                        className="text-xl font-bold text-[#0f172a] mb-3"
+   326→                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   327→                      >
+   328→                        Content Coming Soon
+   329→                      </h3>
+   330→                      <p className="text-[#64748b] max-w-md mx-auto">
+   331→                        Detailed information about our {activity.title.toLowerCase()} programme is being developed. Check back soon for updates.
+   332→                      </p>
+   333→                    </div>
+   334→                  )}
+   335→
+   336→                  {/* Policy Firechat (only on Policy Engagement parent page, not on the firechat page itself) */}
+   337→                  {activity.slug === 'policy-engagement' && activity.policyFirechat && (
+   338→                    <div className="bg-gradient-to-br from-[#fef3c7]/50 to-[#f0fdf4]/30 rounded-2xl p-6 md:p-8 border border-[#d97706]/20">
+   339→                      <div className="flex items-center gap-3 mb-6">
+   340→                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d97706] to-[#b45309] flex items-center justify-center shadow-lg">
+   341→                          <Flame className="w-6 h-6 text-white" />
+   342→                        </div>
+   343→                        <div>
+   344→                          <h3
+   345→                            className="text-xl font-bold text-[#0f172a]"
+   346→                            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   347→                          >
+   348→                            Policy Firechat
+   349→                          </h3>
+   350→                          <p className="text-sm text-[#d97706] font-medium">
+   351→                            Development Conversations
+   352→                          </p>
+   353→                        </div>
+   354→                      </div>
+   355→                      <WpContent html={activity.policyFirechat} />
+   356→                      <div className="mt-6 flex flex-wrap gap-3">
+   357→                        <Button
+   358→                          asChild
+   359→                          className="bg-gradient-to-r from-[#d97706] to-[#b45309] text-white rounded-xl"
+   360→                        >
+   361→                          <Link href="/what-we-do/policy-engagement/policy-firechat">
+   362→                            <Flame className="w-4 h-4 mr-2" />
+   363→                            View Fireside Chats
+   364→                          </Link>
+   365→                        </Button>
+   366→                        {relatedOutputs.length > 0 && (
+   367→                          <Button
+   368→                            asChild
+   369→                            variant="outline"
+   370→                            className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white rounded-xl"
+   371→                          >
+   372→                            <Link href="/outputs?tab=concept-note">
+   373→                              <BookOpen className="w-4 h-4 mr-2" />
+   374→                              View Related Outputs ({relatedOutputs.length})
+   375→                            </Link>
+   376→                          </Button>
+   377→                        )}
+   378→                      </div>
+   379→                    </div>
+   380→                  )}
+   381→
+   382→                  {/* Related Outputs Section */}
+   383→                  {relatedOutputs.length > 0 && (
+   384→                    <div className="mt-8 pt-8 border-t border-[#e2e8f0]">
+   385→                      <div className="flex items-center gap-3 mb-6">
+   386→                        <div className="w-10 h-10 rounded-lg bg-[#f0fdf4] flex items-center justify-center">
+   387→                          <BookOpen className="w-5 h-5 text-[#059669]" />
+   388→                        </div>
+   389→                        <div>
+   390→                          <h3
+   391→                            className="text-lg font-bold text-[#0f172a]"
+   392→                            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   393→                          >
+   394→                            Related Outputs
+   395→                          </h3>
+   396→                          <p className="text-sm text-[#64748b]">
+   397→                            Documents related to this programme
+   398→                          </p>
+   399→                        </div>
+   400→                      </div>
+   401→                      <div className="grid sm:grid-cols-2 gap-4">
+   402→                        {relatedOutputs.map((output) => (
+   403→                          <div
+   404→                            key={output.id}
+   405→                            className="flex items-center gap-4 p-4 rounded-xl border border-[#e2e8f0] hover:border-[#065f46]/30 hover:shadow-md transition-all duration-200 group"
+   406→                          >
+   407→                            {/* File icon */}
+   408→                            <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${getOutputTypeBgGradient(output.type)} flex items-center justify-center shrink-0`}>
+   409→                              {output.fileType === 'pptx' || output.fileType === 'ppt' ? (
+   410→                                <Presentation className="w-6 h-6 text-white/90" />
+   411→                              ) : (
+   412→                                <FileText className="w-6 h-6 text-white/90" />
+   413→                              )}
+   414→                            </div>
+   415→                            {/* File info */}
+   416→                            <div className="min-w-0 flex-1">
+   417→                              <h4 className="text-sm font-semibold text-[#0f172a] leading-snug group-hover:text-[#065f46] transition-colors line-clamp-1">
+   418→                                {output.title}
+   419→                              </h4>
+   420→                              <div className="flex items-center gap-2 mt-1">
+   421→                                <Badge className={`${getOutputTypeBadgeColor(output.type)} text-[10px] px-1.5 py-0`}>
+   422→                                  {output.fileType?.toUpperCase()}
+   423→                                </Badge>
+   424→                                <span className="text-xs text-[#94a3b8]">{getOutputTypeLabel(output.type)}</span>
+   425→                              </div>
+   426→                            </div>
+   427→                            {/* View button (read-only) */}
+   428→                            {output.downloadUrl && (
+   429→                              <ViewDocumentButton
+   430→                                documentUrl={output.downloadUrl}
+   431→                                documentTitle={output.title}
+   432→                                fileType={output.fileType || ''}
+   433→                                iconOnly
+   434→                              />
+   435→                            )}
+   436→                          </div>
+   437→                        ))}
+   438→                      </div>
+   439→                      <div className="mt-4">
+   440→                        <Link
+   441→                          href="/outputs?tab=concept-note"
+   442→                          className="text-sm text-[#059669] hover:text-[#047857] font-medium flex items-center gap-1 transition-colors"
+   443→                        >
+   444→                          View all outputs
+   445→                          <ArrowRight className="w-4 h-4" />
+   446→                        </Link>
+   447→                      </div>
+   448→                    </div>
+   449→                  )}
+   450→                </div>
+   451→              </AnimatedSection>
+   452→
+   453→              {/* Children Sub-Pages */}
+   454→              {hasChildren && (
+   455→                <AnimatedSection>
+   456→                  <div className="mt-12 pt-10 border-t border-[#e2e8f0]">
+   457→                    <h3
+   458→                      className="text-xl font-bold text-[#0f172a] mb-6"
+   459→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   460→                    >
+   461→                      Sub-Programmes under {activity.title}
+   462→                    </h3>
+   463→                    <div className="grid sm:grid-cols-2 gap-6">
+   464→                      {activity.children!.map((child) => (
+   465→                        <Link
+   466→                          key={child.id}
+   467→                          href={`/what-we-do/${activity.slug}/${child.slug}`}
+   468→                          className="group rounded-xl border border-[#e2e8f0] hover:border-[#065f46]/30 bg-white overflow-hidden hover:shadow-lg transition-all duration-300"
+   469→                        >
+   470→                          {child.image && (
+   471→                            <div className="relative aspect-video bg-[#0f172a]">
+   472→                              <Image
+   473→                                src={child.image}
+   474→                                alt={child.title}
+   475→                                fill
+   476→                                className="object-cover"
+   477→                              />
+   478→                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+   479→                              <div className="absolute bottom-3 left-3">
+   480→                                <Badge className="bg-white/90 text-[#0f172a] text-xs">
+   481→                                  {child.slug === 'policy-firechat' ? '🔥 Firechat' : 'Sub-Programme'}
+   482→                                </Badge>
+   483→                              </div>
+   484→                            </div>
+   485→                          )}
+   486→                          <div className="p-5">
+   487→                            <div className="flex items-start gap-3">
+   488→                              <div className={`w-10 h-10 rounded-lg ${color.iconBg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+   489→                                {child.slug === 'policy-firechat' ? (
+   490→                                  <Flame className={`w-5 h-5 ${color.iconText}`} />
+   491→                                ) : (
+   492→                                  <ActivityIcon name={activity.icon} className={`w-5 h-5 ${color.iconText}`} />
+   493→                                )}
+   494→                              </div>
+   495→                              <div className="min-w-0 flex-1">
+   496→                                <h4 className="text-base font-semibold text-[#0f172a] leading-tight mb-2 group-hover:text-[#065f46] transition-colors">
+   497→                                  {child.title}
+   498→                                </h4>
+   499→                                {child.content && (
+   500→                                  <p className="text-sm text-[#64748b] leading-relaxed line-clamp-3">
+   501→                                    {child.content.replace(/<[^>]*>/g, '').trim().substring(0, 200)}...
+   502→                                  </p>
+   503→                                )}
+   504→                              </div>
+   505→                            </div>
+   506→                            <div className="mt-3 flex items-center text-sm font-medium text-[#059669] group-hover:text-[#047857]">
+   507→                              View details
+   508→                              <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+   509→                            </div>
+   510→                          </div>
+   511→                        </Link>
+   512→                      ))}
+   513→                    </div>
+   514→                  </div>
+   515→                </AnimatedSection>
+   516→              )}
+   517→            </div>
+   518→          </div>
+   519→        </div>
+   520→      </section>
+   521→
+   522→      {/* CTA */}
+   523→      <section className="py-16 md:py-20 bg-[#0f172a] relative overflow-hidden" aria-label="Call to Action">
+   524→        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+   525→          <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-[#059669]/10 blur-3xl" />
+   526→        </div>
+   527→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+   528→          <AnimatedSection>
+   529→            <div className="text-center">
+   530→              <h2
+   531→                className="text-2xl md:text-3xl font-bold text-white"
+   532→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   533→              >
+   534→                Interested in Our Work?
+   535→              </h2>
+   536→              <p className="mt-3 text-[#94a3b8] max-w-2xl mx-auto">
+   537→                Get in touch to learn more about our {activity.title.toLowerCase()} programme and how you can collaborate with us.
+   538→              </p>
+   539→              <div className="mt-8 flex flex-wrap justify-center gap-4">
+   540→                <Button
+   541→                  asChild
+   542→                  size="lg"
+   543→                  className="bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl"
+   544→                >
+   545→                  <Link href="/contact">
+   546→                    <Mail className="w-4 h-4 mr-2" />
+   547→                    Contact Us
+   548→                  </Link>
+   549→                </Button>
+   550→                <Button
+   551→                  asChild
+   552→                  size="lg"
+   553→                  variant="outline"
+   554→                  className="border-white/30 text-white hover:bg-white/10 rounded-xl"
+   555→                >
+   556→                  <Link href="/what-we-do">
+   557→                    <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+   558→                    All Activities
+   559→                  </Link>
+   560→                </Button>
+   561→              </div>
+   562→            </div>
+   563→          </AnimatedSection>
+   564→        </div>
+   565→      </section>
+   566→    </main>
+   567→  );
+   568→}
+   569→

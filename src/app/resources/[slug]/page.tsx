@@ -1,5 +1,6 @@
-import { getResourceBySlug, getResources } from '@/graphql/fetchers';
+import { getResourceBySlug, getResources, isWordPressConnected } from '@/graphql/fetchers';
 import ResourceDetailClient from '@/components/pages/ResourceDetailClient';
+import OfflinePage from '@/components/shared/OfflinePage';
 import type { Metadata } from 'next';
 
 export const revalidate = 300;
@@ -23,6 +24,12 @@ export default async function ResourceDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const wpConnected = await isWordPressConnected();
+
+  if (!wpConnected) {
+    return <OfflinePage pageTitle="Resource" />;
+  }
+
   const { slug } = await params;
   const resource = await getResourceBySlug(slug);
 

@@ -1,0 +1,1190 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useRef } from 'react';
+     4→import Image from 'next/image';
+     5→import Link from 'next/link';
+     6→import { motion, useInView } from 'framer-motion';
+     7→import {
+     8→  ArrowRight,
+     9→  FileSearch,
+    10→  Users,
+    11→  Lightbulb,
+    12→  BarChart3,
+    13→  GraduationCap,
+    14→  Heart,
+    15→  Handshake,
+    16→  Microscope,
+    17→  TrendingUp,
+    18→  UserCheck,
+    19→  Scale,
+    20→  Globe,
+    21→  Building2,
+    22→  FlaskConical,
+    23→  Mail,
+    24→  Phone,
+    25→  MapPin,
+    26→  ChevronDown,
+    27→  BookOpen,
+    28→  ExternalLink,
+    29→} from 'lucide-react';
+    30→import { Button } from '@/components/ui/button';
+    31→import { Badge } from '@/components/ui/badge';
+    32→import { Card, CardContent } from '@/components/ui/card';
+    33→import { Input } from '@/components/ui/input';
+    34→import type {
+    35→  WPSiteSettings,
+    36→  GTEEPActivity,
+    37→  GTEEPPhilosophy,
+    38→  GTEEPTeamMember,
+    39→  GTEEPOutput,
+    40→  GTEEPPartner,
+    41→  GTEEPBlogPost,
+    42→} from '@/types';
+    43→import { TeamMemberModal } from '@/components/features/TeamMemberModal';
+    44→
+    45→// =============================================================================
+    46→// Props
+    47→// =============================================================================
+    48→
+    49→interface HomePageClientProps {
+    50→  settings: WPSiteSettings;
+    51→  activities: GTEEPActivity[];
+    52→  philosophy: GTEEPPhilosophy[];
+    53→  teamMembers: GTEEPTeamMember[];
+    54→  outputs: GTEEPOutput[];
+    55→  partners: GTEEPPartner[];
+    56→  blogPosts: GTEEPBlogPost[];
+    57→  aboutData: {
+    58→    aboutSummary: string;
+    59→    aboutVision: string;
+    60→    aboutMission: string;
+    61→    aboutGoal: string;
+    62→  };
+    63→}
+    64→
+    65→// =============================================================================
+    66→// Animation Variants
+    67→// =============================================================================
+    68→
+    69→const fadeInUp = {
+    70→  hidden: { opacity: 0, y: 30 },
+    71→  visible: { opacity: 1, y: 0 },
+    72→};
+    73→
+    74→const staggerContainer = {
+    75→  hidden: { opacity: 0 },
+    76→  visible: {
+    77→    opacity: 1,
+    78→    transition: { staggerChildren: 0.15 },
+    79→  },
+    80→};
+    81→
+    82→const staggerItem = {
+    83→  hidden: { opacity: 0, y: 20 },
+    84→  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+    85→};
+    86→
+    87→// =============================================================================
+    88→// Helper: Animated Counter Component
+    89→// =============================================================================
+    90→
+    91→function AnimatedCounter({ end, suffix = '', duration = 2000 }: { end: number; suffix?: string; duration?: number }) {
+    92→  const [count, setCount] = useState(0);
+    93→  const ref = useRef<HTMLSpanElement>(null);
+    94→  const isInView = useInView(ref, { once: true });
+    95→  const hasStarted = useRef(false);
+    96→
+    97→  useEffect(() => {
+    98→    if (!isInView || hasStarted.current) return;
+    99→    hasStarted.current = true;
+   100→
+   101→    const startTime = performance.now();
+   102→    const animate = (currentTime: number) => {
+   103→      const elapsed = currentTime - startTime;
+   104→      const progress = Math.min(elapsed / duration, 1);
+   105→      const eased = 1 - Math.pow(1 - progress, 3);
+   106→      setCount(Math.floor(eased * end));
+   107→      if (progress < 1) {
+   108→        requestAnimationFrame(animate);
+   109→      }
+   110→    };
+   111→    requestAnimationFrame(animate);
+   112→  }, [isInView, end, duration]);
+   113→
+   114→  return (
+   115→    <span ref={ref} className="tabular-nums">
+   116→      {count}{suffix}
+   117→    </span>
+   118→  );
+   119→}
+   120→
+   121→// =============================================================================
+   122→// Helper: Section Wrapper with Scroll Reveal
+   123→// =============================================================================
+   124→
+   125→function SectionReveal({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+   126→  const ref = useRef(null);
+   127→  const isInView = useInView(ref, { once: true, margin: '-80px' });
+   128→
+   129→  return (
+   130→    <motion.div
+   131→      ref={ref}
+   132→      initial={{ opacity: 0, y: 40 }}
+   133→      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+   134→      transition={{ duration: 0.7, ease: 'easeOut' }}
+   135→      className={className}
+   136→    >
+   137→      {children}
+   138→    </motion.div>
+   139→  );
+   140→}
+   141→
+   142→// =============================================================================
+   143→// Helper: Activity icon mapping
+   144→// =============================================================================
+   145→
+   146→function getActivityIcon(iconName: string) {
+   147→  const iconMap: Record<string, React.ElementType> = {
+   148→    FileSearch,
+   149→    Users,
+   150→    Lightbulb,
+   151→    BarChart3,
+   152→    GraduationCap,
+   153→    Heart,
+   154→  };
+   155→  return iconMap[iconName] || FileSearch;
+   156→}
+   157→
+   158→// =============================================================================
+   159→// Helper: Philosophy icon mapping
+   160→// =============================================================================
+   161→
+   162→function getPhilosophyIcon(iconName: string) {
+   163→  const iconMap: Record<string, React.ElementType> = {
+   164→    Handshake,
+   165→    Microscope,
+   166→    TrendingUp,
+   167→    UserCheck,
+   168→    Scale,
+   169→  };
+   170→  return iconMap[iconName] || Handshake;
+   171→}
+   172→
+   173→// =============================================================================
+   174→// Helper: Partner icon mapping
+   175→// =============================================================================
+   176→
+   177→function getPartnerIcon(type: string) {
+   178→  const iconMap: Record<string, React.ElementType> = {
+   179→    university: GraduationCap,
+   180→    'international-organization': Globe,
+   181→    government: Building2,
+   182→    'research-institute': FlaskConical,
+   183→    ngo: Users,
+   184→    'private-sector': Building2,
+   185→  };
+   186→  return iconMap[type] || Building2;
+   187→}
+   188→
+   189→// =============================================================================
+   190→// Helper: Output type label
+   191→// =============================================================================
+   192→
+   193→function getOutputTypeLabel(type: string): string {
+   194→  const labels: Record<string, string> = {
+   195→    'concept-note': 'Concept Note',
+   196→    'policy-brief': 'Policy Brief',
+   197→    'data-stock': 'Data Stock',
+   198→    'video': 'Video',
+   199→    'photo': 'Photo Gallery',
+   200→    'knowledge-product': 'Knowledge Product',
+   201→  };
+   202→  return labels[type] || 'Output';
+   203→}
+   204→
+   205→// =============================================================================
+   206→// Helper: Team member avatar with initials
+   207→// =============================================================================
+   208→
+   209→function TeamAvatar({ name, size = 'md', imageUrl }: { name: string; size?: 'sm' | 'md' | 'lg'; imageUrl?: string }) {
+   210→  const initials = name
+   211→    .split(' ')
+   212→    .map((n) => n[0])
+   213→    .join('')
+   214→    .slice(0, 2)
+   215→    .toUpperCase();
+   216→
+   217→  const sizeClasses = {
+   218→    sm: 'w-12 h-12 text-sm',
+   219→    md: 'w-16 h-16 text-lg',
+   220→    lg: 'w-24 h-24 text-2xl',
+   221→  };
+   222→
+   223→  if (imageUrl) {
+   224→    return (
+   225→      <div className={`${sizeClasses[size]} rounded-full overflow-hidden shadow-lg shrink-0 relative`}>
+   226→        <Image
+   227→          src={imageUrl}
+   228→          alt={name}
+   229→          fill
+   230→          className="object-cover object-center"
+   231→          sizes="96px"
+   232→        />
+   233→      </div>
+   234→    );
+   235→  }
+   236→
+   237→  return (
+   238→    <div
+   239→      className={`${sizeClasses[size]} rounded-full bg-gradient-to-br from-[#059669] to-[#065f46] flex items-center justify-center text-white font-bold shadow-lg shrink-0`}
+   240→      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   241→    >
+   242→      {initials}
+   243→    </div>
+   244→  );
+   245→}
+   246→
+   247→// =============================================================================
+   248→// Main Component
+   249→// =============================================================================
+   250→
+   251→export default function HomePageClient({
+   252→  settings,
+   253→  activities,
+   254→  philosophy,
+   255→  teamMembers,
+   256→  outputs,
+   257→  partners,
+   258→  blogPosts,
+   259→  aboutData,
+   260→}: HomePageClientProps) {
+   261→  // Use the about summary from WordPress for the hero description.
+   262→  // If the aboutSummary is long, extract the first 1-2 sentences for the hero.
+   263→  const getHeroDescription = () => {
+   264→    const summary = aboutData.aboutSummary;
+   265→    if (!summary) {
+   266→      return settings.acfOptions?.heroDescription ||
+   267→        'Evidence-driven policy analysis for socially inclusive development. We champion partnerships for African development, people-centered growth, and gender equitable economic transformation.';
+   268→    }
+   269→
+   270→    // If the summary is short enough (under 200 chars), use it directly
+   271→    if (summary.length <= 200) return summary;
+   272→
+   273→    // Otherwise, extract the first two sentences
+   274→    const sentences = summary.match(/[^.!?]+[.!?]+/g);
+   275→    if (sentences && sentences.length > 1) {
+   276→      const firstTwo = sentences.slice(0, 2).join('').trim();
+   277→      // If still too long, just use the first sentence
+   278→      if (firstTwo.length > 250) return sentences[0].trim();
+   279→      return firstTwo;
+   280→    }
+   281→
+   282→    return summary;
+   283→  };
+   284→
+   285→  const heroDescription = getHeroDescription();
+   286→
+   287→  const executive = teamMembers.filter((m) => m.category === 'executive');
+   288→  const directors = teamMembers.filter((m) => m.category === 'director');
+   289→  const advisoryBoard = teamMembers.filter((m) => m.category === 'advisory-board');
+   290→  const trustees = teamMembers.filter((m) => m.category === 'board-of-trustees');
+   291→
+   292→  // Team member modal state
+   293→  const [selectedMember, setSelectedMember] = useState<GTEEPTeamMember | null>(null);
+   294→
+   295→  // Get featured outputs: first policy brief, first data stock, first knowledge product
+   296→  const firstPolicyBrief = outputs.find((o) => o.type === 'policy-brief');
+   297→  const firstDataStock = outputs.find((o) => o.type === 'data-stock');
+   298→  const firstKnowledgeProduct = outputs.find((o) => o.type === 'knowledge-product');
+   299→  const featuredOutputs = [firstPolicyBrief, firstDataStock, firstKnowledgeProduct].filter(Boolean) as GTEEPOutput[];
+   300→
+   301→  return (
+   302→    <main>
+   303→      {/* ================================================================== */}
+   304→      {/* SECTION 1: HERO */}
+   305→      {/* ================================================================== */}
+   306→      <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-label="Hero">
+   307→        {/* Background image */}
+   308→        <Image
+   309→          src="/images/policy-engagement.jpg"
+   310→          alt="GTEEP - Gilead Trust Economic Empowerment Project - Building Knowledge, Transforming Lives, Empowering Communities"
+   311→          fill
+   312→          className="object-cover"
+   313→          priority
+   314→          sizes="100vw"
+   315→        />
+   316→        {/* Background gradient overlay */}
+   317→        <div className="absolute inset-0 bg-gradient-to-b from-[#065f46]/80 via-[#047857]/70 to-[#0f172a]/85" />
+   318→
+   319→        {/* Animated floating shapes */}
+   320→        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+   321→          <motion.div
+   322→            className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-white/5"
+   323→            animate={{ y: [0, 30, 0], x: [0, 15, 0] }}
+   324→            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+   325→          />
+   326→          <motion.div
+   327→            className="absolute top-1/3 right-10 w-96 h-96 rounded-full bg-[#d97706]/10"
+   328→            animate={{ y: [0, -40, 0], x: [0, -20, 0] }}
+   329→            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+   330→          />
+   331→          <motion.div
+   332→            className="absolute bottom-20 left-1/4 w-48 h-48 rounded-full bg-white/5"
+   333→            animate={{ y: [0, 25, 0], x: [0, 20, 0] }}
+   334→            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+   335→          />
+   336→          <motion.div
+   337→            className="absolute top-1/4 left-1/3 w-32 h-32 rounded-full bg-[#f59e0b]/8"
+   338→            animate={{ y: [0, -20, 0], scale: [1, 1.1, 1] }}
+   339→            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+   340→          />
+   341→          <motion.div
+   342→            className="absolute bottom-1/3 right-1/4 w-64 h-64 rounded-full bg-white/3"
+   343→            animate={{ y: [0, 35, 0], rotate: [0, 5, 0] }}
+   344→            transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+   345→          />
+   346→        </div>
+   347→
+   348→        {/* Hero Content */}
+   349→        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+   350→          <motion.div
+   351→            variants={staggerContainer}
+   352→            initial="hidden"
+   353→            animate="visible"
+   354→            className="space-y-6 sm:space-y-8"
+   355→          >
+   356→            {/* Badge */}
+   357→            <motion.div variants={staggerItem}>
+   358→              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20">
+   359→                <Globe className="w-4 h-4" />
+   360→                Economic Empowerment &amp; Policy Research
+   361→              </span>
+   362→            </motion.div>
+   363→
+   364→            {/* Main heading */}
+   365→            <motion.h1
+   366→              variants={staggerItem}
+   367→              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white tracking-tight"
+   368→              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   369→            >
+   370→              GTEEP
+   371→            </motion.h1>
+   372→
+   373→            {/* Subtitle */}
+   374→            <motion.p
+   375→              variants={staggerItem}
+   376→              className="text-lg sm:text-xl md:text-2xl text-[#f59e0b] font-semibold"
+   377→            >
+   378→              Gilead Trust Economic Empowerment Project
+   379→            </motion.p>
+   380→
+   381→            {/* Description */}
+   382→            <motion.p
+   383→              variants={staggerItem}
+   384→              className="text-base sm:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed"
+   385→            >
+   386→              {heroDescription}
+   387→            </motion.p>
+   388→
+   389→            {/* CTA Buttons */}
+   390→            <motion.div variants={staggerItem} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+   391→              <Button
+   392→                size="lg"
+   393→                className="bg-[#d97706] hover:bg-[#b45309] text-white px-8 py-6 text-base font-semibold rounded-xl shadow-lg shadow-[#d97706]/25 transition-all hover:shadow-xl hover:shadow-[#d97706]/30 hover:-translate-y-0.5"
+   394→                asChild
+   395→              >
+   396→                <a href="/what-we-do">
+   397→                  <BookOpen className="w-5 h-5 mr-2" />
+   398→                  Explore Our Work
+   399→                </a>
+   400→              </Button>
+   401→              <Button
+   402→                size="lg"
+   403→                variant="outline"
+   404→                className="border-white/30 text-white hover:bg-white/10 px-8 py-6 text-base font-semibold rounded-xl backdrop-blur-sm transition-all hover:-translate-y-0.5"
+   405→                asChild
+   406→              >
+   407→                <a href="#about">
+   408→                  Learn More
+   409→                  <ArrowRight className="w-5 h-5 ml-2" />
+   410→                </a>
+   411→              </Button>
+   412→            </motion.div>
+   413→          </motion.div>
+   414→        </div>
+   415→
+   416→        {/* Scroll indicator */}
+   417→        <motion.div
+   418→          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+   419→          animate={{ y: [0, 10, 0] }}
+   420→          transition={{ duration: 2, repeat: Infinity }}
+   421→          aria-hidden="true"
+   422→        >
+   423→          <div className="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center p-1">
+   424→            <motion.div
+   425→              className="w-1.5 h-3 rounded-full bg-white/50"
+   426→              animate={{ y: [0, 12, 0] }}
+   427→              transition={{ duration: 2, repeat: Infinity }}
+   428→            />
+   429→          </div>
+   430→        </motion.div>
+   431→      </section>
+   432→
+   433→      {/* ================================================================== */}
+   434→      {/* SECTION 2: OUR ACTIVITIES (What We Do) */}
+   435→      {/* ================================================================== */}
+   436→      <SectionReveal>
+   437→        <section className="py-20 sm:py-28 bg-white" id="activities" aria-label="Our Activities">
+   438→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   439→            {/* Section header */}
+   440→            <div className="text-center mb-16">
+   441→              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+   442→                What We Do
+   443→              </Badge>
+   444→              <h2
+   445→                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+   446→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   447→              >
+   448→                Our Activities
+   449→              </h2>
+   450→              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+   451→                Driving evidence-based policy change through research, engagement, and empowerment across Africa.
+   452→              </p>
+   453→            </div>
+   454→
+   455→            {/* Activity cards */}
+   456→            {activities.length > 0 ? (
+   457→              <motion.div
+   458→                variants={staggerContainer}
+   459→                initial="hidden"
+   460→                whileInView="visible"
+   461→                viewport={{ once: true, margin: '-50px' }}
+   462→                className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+   463→              >
+   464→                {activities.map((activity) => {
+   465→                  const IconComponent = getActivityIcon(activity.icon);
+   466→                  // Use description if available, otherwise extract snippet from content
+   467→                  const description = activity.description || activity.content
+   468→                    ? activity.description || activity.content.replace(/<[^>]*>/g, '').trim().substring(0, 150) + '...'
+   469→                    : 'Learn more about our ' + activity.title.toLowerCase() + ' programme.';
+   470→                  return (
+   471→                    <motion.div key={activity.id} variants={staggerItem}>
+   472→                      <Link
+   473→                        href={`/what-we-do/${activity.slug}`}
+   474→                        className="group block p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white cursor-pointer"
+   475→                      >
+   476→                        <div className="w-12 h-12 rounded-xl bg-[#f0fdf4] flex items-center justify-center mb-4 group-hover:bg-[#065f46] transition-colors">
+   477→                          <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-white transition-colors" />
+   478→                        </div>
+   479→                        <h3 className="text-lg font-semibold text-[#0f172a] mb-2 group-hover:text-[#065f46] transition-colors" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+   480→                          {activity.title}
+   481→                        </h3>
+   482→                        <p className="text-sm text-[#64748b] leading-relaxed">{description}</p>
+   483→                        <span className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-[#065f46] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+   484→                          Learn more
+   485→                          <ArrowRight className="w-3.5 h-3.5" />
+   486→                        </span>
+   487→                      </Link>
+   488→                    </motion.div>
+   489→                  );
+   490→                })}
+   491→              </motion.div>
+   492→            ) : (
+   493→              <div className="text-center py-12">
+   494→                <div className="w-16 h-16 rounded-2xl bg-[#f0fdf4] flex items-center justify-center mx-auto mb-4">
+   495→                  <FileSearch className="w-8 h-8 text-[#059669]" />
+   496→                </div>
+   497→                <p className="text-[#64748b] text-base">Our activities are being updated. Check back soon!</p>
+   498→              </div>
+   499→            )}
+   500→
+   501→            {/* View all button */}
+   502→            {activities.length > 0 && (
+   503→              <div className="text-center mt-12">
+   504→                <Button
+   505→                  variant="outline"
+   506→                  className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+   507→                  asChild
+   508→                >
+   509→                  <a href="/what-we-do">
+   510→                    View All Activities
+   511→                    <ArrowRight className="w-4 h-4 ml-2" />
+   512→                  </a>
+   513→                </Button>
+   514→              </div>
+   515→            )}
+   516→          </div>
+   517→        </section>
+   518→      </SectionReveal>
+   519→
+   520→      {/* ================================================================== */}
+   521→      {/* SECTION 3: OUR PHILOSOPHY */}
+   522→      {/* ================================================================== */}
+   523→      <section className="py-20 sm:py-28 bg-[#0f172a] relative overflow-hidden" id="philosophy" aria-label="Our Philosophy">
+   524→        {/* Decorative blurred circles */}
+   525→        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+   526→          <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-[#059669]/10 blur-3xl" />
+   527→          <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-[#d97706]/8 blur-3xl" />
+   528→          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#047857]/5 blur-3xl" />
+   529→        </div>
+   530→
+   531→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+   532→          <SectionReveal>
+   533→            <div className="text-center mb-16">
+   534→              <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-sm px-3 py-1 mb-4">
+   535→                Our Philosophy
+   536→              </Badge>
+   537→              <h2
+   538→                className="text-3xl sm:text-4xl font-bold text-white mt-2"
+   539→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   540→              >
+   541→                Our Philosophy
+   542→              </h2>
+   543→              <p className="mt-4 text-[#94a3b8] max-w-2xl mx-auto">
+   544→                The core principles that guide our work and shape our approach to development in Africa.
+   545→              </p>
+   546→            </div>
+   547→          </SectionReveal>
+   548→
+   549→          {philosophy.length > 0 ? (
+   550→            <motion.div
+   551→              variants={staggerContainer}
+   552→              initial="hidden"
+   553→              whileInView="visible"
+   554→              viewport={{ once: true, margin: '-50px' }}
+   555→              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+   556→            >
+   557→              {philosophy.map((item, index) => {
+   558→                const IconComponent = getPhilosophyIcon(item.icon);
+   559→                // Make the first item span 2 columns on lg for visual interest
+   560→                const isLarge = index === 0;
+   561→                return (
+   562→                  <motion.div
+   563→                    key={item.id}
+   564→                    variants={staggerItem}
+   565→                    className={isLarge ? 'sm:col-span-2 lg:col-span-2' : ''}
+   566→                  >
+   567→                    <div className="group relative p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full">
+   568→                      <div className="w-12 h-12 rounded-xl bg-[#059669]/20 flex items-center justify-center mb-4 group-hover:bg-[#d97706]/20 transition-colors">
+   569→                        <IconComponent className="w-6 h-6 text-[#059669] group-hover:text-[#f59e0b] transition-colors" />
+   570→                      </div>
+   571→                      <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+   572→                        {item.title}
+   573→                      </h3>
+   574→                      <p className="text-sm text-[#94a3b8] leading-relaxed">{item.description}</p>
+   575→                    </div>
+   576→                  </motion.div>
+   577→                );
+   578→              })}
+   579→            </motion.div>
+   580→          ) : (
+   581→            <div className="text-center py-8">
+   582→              <p className="text-[#94a3b8] text-base">Our philosophy is being updated. Check back soon!</p>
+   583→            </div>
+   584→          )}
+   585→        </div>
+   586→      </section>
+   587→
+   588→      {/* ================================================================== */}
+   589→      {/* SECTION 4: WHO WE ARE */}
+   590→      {/* ================================================================== */}
+   591→      <SectionReveal>
+   592→        <section className="py-20 sm:py-28 bg-white" id="about" aria-label="Who We Are">
+   593→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   594→            {/* Section header */}
+   595→            <div className="text-center mb-16">
+   596→              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+   597→                Our Team
+   598→              </Badge>
+   599→              <h2
+   600→                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+   601→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   602→              >
+   603→                Who We Are
+   604→              </h2>
+   605→              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+   606→                A dedicated team of researchers, policy analysts, and development practitioners committed to Africa&apos;s transformation.
+   607→              </p>
+   608→            </div>
+   609→
+   610→            {/* Executive Director - Featured Card */}
+   611→            {executive.map((member) => (
+   612→              <motion.div
+   613→                key={member.id}
+   614→                initial={{ opacity: 0, y: 30 }}
+   615→                whileInView={{ opacity: 1, y: 0 }}
+   616→                viewport={{ once: true }}
+   617→                transition={{ duration: 0.6 }}
+   618→                className="mb-12"
+   619→              >
+   620→                <div
+   621→                  className="group max-w-4xl mx-auto p-8 rounded-2xl border border-[#e2e8f0] hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-[#f0fdf4] to-white cursor-pointer"
+   622→                  onClick={() => setSelectedMember(member)}
+   623→                >
+   624→                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+   625→                    <TeamAvatar name={member.name} size="lg" imageUrl={member.image} />
+   626→                    <div className="text-center sm:text-left flex-1">
+   627→                      <Badge className="bg-[#065f46] text-white text-xs mb-2 hover:bg-[#065f46]">
+   628→                        Executive Director
+   629→                      </Badge>
+   630→                      <h3
+   631→                        className="text-2xl font-bold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
+   632→                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   633→                      >
+   634→                        {member.name}
+   635→                      </h3>
+   636→                      <p className="text-[#059669] font-medium mb-3">{member.role}</p>
+   637→                      <p className="text-sm text-[#64748b] leading-relaxed line-clamp-3">{member.bio}</p>
+   638→                      <span className="inline-flex items-center gap-1 text-xs text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+   639→                        Click to view full profile →
+   640→                      </span>
+   641→                    </div>
+   642→                  </div>
+   643→                </div>
+   644→              </motion.div>
+   645→            ))}
+   646→
+   647→            {/* Directors - 3-column grid */}
+   648→            <motion.div
+   649→              variants={staggerContainer}
+   650→              initial="hidden"
+   651→              whileInView="visible"
+   652→              viewport={{ once: true, margin: '-50px' }}
+   653→              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+   654→            >
+   655→              {directors.map((member) => (
+   656→                <motion.div key={member.id} variants={staggerItem}>
+   657→                  <div
+   658→                    className="group p-6 rounded-2xl border border-[#e2e8f0] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full bg-white text-center cursor-pointer"
+   659→                    onClick={() => setSelectedMember(member)}
+   660→                  >
+   661→                    <div className="flex justify-center mb-4">
+   662→                      <TeamAvatar name={member.name} size="md" imageUrl={member.image} />
+   663→                    </div>
+   664→                    <Badge variant="secondary" className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-xs mb-2">
+   665→                      Director
+   666→                    </Badge>
+   667→                    <h3
+   668→                      className="text-lg font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
+   669→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   670→                    >
+   671→                      {member.name}
+   672→                    </h3>
+   673→                    <p className="text-[#059669] font-medium text-sm mb-3">{member.role}</p>
+   674→                    <p className="text-sm text-[#64748b] leading-relaxed line-clamp-4">{member.bio}</p>
+   675→                    <span className="inline-flex items-center gap-1 text-xs text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+   676→                      View full profile →
+   677→                    </span>
+   678→                  </div>
+   679→                </motion.div>
+   680→              ))}
+   681→            </motion.div>
+   682→          </div>
+   683→        </section>
+   684→      </SectionReveal>
+   685→
+   686→      {/* ================================================================== */}
+   687→      {/* SECTION 5: ADVISORY BOARD */}
+   688→      {/* ================================================================== */}
+   689→      <SectionReveal>
+   690→        <section className="py-20 sm:py-28 bg-[#f8fafc]" id="advisory-board" aria-label="Advisory Board">
+   691→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   692→            {/* Section header */}
+   693→            <div className="text-center mb-16">
+   694→              <Badge className="bg-[#fef3c7] text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
+   695→                Advisory Board
+   696→              </Badge>
+   697→              <h2
+   698→                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+   699→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   700→              >
+   701→                Our Advisory Board
+   702→              </h2>
+   703→              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+   704→                Distinguished experts who provide strategic guidance and direction to our work.
+   705→              </p>
+   706→            </div>
+   707→
+   708→            <motion.div
+   709→              variants={staggerContainer}
+   710→              initial="hidden"
+   711→              whileInView="visible"
+   712→              viewport={{ once: true, margin: '-50px' }}
+   713→              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"
+   714→            >
+   715→              {advisoryBoard.map((member) => (
+   716→                <motion.div key={member.id} variants={staggerItem}>
+   717→                  <div
+   718→                    className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center cursor-pointer"
+   719→                    onClick={() => setSelectedMember(member)}
+   720→                  >
+   721→                    <div className="flex justify-center mb-3">
+   722→                      <TeamAvatar name={member.name} size="sm" imageUrl={member.image} />
+   723→                    </div>
+   724→                    <h3
+   725→                      className="text-sm font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
+   726→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   727→                    >
+   728→                      {member.name}
+   729→                    </h3>
+   730→                    <p className="text-xs text-[#059669] font-medium">{member.role}</p>
+   731→                    <span className="inline-flex items-center gap-1 text-[10px] text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+   732→                      View profile →
+   733→                    </span>
+   734→                  </div>
+   735→                </motion.div>
+   736→              ))}
+   737→            </motion.div>
+   738→          </div>
+   739→        </section>
+   740→      </SectionReveal>
+   741→
+   742→      {/* ================================================================== */}
+   743→      {/* SECTION 6: BOARD OF TRUSTEES */}
+   744→      {/* ================================================================== */}
+   745→      <SectionReveal>
+   746→        <section className="py-20 sm:py-28 bg-white" id="trustees" aria-label="Board of Trustees">
+   747→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   748→            {/* Section header */}
+   749→            <div className="text-center mb-16">
+   750→              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+   751→                Board of Trustees
+   752→              </Badge>
+   753→              <h2
+   754→                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+   755→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   756→              >
+   757→                Board of Trustees
+   758→              </h2>
+   759→              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+   760→                Providing governance oversight and strategic direction for GTEEP&apos;s mission.
+   761→              </p>
+   762→            </div>
+   763→
+   764→            <motion.div
+   765→              variants={staggerContainer}
+   766→              initial="hidden"
+   767→              whileInView="visible"
+   768→              viewport={{ once: true, margin: '-50px' }}
+   769→              className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto"
+   770→            >
+   771→              {trustees.map((member) => (
+   772→                <motion.div key={member.id} variants={staggerItem}>
+   773→                  <div
+   774→                    className="group p-5 rounded-2xl bg-white border border-[#e2e8f0] hover:shadow-md hover:-translate-y-1 transition-all duration-300 h-full text-center cursor-pointer"
+   775→                    onClick={() => setSelectedMember(member)}
+   776→                  >
+   777→                    <div className="flex justify-center mb-3">
+   778→                      <TeamAvatar name={member.name} size="sm" imageUrl={member.image} />
+   779→                    </div>
+   780→                    <h3
+   781→                      className="text-sm font-semibold text-[#0f172a] mb-1 group-hover:text-[#065f46] transition-colors"
+   782→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   783→                    >
+   784→                      {member.name}
+   785→                    </h3>
+   786→                    <p className="text-xs text-[#059669] font-medium">{member.role}</p>
+   787→                    <span className="inline-flex items-center gap-1 text-[10px] text-[#059669] font-medium mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+   788→                      View profile →
+   789→                    </span>
+   790→                  </div>
+   791→                </motion.div>
+   792→              ))}
+   793→            </motion.div>
+   794→          </div>
+   795→        </section>
+   796→      </SectionReveal>
+   797→
+   798→      {/* ================================================================== */}
+   799→      {/* SECTION 7: FEATURED OUTPUTS */}
+   800→      {/* ================================================================== */}
+   801→      <section className="py-20 sm:py-28 bg-[#0f172a] relative overflow-hidden" id="outputs" aria-label="Featured Outputs">
+   802→        {/* Decorative elements */}
+   803→        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+   804→          <div className="absolute top-0 right-1/4 w-72 h-72 rounded-full bg-[#059669]/8 blur-3xl" />
+   805→          <div className="absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-[#d97706]/8 blur-3xl" />
+   806→        </div>
+   807→
+   808→        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+   809→          <SectionReveal>
+   810→            <div className="text-center mb-16">
+   811→              <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-sm px-3 py-1 mb-4">
+   812→                Our Work
+   813→              </Badge>
+   814→              <h2
+   815→                className="text-3xl sm:text-4xl font-bold text-white mt-2"
+   816→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   817→              >
+   818→                Featured Outputs
+   819→              </h2>
+   820→              <p className="mt-4 text-[#94a3b8] max-w-2xl mx-auto">
+   821→                Key research outputs spanning policy briefs, data resources, and knowledge products.
+   822→              </p>
+   823→            </div>
+   824→          </SectionReveal>
+   825→
+   826→          <motion.div
+   827→            variants={staggerContainer}
+   828→            initial="hidden"
+   829→            whileInView="visible"
+   830→            viewport={{ once: true, margin: '-50px' }}
+   831→            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+   832→          >
+   833→            {featuredOutputs.map((output) => (
+   834→              <motion.div key={output.id} variants={staggerItem}>
+   835→                <div className="group rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-[#d97706]/30 transition-all duration-300 hover:-translate-y-1 h-full flex flex-col overflow-hidden">
+   836→                  {output.image && (
+   837→                    <div className="relative h-40 overflow-hidden">
+   838→                      <Image
+   839→                        src={output.image}
+   840→                        alt={output.title}
+   841→                        fill
+   842→                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+   843→                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+   844→                      />
+   845→                      <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/80 to-transparent" />
+   846→                      <Badge className="absolute top-3 left-3 bg-[#d97706]/80 text-[#f59e0b] border-[#d97706]/30 text-xs backdrop-blur-sm hover:bg-[#d97706]/90">
+   847→                        {getOutputTypeLabel(output.type)}
+   848→                      </Badge>
+   849→                    </div>
+   850→                  )}
+   851→                  {!output.image && (
+   852→                    <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-xs w-fit m-6 mb-0 hover:bg-[#d97706]/30">
+   853→                      {getOutputTypeLabel(output.type)}
+   854→                    </Badge>
+   855→                  )}
+   856→                  <div className="p-6 flex flex-col flex-grow">
+   857→                    <h3
+   858→                      className="text-lg font-semibold text-white mb-3 leading-snug group-hover:text-[#f59e0b] transition-colors"
+   859→                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   860→                    >
+   861→                      {output.title}
+   862→                    </h3>
+   863→                    <p className="text-sm text-[#94a3b8] leading-relaxed mb-4 flex-grow">{output.excerpt}</p>
+   864→                    <div className="flex items-center justify-between pt-4 border-t border-white/10">
+   865→                      {output.date && (
+   866→                        <span className="text-xs text-[#64748b]">
+   867→                          {new Date(output.date + 'T00:00:00').toLocaleDateString('en-US', {
+   868→                            year: 'numeric',
+   869→                            month: 'short',
+   870→                            day: 'numeric',
+   871→                          })}
+   872→                        </span>
+   873→                      )}
+   874→                      <Button
+   875→                        variant="link"
+   876→                        className="text-[#f59e0b] hover:text-[#d97706] p-0 h-auto text-sm group/link ml-auto"
+   877→                      >
+   878→                        Read More
+   879→                        <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
+   880→                      </Button>
+   881→                    </div>
+   882→                  </div>
+   883→                </div>
+   884→              </motion.div>
+   885→            ))}
+   886→          </motion.div>
+   887→
+   888→          {/* View all button */}
+   889→          <div className="text-center mt-12">
+   890→            <Button
+   891→              variant="outline"
+   892→              className="border-[#d97706] text-[#f59e0b] hover:bg-[#d97706] hover:text-white px-8 rounded-xl transition-all"
+   893→              asChild
+   894→            >
+   895→              <a href="/outputs">
+   896→                View All Outputs
+   897→                <ArrowRight className="w-4 h-4 ml-2" />
+   898→              </a>
+   899→            </Button>
+   900→          </div>
+   901→        </div>
+   902→      </section>
+   903→
+   904→      {/* ================================================================== */}
+   905→      {/* SECTION 8: PARTNERS */}
+   906→      {/* ================================================================== */}
+   907→      <SectionReveal>
+   908→        <section className="py-20 sm:py-28 bg-[#f8fafc]" id="partners" aria-label="Our Partners">
+   909→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   910→            {/* Section header */}
+   911→            <div className="text-center mb-16">
+   912→              <Badge className="bg-[#fef3c7] text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
+   913→                Collaborations
+   914→              </Badge>
+   915→              <h2
+   916→                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+   917→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   918→              >
+   919→                Our Partners
+   920→              </h2>
+   921→              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+   922→                Working alongside leading institutions across Africa and globally to drive evidence-based policy change.
+   923→              </p>
+   924→            </div>
+   925→
+   926→            <motion.div
+   927→              variants={staggerContainer}
+   928→              initial="hidden"
+   929→              whileInView="visible"
+   930→              viewport={{ once: true, margin: '-50px' }}
+   931→              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
+   932→            >
+   933→              {partners.map((partner) => {
+   934→                const IconComponent = getPartnerIcon(partner.type);
+   935→                return (
+   936→                  <motion.div key={partner.id} variants={staggerItem}>
+   937→                    <div className="group p-6 rounded-2xl bg-white border border-[#e2e8f0] hover:border-[#065f46]/20 hover:shadow-md transition-all duration-300 text-center h-full flex flex-col items-center justify-center hover:-translate-y-1">
+   938→                      <div className="w-14 h-14 rounded-xl bg-[#f0fdf4] flex items-center justify-center mb-3 group-hover:bg-[#065f46]/10 transition-colors">
+   939→                        <IconComponent className="w-7 h-7 text-[#059669]" />
+   940→                      </div>
+   941→                      <h3 className="text-sm font-semibold text-[#0f172a] mb-2 group-hover:text-[#065f46] transition-colors">
+   942→                        {partner.name}
+   943→                      </h3>
+   944→                      {partner.country && (
+   945→                        <Badge variant="secondary" className="text-xs bg-[#f1f5f9] text-[#64748b]">
+   946→                          {partner.country}
+   947→                        </Badge>
+   948→                      )}
+   949→                    </div>
+   950→                  </motion.div>
+   951→                );
+   952→              })}
+   953→            </motion.div>
+   954→
+   955→            {/* View all button */}
+   956→            <div className="text-center mt-12">
+   957→              <Button
+   958→                variant="outline"
+   959→                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+   960→                asChild
+   961→              >
+   962→                <a href="/partners">
+   963→                  View All Partners
+   964→                  <ArrowRight className="w-4 h-4 ml-2" />
+   965→                </a>
+   966→              </Button>
+   967→            </div>
+   968→          </div>
+   969→        </section>
+   970→      </SectionReveal>
+   971→
+   972→      {/* ================================================================== */}
+   973→      {/* SECTION 9: BLOG / LATEST INSIGHTS */}
+   974→      {/* ================================================================== */}
+   975→      <SectionReveal>
+   976→        <section className="py-20 sm:py-28 bg-white" id="blog" aria-label="Latest Insights">
+   977→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   978→            {/* Section header */}
+   979→            <div className="text-center mb-16">
+   980→              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
+   981→                Latest Insights
+   982→              </Badge>
+   983→              <h2
+   984→                className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
+   985→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+   986→              >
+   987→                From Our Blog
+   988→              </h2>
+   989→              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
+   990→                Analysis, commentary, and insights on African trade policy, economic development, and social inclusion.
+   991→              </p>
+   992→            </div>
+   993→
+   994→            <motion.div
+   995→              variants={staggerContainer}
+   996→              initial="hidden"
+   997→              whileInView="visible"
+   998→              viewport={{ once: true, margin: '-50px' }}
+   999→              className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+  1000→            >
+  1001→              {blogPosts.slice(0, 3).map((post) => (
+  1002→                <motion.div key={post.id} variants={staggerItem}>
+  1003→                  <Card className="group h-full overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-[#e2e8f0]">
+  1004→                    {/* Image area */}
+  1005→                    <div className="h-48 relative overflow-hidden">
+  1006→                      {post.image ? (
+  1007→                        <>
+  1008→                          <Image
+  1009→                            src={post.image}
+  1010→                            alt={post.title}
+  1011→                            fill
+  1012→                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+  1013→                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+  1014→                          />
+  1015→                          <div className="absolute inset-0 bg-gradient-to-t from-[#065f46]/40 to-transparent" />
+  1016→                        </>
+  1017→                      ) : (
+  1018→                        <div className="h-full bg-gradient-to-br from-[#065f46] to-[#047857] flex items-center justify-center">
+  1019→                          <div className="text-center text-white/80">
+  1020→                            <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-60" />
+  1021→                            <p className="text-sm font-medium">GTEEP Insights</p>
+  1022→                          </div>
+  1023→                        </div>
+  1024→                      )}
+  1025→                      {/* Category badge */}
+  1026→                      {post.categories.length > 0 && (
+  1027→                        <Badge className="absolute top-4 left-4 bg-white/20 text-white backdrop-blur-sm border-white/30 hover:bg-white/30">
+  1028→                          {post.categories[0]}
+  1029→                        </Badge>
+  1030→                      )}
+  1031→                    </div>
+  1032→
+  1033→                    <CardContent className="p-6 flex flex-col flex-1">
+  1034→                      {/* Date */}
+  1035→                      <p className="text-xs text-[#94a3b8] mb-2">
+  1036→                        {new Date(post.date + 'T00:00:00').toLocaleDateString('en-US', {
+  1037→                          year: 'numeric',
+  1038→                          month: 'long',
+  1039→                          day: 'numeric',
+  1040→                        })}
+  1041→                      </p>
+  1042→
+  1043→                      {/* Title */}
+  1044→                      <h3
+  1045→                        className="text-base font-semibold text-[#0f172a] mb-3 leading-snug line-clamp-2 group-hover:text-[#065f46] transition-colors"
+  1046→                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+  1047→                      >
+  1048→                        {post.title}
+  1049→                      </h3>
+  1050→
+  1051→                      {/* Excerpt */}
+  1052→                      <p className="text-sm text-[#64748b] leading-relaxed mb-4 line-clamp-3 flex-grow">
+  1053→                        {post.excerpt}
+  1054→                      </p>
+  1055→
+  1056→                      {/* Author & Read More */}
+  1057→                      <div className="flex items-center justify-between pt-4 border-t border-[#f1f5f9]">
+  1058→                        <span className="text-xs text-[#94a3b8]">By {post.author}</span>
+  1059→                        <Button
+  1060→                          variant="link"
+  1061→                          className="text-[#059669] hover:text-[#047857] p-0 h-auto text-sm group/link"
+  1062→                        >
+  1063→                          Read More
+  1064→                          <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
+  1065→                        </Button>
+  1066→                      </div>
+  1067→                    </CardContent>
+  1068→                  </Card>
+  1069→                </motion.div>
+  1070→              ))}
+  1071→            </motion.div>
+  1072→
+  1073→            {/* View all button */}
+  1074→            <div className="text-center mt-12">
+  1075→              <Button
+  1076→                variant="outline"
+  1077→                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+  1078→                asChild
+  1079→              >
+  1080→                <a href="/blog">
+  1081→                  View All Posts
+  1082→                  <ArrowRight className="w-4 h-4 ml-2" />
+  1083→                </a>
+  1084→              </Button>
+  1085→            </div>
+  1086→          </div>
+  1087→        </section>
+  1088→      </SectionReveal>
+  1089→
+  1090→      {/* ================================================================== */}
+  1091→      {/* SECTION 10: NEWSLETTER + CONTACT CTA */}
+  1092→      {/* ================================================================== */}
+  1093→      <section
+  1094→        className="py-20 sm:py-28 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] relative overflow-hidden"
+  1095→        id="contact"
+  1096→        aria-label="Stay Connected"
+  1097→      >
+  1098→        {/* Decorative elements */}
+  1099→        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+  1100→          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#065f46]/10 blur-3xl" />
+  1101→          <div className="absolute bottom-0 right-0 w-72 h-72 rounded-full bg-[#d97706]/8 blur-3xl" />
+  1102→        </div>
+  1103→
+  1104→        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+  1105→          <SectionReveal>
+  1106→            <div className="text-center mb-12">
+  1107→              <div className="w-16 h-16 mx-auto rounded-2xl bg-[#d97706]/20 flex items-center justify-center mb-6">
+  1108→                <Mail className="w-8 h-8 text-[#f59e0b]" />
+  1109→              </div>
+  1110→              <h2
+  1111→                className="text-3xl sm:text-4xl font-bold text-white mb-4"
+  1112→                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+  1113→              >
+  1114→                Stay Connected
+  1115→              </h2>
+  1116→              <p className="text-[#94a3b8] max-w-xl mx-auto">
+  1117→                Subscribe to our newsletter for the latest research insights, policy analysis, and updates on our work across Africa.
+  1118→              </p>
+  1119→            </div>
+  1120→
+  1121→            {/* Newsletter form */}
+  1122→            <div className="max-w-md mx-auto mb-16">
+  1123→              <div className="flex gap-3">
+  1124→                <Input
+  1125→                  type="email"
+  1126→                  placeholder="Enter your email address"
+  1127→                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-[#d97706] focus:ring-[#d97706]/20 h-12 rounded-xl"
+  1128→                  aria-label="Email address for newsletter"
+  1129→                />
+  1130→                <Button className="bg-[#d97706] hover:bg-[#b45309] text-white px-6 h-12 rounded-xl font-semibold shadow-lg shadow-[#d97706]/25 shrink-0 transition-all hover:shadow-xl hover:shadow-[#d97706]/30">
+  1131→                  Subscribe
+  1132→                </Button>
+  1133→              </div>
+  1134→              <p className="text-xs text-[#64748b] mt-3 text-center">
+  1135→                We respect your privacy. Unsubscribe at any time.
+  1136→              </p>
+  1137→            </div>
+  1138→
+  1139→            {/* Contact info */}
+  1140→            <div className="grid sm:grid-cols-3 gap-8 text-center">
+  1141→              <div className="flex flex-col items-center gap-2">
+  1142→                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+  1143→                  <Mail className="w-5 h-5 text-[#f59e0b]" />
+  1144→                </div>
+  1145→                <p className="text-white font-medium text-sm">Email</p>
+  1146→                <a
+  1147→                  href={`mailto:${settings.acfOptions?.contactEmail || 'info@gteep.gileadtrust.com'}`}
+  1148→                  className="text-[#94a3b8] text-sm hover:text-[#f59e0b] transition-colors"
+  1149→                >
+  1150→                  {settings.acfOptions?.contactEmail || 'info@gteep.gileadtrust.com'}
+  1151→                </a>
+  1152→              </div>
+  1153→
+  1154→              <div className="flex flex-col items-center gap-2">
+  1155→                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+  1156→                  <MapPin className="w-5 h-5 text-[#f59e0b]" />
+  1157→                </div>
+  1158→                <p className="text-white font-medium text-sm">Address</p>
+  1159→                <p className="text-[#94a3b8] text-sm">
+  1160→                  {settings.acfOptions?.contactAddress || 'Lagos, Nigeria'}
+  1161→                </p>
+  1162→              </div>
+  1163→
+  1164→              <div className="flex flex-col items-center gap-2">
+  1165→                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+  1166→                  <Phone className="w-5 h-5 text-[#f59e0b]" />
+  1167→                </div>
+  1168→                <p className="text-white font-medium text-sm">Phone</p>
+  1169→                <a
+  1170→                  href={`tel:${settings.acfOptions?.contactPhone || '+234 801 234 5678'}`}
+  1171→                  className="text-[#94a3b8] text-sm hover:text-[#f59e0b] transition-colors"
+  1172→                >
+  1173→                  {settings.acfOptions?.contactPhone || '+234 801 234 5678'}
+  1174→                </a>
+  1175→              </div>
+  1176→            </div>
+  1177→          </SectionReveal>
+  1178→        </div>
+  1179→      </section>
+  1180→
+  1181→      {/* Team Member Modal */}
+  1182→      <TeamMemberModal
+  1183→        member={selectedMember}
+  1184→        isOpen={!!selectedMember}
+  1185→        onClose={() => setSelectedMember(null)}
+  1186→      />
+  1187→    </main>
+  1188→  );
+  1189→}
+  1190→

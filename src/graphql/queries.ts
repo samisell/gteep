@@ -3,7 +3,7 @@
 // GTEEP - Gilead Trust Economic Empowerment Project
 //
 // These queries are designed to work with the actual WordPress GraphQL schema
-// at gteep.jileadtrust.com/graphql. ACF fields are NOT available, so we only
+// at backend.gileadtrust.com/graphql. ACF fields are NOT available, so we only
 // query standard WP GraphQL fields.
 // =============================================================================
 
@@ -523,16 +523,16 @@ export const GET_TEAM_MEMBERS_ACF = `
 
 // -----------------------------------------------------------------------------
 // Output Downloadables Query (ACF-based)
-// Fetches the ourOutputDownloadables ACF field group on posts.
+// Fetches the ourOutputDownloadables ACF field group on the "Our Outputs" page.
 //
 // ACF Field Group: "OurOutputDownloadables"
 // GraphQL Type: "OurOutputDownloadables"
-// Location Rule: Post Type = Post
+// Location Rule: Post Type = Page (applies to all pages)
 //
 // ACF Fields (all URL type, each pointing to a downloadable file):
 //   Field Name                              | Label                                       | Category
 //   ----------------------------------------|---------------------------------------------|------------------
-//   firechatDevelopmentConversationsWebsite | Firechat Development Conversations Website   | concept-note (Firechat)
+//   whatIsFiresideChat                      | What Is Fireside Chat                       | concept-note (Firechat)
 //   genderBacklashArchitecture              | Gender Backlash Architecture                | concept-note (Firechat)
 //   graphicsOnBookTalk                      | Graphics on Book Talk                       | (uncategorized → All)
 //   oluponnaGenderBacklashResponse60        | Oluponna Gender Backlash Response 60        | concept-note (Firechat)
@@ -540,17 +540,15 @@ export const GET_TEAM_MEMBERS_ACF = `
 // -----------------------------------------------------------------------------
 
 export const GET_OUTPUT_DOWNLOADABLES = `
-  query GetOutputDownloadables($first: Int = 1) {
-    posts(first: $first, where: { status: PUBLISH }) {
-      nodes {
-        id
-        ourOutputDownloadables {
-          firechatDevelopmentConversationsWebsite
-          genderBacklashArchitecture
-          graphicsOnBookTalk
-          oluponnaGenderBacklashResponse60
-          thePolicyFiresideChatOutcomesAndNextSteps0323
-        }
+  query GetOutputDownloadables {
+    page(id: "/our-outputs/", idType: URI) {
+      id
+      ourOutputDownloadables {
+        whatIsFiresideChat
+        genderBacklashArchitecture
+        graphicsOnBookTalk
+        oluponnaGenderBacklashResponse60
+        thePolicyFiresideChatOutcomesAndNextSteps0323
       }
     }
   }
