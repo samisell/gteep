@@ -895,3 +895,148 @@ Stage Summary:
 - All hardcoded marketing copy removed; only WP-sourced content (contactEmail, contactPhone, contactAddress from contactDetails ACF) + functional form structure remain
 - Page now consists of: PageHeader (title + breadcrumb only), Contact Form section (form fields, validation, submit handler, toast notifications), and a slim Contact Info sidebar (icon + WP value for each of email/phone/address) plus a Map Card showing the WP address
 - Lint and TypeScript checks pass for the modified file
+
+---
+Task ID: 11
+Agent: Main Agent
+Task: Remove PageHeader subtitle + description from remaining activity detail pages and Publications page
+
+Work Log:
+- User requested removal of "What We Do / GTEEP's <X> programme — driving evidence-based policy change across Africa." from the headers of:
+  - /what-we-do/policy-research
+  - /what-we-do/citizen-enlightenment
+  - /what-we-do/data-speaks
+  - /what-we-do/youth-mentoring
+  - /what-we-do/womens-economic-livelihood
+- User also requested removal of "Academic Research & Policy Output / Browse the complete catalogue of academic publications..." from the Publications page header.
+- In `src/components/pages/ActivityDetailClient.tsx`, extended the existing `hideHeaderSubtitle` flag (previously only `policy-engagement` and `policy-firechat`) to include all activity slugs: `policy-research`, `citizen-enlightenment`, `data-speaks`, `youth-mentoring`, `womens-economic-livelihood`, `our-publication`. Refactored from boolean OR to array `.includes()` for clarity.
+- In `src/components/pages/PublicationsPageClient.tsx`, set PageHeader `subtitle={undefined}` and `description={undefined}` (kept `title="Publications"` and breadcrumb).
+- Lint passes with zero errors.
+- Verified via Agent Browser:
+  - /what-we-do/policy-research: "GTEEP's Policy Research programme" desc REMOVED ✓, "driving evidence-based policy change across Africa" REMOVED ✓
+  - /what-we-do/citizen-enlightenment: desc REMOVED ✓
+  - /what-we-do/data-speaks: desc REMOVED ✓
+  - /what-we-do/youth-mentoring: desc REMOVED ✓
+  - /what-we-do/womens-economic-livelihood: desc REMOVED ✓
+  - /publications: "Academic Research & Policy Output" REMOVED ✓, "Browse the complete catalogue" REMOVED ✓, "Publications" title still PRESENT ✓
+  - "What We Do" only appears in nav menu links (header/footer) and in the breadcrumb trail (Home / What We Do / Page Title) — both are functional navigation, not page header subtitle.
+- All routes returning 200, no errors in dev log.
+
+Stage Summary:
+- All activity detail page headers now show only the WP-sourced page title (no hardcoded "What We Do" subtitle or "GTEEP's X programme..." description).
+- Publications page header now shows only "Publications" title (no hardcoded subtitle or description).
+- Pattern consistent with Tasks 6 and 7: PageHeader receives `subtitle={undefined}` and `description={undefined}` when no WordPress content is available, leaving the header area blank rather than showing hardcoded marketing copy.
+
+---
+Task ID: 12
+Agent: Main Agent
+Task: Reduce home hero to single "What We Do" button; truncate fireside chat write-up to first 2 paragraphs with Read More button opening Development Conversations document
+
+Work Log:
+- User requested: (1) leave only 1 button on home page hero, linking to /what-we-do; (2) on the policy fireside chat page, show only the first 2 paragraphs of the long write-up with a Read More button that opens the Development Conversations related output document (without removing it from the Related Outputs section).
+
+HOME PAGE HERO (HomePageClient.tsx):
+- Removed the "Join Fireside Chat" button (was linking to /what-we-do/policy-engagement/policy-firechat with Flame icon).
+- Kept only the "Explore Our Work" button linking to /what-we-do, styled as the solid amber primary button for visual prominence.
+- Updated comment from "CTA Buttons" to "CTA Button — single button to What We Do".
+- Flame import kept (still used in Sections 2 and 8).
+
+FIRESIDE CHAT PAGE (ActivityDetailClient.tsx):
+- Added import of DocumentViewer component (alongside existing ViewDocumentButton import).
+- Created extractFirstParagraphs() helper function:
+  - First tries to match <p>...</p> HTML tags (for WordPress block editor content).
+  - Falls back to splitting plain text by double newlines for ACF textarea content.
+  - Handles both \r\n\r\n (Windows) and \n\n (Unix) line breaks — critical because the WordPress policyFirechat ACF field uses \r\n\r\n separators.
+  - Identifies "paragraphs" as blocks longer than 50 chars (short blocks are headings).
+  - Returns the first `count` paragraph blocks plus any preceding headings, each wrapped in <p> tags with single newlines converted to <br>.
+- Created FirechatIntro component:
+  - Renders only the first 2 paragraphs via extractFirstParagraphs().
+  - Finds the "Development Conversations" related output by title.
+  - Shows a "Read More" button (amber, with ArrowRight icon) that opens the DocumentViewer modal for the Development Conversations document.
+  - The document is NOT removed from the Related Outputs section below — it stays where it is.
+- Updated the policy-firechat page rendering to use <FirechatIntro> instead of <WpContent> for the intro content.
+
+VERIFICATION (Agent Browser):
+- Home page hero: exactly 1 CTA button ("Explore Our Work" → /what-we-do). "Join Fireside Chat" button removed. ✓
+- Fireside chat page intro: 3 <p> tags rendered (Introduction heading + 2 content paragraphs). Text length reduced from 6678 → 1320 chars. Paragraph 3+ content absent. ✓
+- "Read More" button present below the intro paragraphs. ✓
+- Clicking "Read More" opens the DocumentViewer modal with "Development Conversations Website.docx" loaded via Google Docs Viewer. ✓
+- "Development Conversations Website" document still present in the Related Outputs section below (not removed). ✓
+- Event Accordion (Gender Backlash + Follow the Money) still renders below the intro. ✓
+- Lint passes with zero errors. All routes returning 200.
+
+Stage Summary:
+- Home page hero now has a single CTA button linking to /what-we-do.
+- Fireside chat page write-up is truncated to the first 2 paragraphs with a Read More button that opens the Development Conversations document in the read-only DocumentViewer.
+- The Development Conversations document remains in the Related Outputs section (not removed or duplicated).
+- extractFirstParagraphs() helper handles both HTML <p> content and plain-text ACF content with Windows/Unix newline variants.
+
+---
+Task ID: 13
+Agent: Main Agent
+Task: Show the Follow the Money event output files on the Our Outputs page (in addition to the Fireside Chat page)
+
+Work Log:
+- Read worklog.md (Tasks 1-12) to understand prior work. Task 12 already completed the home hero single-button + fireside chat read-more changes.
+- Read src/graphql/fetchers.ts to understand the data flow:
+  - getOutputDownloadables() fetches 5 ACF fields from the "Our Outputs" page (ourOutputDownloadables) and maps them to GTEEPOutput[] via DOWNLOADABLE_FIELD_MAP.
+  - getFollowTheMoneyFiles() fetches the followTheMoney ACF field group from posts (briefForRegistration + fullConceptNote) and returns a FollowTheMoneyFiles object.
+  - The Outputs page server component (src/app/outputs/page.tsx) merges downloadables + outputs into allOutputs.
+- Read src/app/outputs/page.tsx, OutputsPageClient.tsx, and the EventAccordion section of ActivityDetailClient.tsx to confirm how Follow the Money files are currently rendered (titleFromFilename() derives titles from the WP file URLs) and how outputs are tab-categorised (concept-note merges into knowledge-product tab; relatedSubActivity === 'policy-firechat' triggers the Fireside Chat badge).
+- Added a new fetcher getFollowTheMoneyOutputs() to src/graphql/fetchers.ts (after getFollowTheMoneyFiles):
+  - Added a local titleFromFilename() helper that mirrors the one in ActivityDetailClient.tsx so titles are consistent across both pages.
+  - Added FOLLOW_THE_MONEY_FIELD_MAP mapping the two ACF field names to title fallbacks.
+  - The fetcher calls getFollowTheMoneyFiles(), then converts each present file URL into a GTEEPOutput with: type 'concept-note' (so it shows under Knowledge Products tab, consistent with the other fireside chat documents), relatedActivity 'policy-engagement' + relatedSubActivity 'policy-firechat' (so it displays the Fireside Chat badge that links to the firechat page), fileType derived from the URL extension, and title/description/excerpt generated the same way as getOutputDownloadables().
+  - Reuses the existing module-level getFileExtension() and getFileTypeIcon() helpers.
+- Updated src/app/outputs/page.tsx:
+  - Imported getFollowTheMoneyOutputs.
+  - Added it to the Promise.all and merged into allOutputs as [...downloadables, ...followTheMoneyOutputs, ...outputs].
+  - Added a comment clarifying the Follow the Money files ALSO remain on the Fireside Chat page (additive listing, not moved).
+- Ran `bun run lint` — passes with zero errors.
+- Verified via Agent Browser:
+  - /outputs "All" tab now shows 7 outputs (was 5): Development Conversations Website, Gender Backlash Architecture, Oluponna Gender Backlash Response, Policy Fireside Chat Outcomes & Next Steps, Graphics on Book Talk, PLUS the 2 new Follow the Money files: "Concept Brief For Registration" (DOCX) and "Concept Note 05 01 Fin" (DOCX).
+  - Both new files display the "Fireside Chat" badge (links to /what-we-do/policy-engagement/policy-firechat).
+  - "Knowledge Products" tab count is 7 and shows the same 7 outputs (concept-note merges into knowledge-product).
+  - "View DOCX" buttons present on both new cards.
+  - /what-we-do/policy-engagement/policy-firechat still shows the Follow the Money event accordion with both files ("Concept Brief For Registration", "Concept Note 05 01 Fin"), the Register Now link, and the Gender Backlash section — nothing was removed.
+  - No page errors, no console errors, both routes return 200.
+  - Titles match exactly between the Outputs page and the Fireside Chat page (both derived from the same filenames via titleFromFilename).
+
+Stage Summary:
+- The two Follow the Money event files (brief for registration + full concept note) now ALSO appear on the Our Outputs page under both the "All" and "Knowledge Products" tabs, with the Fireside Chat badge linking back to the firechat page.
+- The files were NOT removed from the Fireside Chat page — they remain in the Follow the Money event accordion there. This is an additive listing for discoverability from either entry point.
+- New fetcher getFollowTheMoneyOutputs() is reusable; the Outputs page server component fetches it in parallel with the existing fetchers via Promise.all.
+- Lint passes with zero errors; Agent Browser confirms the files render correctly on both pages with consistent titles.
+
+---
+Task ID: 14
+Agent: Main Agent
+Task: Update the "Development Conversations Website" document name to reflect the new file the WP admin uploaded to the ACF field whatIsFiresideChat (ourOutputDownloadables)
+
+Work Log:
+- User reported that the document name "Development Conversations Website" no longer matches the file currently in the WordPress ACF field `ourOutputDownloadables > whatIsFiresideChat` (the admin swapped the file in WP).
+- Root cause: in src/graphql/fetchers.ts, DOWNLOADABLE_FIELD_MAP hardcodes `title: 'Development Conversations Website'` for the whatIsFiresideChat field, and getOutputDownloadables() uses metadata.title directly. The title never reflected the actual WP file.
+- Investigated downstream dependency: FirechatIntro (Task 12) finds the Development Conversations output by searching `o.title.toLowerCase().includes('development conversation')`. Deriving the title from the new filename would break this lookup if the new filename does not contain "development conversation".
+
+FETCHERS.TS CHANGES (src/graphql/fetchers.ts):
+- Added a `deriveTitleFromFilename?: boolean` flag to the DOWNLOADABLE_FIELD_MAP value type.
+- Set `deriveTitleFromFilename: true` on the whatIsFiresideChat entry (kept `title: 'Development Conversations Website'` as a fallback).
+- Updated getOutputDownloadables() loop: `const derivedTitle = metadata.deriveTitleFromFilename ? (titleFromFilename(url) || metadata.title) : metadata.title;` — reuses the existing titleFromFilename() helper (hoisted function declaration) that is already used by getFollowTheMoneyOutputs(). The derived title and excerpt both use the new value.
+- Left all other fields (genderBacklashArchitecture, oluponnaGenderBacklashResponse60, thePolicyFiresideChatOutcomesAndNextSteps0323, graphicsOnBookTalk) unchanged — their hardcoded titles are still used (surgical change, only the field the user mentioned is affected).
+
+ACTIVITYDETAILCLIENT.TSX CHANGES (FirechatIntro):
+- Changed the Development Conversations output lookup from title-text matching to the stable ACF field slug: `relatedOutputs.find((o) => o.slug === 'whatIsFiresideChat')`. The slug is the ACF field name (constant), so the Read More button keeps working no matter what the WP admin renames the file to. Updated the comment to explain the rationale.
+
+VERIFICATION (Agent Browser):
+- /outputs page: first output card title is now "What Is A Fireside Chat" (derived from the new WP filename "What-Is-A-Fireside-Chat.docx" → "What Is A Fireside Chat"). The other 6 output titles are unchanged (Gender Backlash Architecture, Oluponna Gender Backlash Response, Policy Fireside Chat Outcomes & Next Steps, Graphics on Book Talk, Concept Brief For Registration, Concept Note 05 01 Fin).
+- /what-we-do/policy-engagement/policy-firechat: Related Outputs section shows the updated "What Is A Fireside Chat" title with a "View What Is A Fireside Chat" button.
+- Clicked the "Read More" button on the intro → DocumentViewer modal opens with "What Is A Fireside Chat.docx" loaded via Google Docs Viewer. The slug-based lookup works correctly.
+- No page errors, no console errors/warnings, both routes return 200.
+- `bun run lint` passes with zero errors.
+
+Stage Summary:
+- The whatIsFiresideChat document title is now derived from the actual WordPress file URL's filename (via titleFromFilename()), so it auto-updates whenever the WP admin changes the file in the ACF field — no code change needed for future file swaps.
+- The hardcoded "Development Conversations Website" string is kept only as a fallback (used if filename derivation somehow fails).
+- The FirechatIntro "Read More" button now finds the output by its stable slug (`whatIsFiresideChat`) instead of by title text, making it robust to file renames in WordPress.
+- Other downloadable titles are unchanged (surgical change limited to the field the user mentioned).
+- Verified end-to-end: new title shows on Outputs page + Fireside Chat Related Outputs, and Read More opens the correct document.

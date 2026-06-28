@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { GTEEPActivity, GTEEPActivityChild, GTEEPOutput, YouTubeVideo, FollowTheMoneyFiles } from '@/types';
-import { ViewDocumentButton } from '@/components/features/DocumentViewer';
+import { ViewDocumentButton, DocumentViewer } from '@/components/features/DocumentViewer';
 
 // =============================================================================
 // Props
@@ -175,6 +175,107 @@ function WpContent({ html, className }: { html: string; className?: string }) {
       className={`prose prose-slate max-w-none text-[#475569] leading-relaxed [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-[#0f172a] [&_h1]:mb-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-[#0f172a] [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-[#0f172a] [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-1 [&_a]:text-[#059669] [&_a]:underline [&_a:hover]:text-[#047857] [&_strong]:text-[#0f172a] [&_blockquote]:border-l-4 [&_blockquote]:border-[#065f46] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-[#64748b] ${className || ''}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
+  );
+}
+
+// =============================================================================
+// Helper: Extract the first N <p> paragraphs from an HTML string.
+// Falls back to splitting on double-newlines if no <p> tags are present.
+// =============================================================================
+
+function extractFirstParagraphs(html: string, count: number = 2): string {
+  if (!html) return '';
+
+  // Try to match <p>...</p> blocks first (HTML content from WordPress editor)
+  const matches: string[] = [];
+  const regex = /<p[^>]*>[\s\S]*?<\/p>/gi;
+  let match;
+  while ((match = regex.exec(html)) !== null && matches.length < count) {
+    matches.push(match[0]);
+  }
+
+  if (matches.length > 0) {
+    return matches.join('');
+  }
+
+  // Fallback: plain text content (e.g. from ACF textarea fields like policyFirechat)
+  // Split by double newlines (handles both \r\n\r\n Windows and \n\n Unix styles).
+  // Include headings + first `count` paragraph-like blocks
+  // (a "paragraph" is any block longer than 50 chars; short blocks are headings).
+  const blocks = html
+    .split(/\r?\n\r?\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const result: string[] = [];
+  let paragraphCount = 0;
+
+  for (const block of blocks) {
+    result.push(block);
+    if (block.length > 50) {
+      paragraphCount++;
+    }
+    if (paragraphCount >= count) {
+      break;
+    }
+  }
+
+  // Wrap each block in <p> and convert single newlines to <br> for line breaks
+  return result.map((p) => `<p>${p.replace(/\r?\n/g, '<br>')}</p>`).join('');
+}
+
+// =============================================================================
+// FirechatIntro — Renders only the first 2 paragraphs of the Fireside Chat
+// write-up, plus a "Read More" button that opens the Development Conversations
+// related output in the DocumentViewer. The Development Conversations document
+// is NOT removed from the Related Outputs section below — it stays where it is.
+// =============================================================================
+
+function FirechatIntro({
+  html,
+  relatedOutputs,
+}: {
+  html: string;
+  relatedOutputs: GTEEPOutput[];
+}) {
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const firstTwoParagraphs = extractFirstParagraphs(html, 2);
+
+  // Find the "Development Conversations" related output by its stable ACF field
+  // slug (whatIsFiresideChat). Looking up by slug — not by title text — keeps the
+  // Read More button working even when the WP admin renames the underlying file
+  // (the title is now derived from the filename, but the slug stays constant).
+  const developmentConversationOutput = relatedOutputs.find(
+    (o) => o.slug === 'whatIsFiresideChat'
+  );
+
+  if (!firstTwoParagraphs) return null;
+
+  return (
+    <div className="space-y-4">
+      <WpContent html={firstTwoParagraphs} />
+
+      {developmentConversationOutput?.downloadUrl && (
+        <>
+          <div>
+            <Button
+              onClick={() => setIsViewerOpen(true)}
+              className="bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl"
+            >
+              Read More
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+          <DocumentViewer
+            isOpen={isViewerOpen}
+            onClose={() => setIsViewerOpen(false)}
+            documentUrl={developmentConversationOutput.downloadUrl}
+            documentTitle={developmentConversationOutput.title}
+            fileType={developmentConversationOutput.fileType || ''}
+          />
+        </>
+      )}
+    </div>
   );
 }
 
@@ -560,8 +661,18 @@ export default function ActivityDetailClient({ activity, parentPage, relatedOutp
 
   // Pages that should NOT show the generic "What We Do" subtitle and the
   // "GTEEP's <title> programme — driving evidence-based policy change..." description
-  // in their header. These pages manage their own intro content below.
-  const hideHeaderSubtitle = activity.slug === 'policy-engagement' || activity.slug === 'policy-firechat';
+  // in their header. Per the user's directive, all non-WordPress content is removed
+  // from these page headers — leave blank if no WP content.
+  const hideHeaderSubtitle = [
+    'policy-engagement',
+    'policy-firechat',
+    'policy-research',
+    'citizen-enlightenment',
+    'data-speaks',
+    'youth-mentoring',
+    'womens-economic-livelihood',
+    'our-publication',
+  ].includes(activity.slug);
 
   // Build breadcrumb (PageHeader already adds "Home" as the first item)
   const breadcrumb: { label: string; href?: string }[] = [
@@ -742,11 +853,14 @@ export default function ActivityDetailClient({ activity, parentPage, relatedOutp
                       )}
                     </div>
                   ) : activity.slug === 'policy-firechat' ? (
-                    /* Policy Fireside Chat page: WP content + Event Accordion (Gender Backlash / Follow the Money) */
+                    /* Policy Fireside Chat page: First 2 paragraphs of WP content + Read More button + Event Accordion */
                     <div className="space-y-8">
-                      {/* WordPress content (from page editor or policyFirechat ACF field) */}
+                      {/* WordPress content — first 2 paragraphs only, with Read More button */}
                       {(activity.content || activity.policyFirechat) && (
-                        <WpContent html={activity.content || activity.policyFirechat || ''} />
+                        <FirechatIntro
+                          html={activity.content || activity.policyFirechat || ''}
+                          relatedOutputs={relatedOutputs}
+                        />
                       )}
 
                       {/* Event Accordion — Gender Backlash + Follow the Money */}

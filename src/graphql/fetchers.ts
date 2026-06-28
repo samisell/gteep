@@ -1061,7 +1061,11 @@ export async function getVideoGallery(): Promise<YouTubeVideo[]> {
 /**
  * Mapping from ACF field names to output metadata:
  *   - outputType: which tab on the Outputs page
- *   - title: human-readable title
+ *   - title: human-readable title (used as fallback when deriveTitleFromFilename is true,
+ *           or directly otherwise)
+ *   - deriveTitleFromFilename: when true, the title is derived from the WordPress
+ *           file URL's filename so it auto-updates whenever the WP admin swaps the
+ *           file in the ACF field (falls back to `title` if derivation fails)
  *   - relatedActivity: which activity page this relates to
  *   - relatedSubActivity: which sub-activity (child page)
  *
@@ -1070,12 +1074,14 @@ export async function getVideoGallery(): Promise<YouTubeVideo[]> {
 const DOWNLOADABLE_FIELD_MAP: Record<string, {
   outputType: GTEEPOutput['type'];
   title: string;
+  deriveTitleFromFilename?: boolean;
   relatedActivity?: string;
   relatedSubActivity?: string;
 }> = {
   whatIsFiresideChat: {
     outputType: 'concept-note',
     title: 'Development Conversations Website',
+    deriveTitleFromFilename: true,
     relatedActivity: 'policy-engagement',
     relatedSubActivity: 'policy-firechat',
   },
@@ -1160,13 +1166,20 @@ export async function getOutputDownloadables(): Promise<GTEEPOutput[]> {
       const ext = getFileExtension(url);
       const fileIcon = getFileTypeIcon(ext);
 
+      // Derive the title from the WP file URL's filename when the field is flagged
+      // for it (so the title auto-updates when the WP admin changes the file);
+      // otherwise use the hardcoded title from the map.
+      const derivedTitle = metadata.deriveTitleFromFilename
+        ? (titleFromFilename(url) || metadata.title)
+        : metadata.title;
+
       outputs.push({
         id: `download-${counter++}`,
-        title: metadata.title,
+        title: derivedTitle,
         slug: fieldName,
         type: metadata.outputType,
         description: `${fileIcon.charAt(0).toUpperCase() + fileIcon.slice(1)} file (${ext.toUpperCase()}) from GTEEP research outputs`,
-        excerpt: `${metadata.title} — ${ext.toUpperCase()} download`,
+        excerpt: `${derivedTitle} — ${ext.toUpperCase()} download`,
         date: new Date().toISOString().split('T')[0],
         downloadUrl: url,
         relatedActivity: metadata.relatedActivity,
@@ -1223,6 +1236,98 @@ export async function getFollowTheMoneyFiles(): Promise<FollowTheMoneyFiles> {
     console.error('Failed to fetch Follow the Money files from ACF:', error);
     return {};
   }
+}
+
+// -----------------------------------------------------------------------------
+// Follow the Money Outputs (for the Our Outputs page)
+// Converts the Follow the Money ACF files (brief for registration + full
+// concept note) into GTEEPOutput entries so they ALSO appear on the Our Outputs
+// page, in addition to the Fireside Chat page where they are already shown.
+// The files are NOT removed from their original location — this is an additive
+// listing so visitors can discover them from either page.
+// -----------------------------------------------------------------------------
+
+/**
+ * Derives a human-readable title from a file URL's filename.
+ * Mirrors the titleFromFilename() helper used on the Fireside Chat page so the
+ * titles shown on the Outputs page match those shown on the event page.
+ */
+function titleFromFilename(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const filename = pathname.split('/').pop() || '';
+    const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+    return (
+      nameWithoutExt
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+        .trim() || 'Document'
+    );
+  } catch {
+    return 'Document';
+  }
+}
+
+/**
+ * Mapping from ACF field name to output metadata for Follow the Money files.
+ * Both files are categorised as 'concept-note' (shown under the Knowledge
+ * Products tab on the Outputs page, consistent with the other Fireside Chat
+ * documents) and linked to the Policy Fireside Chat sub-activity so they
+ * display the Fireside Chat badge.
+ */
+const FOLLOW_THE_MONEY_FIELD_MAP: Record<string, {
+  titleFallback: string;
+}> = {
+  followTheMoneyBriefForRegistration: {
+    titleFallback: 'Follow the Money Brief for Registration',
+  },
+  followTheMoneyFullConceptNote: {
+    titleFallback: 'Follow the Money Full Concept Note',
+  },
+};
+
+export async function getFollowTheMoneyOutputs(): Promise<GTEEPOutput[]> {
+  const files = await getFollowTheMoneyFiles();
+
+  const fileEntries: { url: string; fieldName: string }[] = [];
+  if (files.briefForRegistration) {
+    fileEntries.push({
+      url: files.briefForRegistration,
+      fieldName: 'followTheMoneyBriefForRegistration',
+    });
+  }
+  if (files.fullConceptNote) {
+    fileEntries.push({
+      url: files.fullConceptNote,
+      fieldName: 'followTheMoneyFullConceptNote',
+    });
+  }
+
+  const outputs: GTEEPOutput[] = [];
+  let counter = 0;
+
+  for (const { url, fieldName } of fileEntries) {
+    const ext = getFileExtension(url);
+    const fileIcon = getFileTypeIcon(ext);
+    const metadata = FOLLOW_THE_MONEY_FIELD_MAP[fieldName];
+    const title = titleFromFilename(url) || metadata?.titleFallback || 'Follow the Money Document';
+
+    outputs.push({
+      id: `ftm-${counter++}`,
+      title,
+      slug: fieldName,
+      type: 'concept-note',
+      description: `${fileIcon.charAt(0).toUpperCase() + fileIcon.slice(1)} file (${ext.toUpperCase()}) from GTEEP Follow the Money event`,
+      excerpt: `${title} — ${ext.toUpperCase()} download`,
+      date: new Date().toISOString().split('T')[0],
+      downloadUrl: url,
+      relatedActivity: 'policy-engagement',
+      relatedSubActivity: 'policy-firechat',
+      fileType: ext,
+    });
+  }
+
+  return outputs;
 }
 
 // -----------------------------------------------------------------------------

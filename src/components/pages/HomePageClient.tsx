@@ -640,22 +640,11 @@ export default function HomePageClient({
               ))}
             </motion.div>
 
-            {/* CTA Buttons */}
+            {/* CTA Button — single button to What We Do */}
             <motion.div variants={staggerItem} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Button
                 size="lg"
                 className="bg-[#d97706] hover:bg-[#b45309] text-white px-8 py-6 text-base font-semibold rounded-xl shadow-lg shadow-[#d97706]/25 transition-all hover:shadow-xl hover:shadow-[#d97706]/30 hover:-translate-y-0.5"
-                asChild
-              >
-                <a href="/what-we-do/policy-engagement/policy-firechat">
-                  <Flame className="w-5 h-5 mr-2" />
-                  Join Fireside Chat
-                </a>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/30 text-white hover:bg-white/10 px-8 py-6 text-base font-semibold rounded-xl backdrop-blur-sm transition-all hover:-translate-y-0.5"
                 asChild
               >
                 <a href="/what-we-do">

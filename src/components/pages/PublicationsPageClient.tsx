@@ -87,8 +87,8 @@ export default function PublicationsPageClient({ publications }: PublicationsPag
     <main className="min-h-screen">
       <PageHeader
         title="Publications"
-        subtitle="Academic Research & Policy Output"
-        description="Browse the complete catalogue of academic publications, including journal articles, book chapters, working papers, and policy briefs."
+        subtitle={undefined}
+        description={undefined}
         breadcrumb={[{ label: 'Publications' }]}
       />
 
