@@ -16,8 +16,6 @@ import {
   Heart,
   ArrowRight,
   BookOpen,
-  Mail,
-  ChevronRight,
   Flame,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -141,11 +139,8 @@ function PolicyFirechatSection({ firechatContent, childPage }: { firechatContent
                 className="text-xl font-bold text-[#0f172a]"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
-                {childPage?.title || 'Policy Firechat'}
+                {childPage?.title}
               </h4>
-              <p className="text-sm text-[#d97706] font-medium">
-                Development Conversations &bull; Under Policy Engagement
-              </p>
             </div>
           </div>
 
@@ -158,15 +153,9 @@ function PolicyFirechatSection({ firechatContent, childPage }: { firechatContent
           )}
 
           {rest && (
-            <details className="group">
-              <summary className="cursor-pointer flex items-center gap-2 text-[#d97706] font-medium text-sm hover:text-[#b45309] transition-colors">
-                <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
-                Read more about Policy Firechats
-              </summary>
-              <div className="mt-4">
-                <WpContent html={rest} />
-              </div>
-            </details>
+            <div className="mt-4">
+              <WpContent html={rest} />
+            </div>
           )}
 
           <div className="mt-6 flex flex-wrap gap-3">
@@ -269,9 +258,6 @@ function ActivitySection({
             {/* Content Side */}
             <div className={`${!isEven ? 'lg:col-start-1' : ''}`}>
               <div className="space-y-5">
-                <Badge className={`${color.iconBg} ${color.iconText} border-0 text-sm px-3 py-1`}>
-                  Activity {index + 1}
-                </Badge>
                 <h2
                   className="text-3xl sm:text-4xl font-bold text-[#0f172a]"
                   style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
@@ -283,11 +269,7 @@ function ActivitySection({
                 {/* Render content from WordPress */}
                 {activity.content ? (
                   <WpContent html={activity.content} className="text-base md:text-lg" />
-                ) : (
-                  <p className="text-[#64748b] leading-relaxed text-base md:text-lg">
-                    Content for this activity is being developed. Check back soon for detailed information about our {activity.title.toLowerCase()} work.
-                  </p>
-                )}
+                ) : null}
 
                 {/* Action buttons */}
                 <div className="flex flex-wrap gap-3 pt-2">
@@ -301,19 +283,6 @@ function ActivitySection({
                       <ArrowRight className="w-4 h-4 ml-1.5" />
                     </Link>
                   </Button>
-                  {hasChildren && (
-                    <Button
-                      asChild
-                      size="sm"
-                      variant="outline"
-                      className={`border-[#065f46]/30 text-[#065f46] hover:bg-[#065f46] hover:text-white rounded-xl`}
-                    >
-                      <Link href={`/what-we-do/${activity.slug}`}>
-                        <BookOpen className="w-4 h-4 mr-1.5" />
-                        Sub-Programmes ({activity.children!.length})
-                      </Link>
-                    </Button>
-                  )}
                 </div>
               </div>
             </div>
@@ -324,13 +293,6 @@ function ActivitySection({
         {hasChildren && (
           <AnimatedSection>
             <div className="mt-10">
-              <h3
-                className="text-lg font-bold text-[#0f172a] mb-4 flex items-center gap-2"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-              >
-                <div className={`w-1.5 h-1.5 rounded-full ${color.accent}`} />
-                Sub-Programmes under {activity.title}
-              </h3>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {activity.children!.map((child) => (
                   <Link
@@ -368,10 +330,6 @@ function ActivitySection({
                             </p>
                           )}
                         </div>
-                      </div>
-                      <div className="mt-3 flex items-center text-xs font-medium text-[#059669] group-hover:text-[#047857]">
-                        View details
-                        <ChevronRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
                   </Link>
@@ -431,8 +389,6 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
       {/* Page Header */}
       <PageHeader
         title="What We Do"
-        subtitle="Our Activities"
-        description="Driving evidence-based policy change through research, engagement, and empowerment across Africa."
         breadcrumb={[{ label: 'What We Do' }]}
         backgroundImage="/images/policy-engagement.jpg"
       />
@@ -443,20 +399,6 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
       {sortedActivities.length > 0 && (
         <section className="py-12 md:py-16 bg-white border-b border-[#e2e8f0]" aria-label="Activities Overview">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <AnimatedSection>
-              <div className="text-center mb-8">
-                <h2
-                  className="text-2xl md:text-3xl font-bold text-[#0f172a]"
-                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                >
-                  Our Programme Areas
-                </h2>
-                <p className="mt-2 text-[#64748b] max-w-2xl mx-auto">
-                  GTEEP operates across six interconnected programme areas, each contributing to evidence-driven policy analysis for socially inclusive development.
-                </p>
-              </div>
-            </AnimatedSection>
-
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {sortedActivities.map((activity, index) => {
                 const color = activityColors[index % activityColors.length];
@@ -488,102 +430,9 @@ export default function WhatWeDoPageClient({ activities }: WhatWeDoPageClientPro
       {/* ================================================================== */}
       {/* ACTIVITY SECTIONS - Full detail for each activity */}
       {/* ================================================================== */}
-      {sortedActivities.length === 0 && (
-        <section className="py-16 md:py-24 bg-white" aria-label="Activities Coming Soon">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <AnimatedSection>
-              <div className="text-center py-16">
-                <div className="w-20 h-20 rounded-2xl bg-[#f0fdf4] flex items-center justify-center mx-auto mb-6">
-                  <FileSearch className="w-10 h-10 text-[#059669]" />
-                </div>
-                <h2
-                  className="text-2xl md:text-3xl font-bold text-[#0f172a] mb-4"
-                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                >
-                  Activities Coming Soon
-                </h2>
-                <p className="text-[#64748b] max-w-xl mx-auto text-base md:text-lg leading-relaxed">
-                  Our programme activities are being updated. Check back soon to learn about our policy research, engagement, and empowerment initiatives across Africa.
-                </p>
-                <div className="mt-8 flex flex-wrap justify-center gap-4">
-                  <Button
-                    asChild
-                    className="bg-[#065f46] hover:bg-[#064e3b] text-white rounded-xl px-6"
-                  >
-                    <Link href="/about">
-                      Learn About GTEEP
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white rounded-xl px-6"
-                  >
-                    <Link href="/contact">
-                      <Mail className="w-4 h-4 mr-2" />
-                      Contact Us
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </AnimatedSection>
-          </div>
-        </section>
-      )}
-
       {sortedActivities.map((activity, index) => (
         <ActivitySection key={activity.id} activity={activity} index={index} />
       ))}
-
-      {/* ================================================================== */}
-      {/* CTA SECTION */}
-      {/* ================================================================== */}
-      <section className="py-16 md:py-20 bg-[#0f172a] relative overflow-hidden" aria-label="Call to Action">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-[#059669]/10 blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-72 h-72 rounded-full bg-[#d97706]/8 blur-3xl" />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <AnimatedSection>
-            <div className="text-center">
-              <h2
-                className="text-2xl md:text-3xl font-bold text-white"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-              >
-                Explore Our Work
-              </h2>
-              <p className="mt-3 text-[#94a3b8] max-w-2xl mx-auto">
-                Discover our research outputs, from policy briefs and concept notes to data resources and knowledge products.
-              </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-4">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-[#d97706] hover:bg-[#b45309] text-white rounded-xl"
-                >
-                  <Link href="/outputs">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    View Our Outputs
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="border-white/30 text-white hover:bg-white/10 rounded-xl"
-                >
-                  <Link href="/contact">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Contact Us
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
     </main>
   );
 }

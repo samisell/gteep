@@ -6,7 +6,6 @@ import { useSearchParams } from 'next/navigation';
 import PageHeader from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Tabs,
   TabsList,
@@ -15,12 +14,10 @@ import {
 } from '@/components/ui/tabs';
 import {
   FileText,
-  BarChart3,
   Database,
   Video,
   Camera,
   BookOpen,
-  ArrowRight,
   Calendar,
   ExternalLink,
   Plus,
@@ -187,19 +184,6 @@ function DownloadableCard({ output }: { output: GTEEPOutput }) {
           {output.description}
         </p>
 
-        {/* Related activity link */}
-        {output.relatedActivity && (
-          <div className="mb-3">
-            <Link
-              href={`/what-we-do/${output.relatedActivity}${output.relatedSubActivity ? `/${output.relatedSubActivity}` : ''}`}
-              className="text-xs text-[#059669] hover:text-[#047857] flex items-center gap-1 transition-colors"
-            >
-              <Flame className="w-3 h-3" />
-              Related: Policy Fireside Chat
-            </Link>
-          </div>
-        )}
-
         {/* View button (read-only, no download) */}
         <div className="pt-4 border-t border-[#f1f5f9]">
           {output.downloadUrl ? (
@@ -208,9 +192,7 @@ function DownloadableCard({ output }: { output: GTEEPOutput }) {
               documentTitle={output.title}
               fileType={ext}
             />
-          ) : (
-            <span className="text-sm text-[#94a3b8]">No document available</span>
-          )}
+          ) : null}
         </div>
       </CardContent>
     </Card>
@@ -286,15 +268,7 @@ function OutputCard({ output }: { output: GTEEPOutput }) {
               <ExternalLink className="w-3.5 h-3.5" />
               View
             </a>
-          ) : (
-            <Button
-              variant="link"
-              className="text-[#059669] hover:text-[#047857] p-0 h-auto text-sm group/link"
-            >
-              Read More
-              <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover/link:translate-x-1 transition-transform" />
-            </Button>
-          )}
+          ) : null}
         </div>
 
         {/* Tags */}
@@ -353,8 +327,6 @@ export default function OutputsPageClient({
       {/* Page Header */}
       <PageHeader
         title="Our Outputs"
-        subtitle="Research & Knowledge Products"
-        description="Browse our comprehensive collection of research outputs, policy briefs, data resources, videos, and knowledge products."
         breadcrumb={[{ label: 'Our Outputs' }]}
       />
 
@@ -385,15 +357,7 @@ export default function OutputsPageClient({
             {/* Tab content */}
             {tabDefs.map((tab) => (
               <TabsContent key={tab.value} value={tab.value}>
-                {filteredOutputs.length === 0 ? (
-                  <div className="text-center py-16">
-                    <BarChart3 className="w-16 h-16 mx-auto text-[#cbd5e1] mb-4" />
-                    <h3 className="text-lg font-semibold text-[#0f172a] mb-2">No outputs found</h3>
-                    <p className="text-sm text-[#64748b]">
-                      There are no outputs in this category yet. Check back soon.
-                    </p>
-                  </div>
-                ) : (
+                {filteredOutputs.length === 0 ? null : (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredOutputs.map((output) => (
                       <OutputCard key={output.id} output={output} />

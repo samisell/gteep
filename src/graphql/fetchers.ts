@@ -34,6 +34,7 @@ import {
   GET_RESOURCE_BY_SLUG,
   GET_VIDEO_GALLERY,
   GET_OUTPUT_DOWNLOADABLES,
+  GET_FOLLOW_THE_MONEY_FILES,
 } from './queries';
 
 import type {
@@ -54,6 +55,7 @@ import type {
   GTEEPTeamMember,
   GTEEPOutput,
   YouTubeVideo,
+  FollowTheMoneyFiles,
   WPPublication,
   WPProject,
   WPEvent,
@@ -182,8 +184,51 @@ export async function getPageBySlug(slug: string): Promise<WPPage | null> {
 }
 
 // -----------------------------------------------------------------------------
-// About Page (fetches ACF aboutContent fields from WP)
+// About Page
+// Fetches the About Us page from WordPress.
+//
+// The "about summary" shown on the About Us page is sourced from the
+// WordPress page editor (page.content) — i.e. what the site admin edits in
+// the standard WordPress block editor. This is the canonical source of
+// truth so that edits to the About Us page in WordPress are reflected on
+// the site immediately.
+//
+// The ACF `aboutContent.aboutSummary` field is kept as a fallback only,
+// for backwards compatibility when the page editor content is empty.
+// Vision / Mission / Goal still come from the ACF `aboutContent` group.
 // -----------------------------------------------------------------------------
+
+/**
+ * Convert WordPress `page.content` HTML into plain-text paragraphs joined
+ * by "\n\n" so the existing rendering logic (which splits on "\n\n") keeps
+ * working unchanged. Only <p>...</p> blocks are extracted; empty paragraphs
+ * are skipped. Common HTML entities are decoded to their plain-text form.
+ */
+function htmlContentToParagraphs(html: string | undefined | null): string {
+  if (!html) return '';
+  const paragraphs: string[] = [];
+  const regex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(html)) !== null) {
+    const text = match[1]
+      .replace(/<[^>]+>/g, '') // strip inner HTML tags
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;|&apos;|&rsquo;|&#8217;/g, "'")
+      .replace(/&lsquo;|&#8216;/g, "'")
+      .replace(/&ldquo;|&#8220;/g, '"')
+      .replace(/&rdquo;|&#8221;/g, '"')
+      .replace(/&ndash;|&#8211;/g, '-')
+      .replace(/&mdash;|&#8212;/g, '—')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (text) paragraphs.push(text);
+  }
+  return paragraphs.join('\n\n');
+}
 
 export interface AboutPageData {
   aboutSummary: string;
@@ -194,21 +239,32 @@ export interface AboutPageData {
 
 export async function getAboutPage(): Promise<AboutPageData> {
   const defaults: AboutPageData = {
-    aboutSummary: "Africa's economic transformation and the challenges and opportunities lie in the ability to learn, relearn and unlearn. This process is both integrative and intentional and be socially inclusive. GTEEP aims to curate and supply the required evidence and knowledge to support this process. Gender, Trade, Economics and Empowerment Programme (GTEEP) is an initiative of the Gilead Trust for Economic Empowerment. It is a knowledge, research and policy advocacy initiative that places people at the centre of economic policy and development. GTEEP's activities and one small successful bite at a time, contribute to creating spaces that promote more participatory and equitable access to resources and opportunities.",
-    aboutVision: 'A socially and culturally inclusive economy where everyone is heard.',
-    aboutMission: 'To continually knowledge spaces and inform policies with data-driven evidence and empower the citizens with requisite tools to reshape their individual and collective economic choices.',
-    aboutGoal: 'To promote spaces that create more participatory and equitable access to resources and opportunities.',
+    aboutSummary:
+      "Africa's economic transformation and the challenges and opportunities lie in the ability to learn, relearn and unlearn. This process is both integrative and intentional and be socially inclusive. GTEEP aims to curate and supply the required evidence and knowledge to support this process. Gender, Trade, Economics and Empowerment Programme (GTEEP) is an initiative of the Gilead Trust for Economic Empowerment. It is a knowledge, research and policy advocacy initiative that places people at the centre of economic policy and development. GTEEP's activities and one small successful bite at a time, contribute to creating spaces that promote more participatory and equitable access to resources and opportunities.",
+    aboutVision:
+      'A socially and culturally inclusive economy where everyone is heard.',
+    aboutMission:
+      'To continually knowledge spaces and inform policies with data-driven evidence and empower the citizens with requisite tools to reshape their individual and collective economic choices.',
+    aboutGoal:
+      'To promote spaces that create more participatory and equitable access to resources and opportunities.',
   };
 
   try {
     const page = await getPageBySlug('about-us');
 
-    if (page?.aboutContent) {
+    if (page) {
+      // Primary source: WordPress page editor content (page.content)
+      const pageContent = htmlContentToParagraphs(page.content);
+
+      // Fallback source: ACF aboutContent.aboutSummary (legacy)
+      const acfSummary = page.aboutContent?.aboutSummary || '';
+
       return {
-        aboutSummary: page.aboutContent.aboutSummary || defaults.aboutSummary,
-        aboutVision: page.aboutContent.aboutVision || defaults.aboutVision,
-        aboutMission: page.aboutContent.aboutMission || defaults.aboutMission,
-        aboutGoal: page.aboutContent.aboutGoal || defaults.aboutGoal,
+        aboutSummary: pageContent || acfSummary || defaults.aboutSummary,
+        aboutVision: page.aboutContent?.aboutVision || defaults.aboutVision,
+        aboutMission:
+          page.aboutContent?.aboutMission || defaults.aboutMission,
+        aboutGoal: page.aboutContent?.aboutGoal || defaults.aboutGoal,
       };
     }
   } catch {
@@ -1123,6 +1179,49 @@ export async function getOutputDownloadables(): Promise<GTEEPOutput[]> {
   } catch (error) {
     console.error('Failed to fetch output downloadables from ACF:', error);
     return [];
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Follow the Money Event Files (ACF-based)
+// Fetches the followTheMoney ACF field group from posts.
+// Returns the brief-for-registration and full concept note file URLs for the
+// "Follow the Money" Fireside Chat event.
+// -----------------------------------------------------------------------------
+
+interface FollowTheMoneyData {
+  posts: {
+    nodes: Array<{
+      id: string;
+      followTheMoney: {
+        followTheMoneyBriefForRegistration: string | null;
+        followTheMoneyFullConceptNote: string | null;
+      } | null;
+    }>;
+  };
+}
+
+export async function getFollowTheMoneyFiles(): Promise<FollowTheMoneyFiles> {
+  try {
+    const response = await fetchGraphQL<FollowTheMoneyData>(GET_FOLLOW_THE_MONEY_FILES, { first: 1 });
+
+    if (response.errors || !response.data?.posts?.nodes?.length) {
+      return {};
+    }
+
+    // The ACF field group is attached to all posts (location rule), so the data
+    // is the same on every post. Read from the first post.
+    const post = response.data.posts.nodes[0];
+    const ftm = post.followTheMoney;
+    if (!ftm) return {};
+
+    return {
+      briefForRegistration: ftm.followTheMoneyBriefForRegistration?.trim() || undefined,
+      fullConceptNote: ftm.followTheMoneyFullConceptNote?.trim() || undefined,
+    };
+  } catch (error) {
+    console.error('Failed to fetch Follow the Money files from ACF:', error);
+    return {};
   }
 }
 

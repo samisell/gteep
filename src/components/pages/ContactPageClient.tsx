@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import PageHeader from '@/components/shared/PageHeader';
 import { AnimatedSection } from '@/components/shared/AnimatedSection';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -19,26 +17,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
   Mail,
   Phone,
   MapPin,
-  Clock,
   Send,
   Loader2,
-  CheckCircle2,
-  MessageSquare,
-  Handshake,
-  BookOpen,
-  Users,
   Globe2,
-  Building2,
-  HelpCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ContactDetailsData } from '@/graphql/fetchers';
@@ -55,8 +39,6 @@ interface ContactPageClientProps {
 // Constants
 // =============================================================================
 
-const OFFICE_HOURS = 'Monday - Friday, 9:00 AM - 5:00 PM WAT';
-
 const SUBJECT_OPTIONS = [
   { value: 'general-inquiry', label: 'General Inquiry' },
   { value: 'research-collaboration', label: 'Research Collaboration' },
@@ -69,115 +51,18 @@ const SUBJECT_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
-const FAQ_ITEMS = [
-  {
-    question: 'How can I collaborate with GTEEP on research?',
-    answer:
-      'We welcome research collaborations with academic institutions, think tanks, and policy organizations. Please select "Research Collaboration" as your subject and provide details about your proposed research area, timeline, and expected outcomes.',
-  },
-  {
-    question: 'Does GTEEP offer policy advisory services?',
-    answer:
-      'Yes, GTEEP provides evidence-based policy advisory services to governments, international organizations, and development agencies across Africa. Our expertise spans trade policy, gender equity, regional integration, and economic empowerment.',
-  },
-  {
-    question: 'How can my organization partner with GTEEP?',
-    answer:
-      'We are always open to strategic partnerships that align with our mission. Select "Partnership Opportunity" and share your organization details, proposed area of collaboration, and expected mutual benefits.',
-  },
-  {
-    question: 'What is the typical response time?',
-    answer:
-      'We aim to respond to all inquiries within 2-3 business days. For urgent matters, please call our office during business hours (Monday-Friday, 9 AM - 5 PM WAT).',
-  },
-  {
-    question: 'Are GTEEP publications freely available?',
-    answer:
-      'Most of our research outputs, policy briefs, and data products are freely available for download. Some specialized reports may require registration. Visit our Outputs page to browse our publications.',
-  },
-  {
-    question: 'Does GTEEP offer internship opportunities?',
-    answer:
-      'Yes, we periodically offer internship and volunteer positions for emerging researchers and policy enthusiasts. Select "Volunteer / Internship" as your subject to express your interest.',
-  },
-];
-
-function getContactCards(email: string) {
-  return [
-    {
-      icon: MessageSquare,
-      title: 'General Inquiries',
-      description: 'Questions about our programs, research, or operations',
-      action: email,
-      actionLabel: 'Email Us',
-      href: `mailto:${email}`,
-      color: 'emerald',
-    },
-    {
-      icon: Handshake,
-      title: 'Partnerships',
-      description: 'Explore strategic collaboration opportunities',
-      action: `partnerships@${email.split('@')[1] || 'gteep.gileadtrust.com'}`,
-      actionLabel: 'Email Partnerships',
-      href: `mailto:partnerships@${email.split('@')[1] || 'gteep.gileadtrust.com'}`,
-      color: 'amber',
-    },
-    {
-      icon: BookOpen,
-      title: 'Research & Publications',
-      description: 'Access our policy briefs, reports, and data',
-      action: '/outputs',
-      actionLabel: 'Browse Outputs',
-      href: '/outputs',
-      color: 'emerald',
-    },
-    {
-      icon: Users,
-      title: 'Media & Press',
-      description: 'Press inquiries, interviews, and commentary',
-      action: `media@${email.split('@')[1] || 'gteep.gileadtrust.com'}`,
-      actionLabel: 'Email Media Team',
-      href: `mailto:media@${email.split('@')[1] || 'gteep.gileadtrust.com'}`,
-      color: 'amber',
-    },
-  ];
-}
-
-// =============================================================================
-// Animation Variants
-// =============================================================================
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-  },
-};
-
 // =============================================================================
 // Main Component
 // =============================================================================
 
 export default function ContactPageClient({ contactDetails }: ContactPageClientProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [consent, setConsent] = useState(false);
 
   // Derived from WordPress ACF contactdetails
   const contactEmail = contactDetails.email;
   const contactPhone = contactDetails.phone;
   const contactAddress = contactDetails.address;
-  const contactCards = getContactCards(contactEmail);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -229,10 +114,7 @@ export default function ContactPageClient({ contactDetails }: ContactPageClientP
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setIsSuccess(true);
-        toast.success('Message sent!', {
-          description: 'Thank you for reaching out. We will get back to you shortly.',
-        });
+        toast.success('Message sent!');
       } else {
         const errorMsg = data.error || 'Something went wrong. Please try again.';
         toast.error('Submission failed', { description: errorMsg });
@@ -262,67 +144,10 @@ export default function ContactPageClient({ contactDetails }: ContactPageClientP
       {/* Page Header */}
       <PageHeader
         title="Contact Us"
-        subtitle="Get in Touch"
-        description="We'd love to hear from you. Whether you have a question about our research, partnerships, or anything else, our team is ready to answer."
+        subtitle={undefined}
+        description={undefined}
         breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Contact Us' }]}
       />
-
-      {/* ================================================================== */}
-      {/* CONTACT CARDS - Quick Access */}
-      {/* ================================================================== */}
-      <section className="py-12 md:py-16 bg-white" aria-label="Quick Contact Options">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-50px' }}
-            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            {contactCards.map((card) => (
-              <motion.div key={card.title} variants={itemVariants}>
-                <Card className="group h-full border border-[#e2e8f0] hover:border-[#065f46]/30 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
-                  <CardContent className="p-6">
-                    <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 ${
-                        card.color === 'emerald'
-                          ? 'bg-[#065f46]/10 text-[#065f46]'
-                          : 'bg-[#d97706]/10 text-[#d97706]'
-                      }`}
-                    >
-                      <card.icon className="h-6 w-6" />
-                    </div>
-                    <h3
-                      className="font-semibold text-[#0f172a] mb-1"
-                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                    >
-                      {card.title}
-                    </h3>
-                    <p className="text-sm text-[#64748b] mb-4">{card.description}</p>
-                    {card.href.startsWith('mailto:') ? (
-                      <a
-                        href={card.href}
-                        className="text-sm font-medium text-[#059669] hover:text-[#065f46] transition-colors inline-flex items-center gap-1"
-                      >
-                        {card.actionLabel}
-                        <span className="text-xs">→</span>
-                      </a>
-                    ) : (
-                      <a
-                        href={card.href}
-                        className="text-sm font-medium text-[#059669] hover:text-[#065f46] transition-colors inline-flex items-center gap-1"
-                      >
-                        {card.actionLabel}
-                        <span className="text-xs">→</span>
-                      </a>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
 
       {/* ================================================================== */}
       {/* CONTACT FORM + INFO */}
@@ -335,62 +160,7 @@ export default function ContactPageClient({ contactDetails }: ContactPageClientP
               <AnimatedSection>
                 <Card className="border border-[#e2e8f0] shadow-md">
                   <CardContent className="p-6 md:p-8">
-                    {isSuccess ? (
-                      <div className="py-10 text-center">
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                        >
-                          <CheckCircle2 className="mx-auto h-16 w-16 text-[#059669]" />
-                        </motion.div>
-                        <h3
-                          className="mt-4 text-xl font-semibold text-[#0f172a]"
-                          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                        >
-                          Message Sent Successfully!
-                        </h3>
-                        <p className="mt-2 text-[#64748b] max-w-md mx-auto">
-                          Thank you for reaching out to GTEEP. Our team will review your message and
-                          get back to you within 2-3 business days.
-                        </p>
-                        <p className="mt-1 text-sm text-[#94a3b8]">
-                          A confirmation email has been sent to your inbox.
-                        </p>
-                        <Button
-                          variant="outline"
-                          className="mt-6 border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white rounded-xl"
-                          onClick={() => {
-                            setIsSuccess(false);
-                            setFormData({
-                              name: '',
-                              email: '',
-                              subject: '',
-                              subjectCategory: '',
-                              message: '',
-                              organization: '',
-                              phone: '',
-                            });
-                            setConsent(false);
-                          }}
-                        >
-                          Send Another Message
-                        </Button>
-                      </div>
-                    ) : (
-                      <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                          <h2
-                            className="text-xl font-semibold text-[#0f172a]"
-                            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                          >
-                            Send a Message
-                          </h2>
-                          <p className="text-sm text-[#64748b] mt-1">
-                            Fill out the form below and we&apos;ll get back to you as soon as possible.
-                          </p>
-                        </div>
-
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Row 1: Name + Email */}
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-2">
@@ -580,7 +350,6 @@ export default function ContactPageClient({ contactDetails }: ContactPageClientP
                           )}
                         </Button>
                       </form>
-                    )}
                   </CardContent>
                 </Card>
               </AnimatedSection>
@@ -593,19 +362,11 @@ export default function ContactPageClient({ contactDetails }: ContactPageClientP
                   {/* Office Info */}
                   <Card className="border border-[#e2e8f0] shadow-md">
                     <CardContent className="p-6 space-y-5">
-                      <h3
-                        className="font-semibold text-[#0f172a]"
-                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                      >
-                        Office Information
-                      </h3>
-
                       <div className="flex items-start gap-3">
                         <div className="w-9 h-9 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0">
                           <Mail className="h-4 w-4 text-[#065f46]" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-[#0f172a]">Email</p>
                           <a
                             href={`mailto:${contactEmail}`}
                             className="text-sm text-[#059669] hover:underline"
@@ -620,7 +381,6 @@ export default function ContactPageClient({ contactDetails }: ContactPageClientP
                           <Phone className="h-4 w-4 text-[#065f46]" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-[#0f172a]">Phone</p>
                           <a
                             href={`tel:${contactPhone.replace(/\s/g, '')}`}
                             className="text-sm text-[#059669] hover:underline"
@@ -635,21 +395,8 @@ export default function ContactPageClient({ contactDetails }: ContactPageClientP
                           <MapPin className="h-4 w-4 text-[#065f46]" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-[#0f172a]">Address</p>
                           <p className="text-sm text-[#64748b]">
                             {contactAddress}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-[#d97706]/10 flex items-center justify-center shrink-0">
-                          <Clock className="h-4 w-4 text-[#d97706]" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-[#0f172a]">Office Hours</p>
-                          <p className="text-sm text-[#64748b]">
-                            {OFFICE_HOURS}
                           </p>
                         </div>
                       </div>
@@ -666,90 +413,13 @@ export default function ContactPageClient({ contactDetails }: ContactPageClientP
                         <p className="text-sm font-medium text-[#0f172a]">
                           {contactAddress}
                         </p>
-                        <p className="text-xs text-[#64748b] mt-1">GTEEP Headquarters</p>
                       </div>
                     </div>
-                  </Card>
-
-                  {/* Quick Response Notice */}
-                  <Card className="border border-[#065f46]/20 bg-[#065f46]/5">
-                    <CardContent className="p-5">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0">
-                          <Building2 className="h-4 w-4 text-[#065f46]" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-[#0f172a]">Quick Response</p>
-                          <p className="text-xs text-[#64748b] mt-1">
-                            We typically respond within 2-3 business days. For urgent matters,
-                            please call our office during business hours.
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
                   </Card>
                 </div>
               </AnimatedSection>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ================================================================== */}
-      {/* FAQ SECTION */}
-      {/* ================================================================== */}
-      <section className="py-12 md:py-20 bg-white" aria-label="Frequently Asked Questions">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection>
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#d97706]/10 text-[#d97706] text-sm font-medium mb-4">
-                <HelpCircle className="h-4 w-4" />
-                FAQ
-              </div>
-              <h2
-                className="text-2xl md:text-3xl font-bold text-[#0f172a]"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-              >
-                Frequently Asked Questions
-              </h2>
-              <p className="mt-2 text-[#64748b]">
-                Find answers to common questions about GTEEP and our work.
-              </p>
-            </div>
-
-            <Accordion type="single" collapsible className="space-y-3">
-              {FAQ_ITEMS.map((item, index) => (
-                <AccordionItem
-                  key={index}
-                  value={`faq-${index}`}
-                  className="border border-[#e2e8f0] rounded-xl px-6 data-[state=open]:border-[#065f46]/30 data-[state=open]:shadow-sm transition-all"
-                >
-                  <AccordionTrigger className="text-left text-[#0f172a] hover:no-underline hover:text-[#065f46] py-4 text-sm font-medium">
-                    {item.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[#64748b] text-sm leading-relaxed pb-4">
-                    {item.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </AnimatedSection>
-
-          <AnimatedSection delay={0.2}>
-            <div className="mt-10 text-center">
-              <Separator className="mb-8" />
-              <p className="text-[#64748b] text-sm">
-                Still have questions?{' '}
-                <a
-                  href={`mailto:${contactEmail}`}
-                  className="text-[#059669] hover:underline font-medium"
-                >
-                  Email us directly
-                </a>{' '}
-                or use the contact form above.
-              </p>
-            </div>
-          </AnimatedSection>
         </div>
       </section>
     </main>

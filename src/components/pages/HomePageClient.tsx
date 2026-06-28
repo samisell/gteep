@@ -29,8 +29,6 @@ import {
   Flame,
   Target,
   Eye,
-  Sparkles,
-  MessageCircle,
   ChevronLeft,
   Presentation,
   FileText,
@@ -319,19 +317,12 @@ function OutputsCarousel({ outputs }: { outputs: GTEEPOutput[] }) {
         <SectionReveal>
           <div className="flex items-end justify-between mb-12">
             <div>
-              <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-sm px-3 py-1 mb-4">
-                <BookOpen className="w-3.5 h-3.5 mr-1" />
-                Our Work
-              </Badge>
               <h2
                 className="text-3xl sm:text-4xl font-bold text-white mt-2"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
                 Our Outputs
               </h2>
-              <p className="mt-3 text-[#94a3b8] max-w-xl">
-                Browse our research outputs, concept notes, and knowledge products.
-              </p>
             </div>
             {/* Navigation arrows */}
             <div className="hidden sm:flex items-center gap-2">
@@ -546,31 +537,11 @@ export default function HomePageClient({
   blogPosts,
   aboutData,
 }: HomePageClientProps) {
-  // Use the about summary from WordPress for the hero description.
-  // If the aboutSummary is long, extract the first 1-2 sentences for the hero.
-  const getHeroDescription = () => {
-    const summary = aboutData.aboutSummary;
-    if (!summary) {
-      return settings.acfOptions?.heroDescription ||
-        'Evidence-driven policy analysis for socially inclusive development. We champion partnerships for African development, people-centered growth, and gender equitable economic transformation.';
-    }
-
-    // If the summary is short enough (under 200 chars), use it directly
-    if (summary.length <= 200) return summary;
-
-    // Otherwise, extract the first two sentences
-    const sentences = summary.match(/[^.!?]+[.!?]+/g);
-    if (sentences && sentences.length > 1) {
-      const firstTwo = sentences.slice(0, 2).join('').trim();
-      // If still too long, just use the first sentence
-      if (firstTwo.length > 250) return sentences[0].trim();
-      return firstTwo;
-    }
-
-    return summary;
-  };
-
-  const heroDescription = getHeroDescription();
+  // Hero content comes entirely from the WordPress about summary (ACF / page editor).
+  const heroParagraphs = (aboutData.aboutSummary || '')
+    .split('\n\n')
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   const executive = teamMembers.filter((m) => m.category === 'executive');
   const directors = teamMembers.filter((m) => m.category === 'director');
@@ -650,14 +621,6 @@ export default function HomePageClient({
             animate="visible"
             className="space-y-6 sm:space-y-8"
           >
-            {/* Badge */}
-            <motion.div variants={staggerItem}>
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20">
-                <Globe className="w-4 h-4" />
-                Economic Empowerment &amp; Policy Research
-              </span>
-            </motion.div>
-
             {/* Main heading */}
             <motion.h1
               variants={staggerItem}
@@ -667,21 +630,15 @@ export default function HomePageClient({
               GTEEP
             </motion.h1>
 
-            {/* Subtitle */}
-            <motion.p
+            {/* Description — full about summary from WordPress */}
+            <motion.div
               variants={staggerItem}
-              className="text-lg sm:text-xl md:text-2xl text-[#f59e0b] font-semibold"
+              className="text-base sm:text-lg text-white/85 max-w-3xl mx-auto leading-relaxed space-y-4"
             >
-              Gilead Trust Economic Empowerment Project
-            </motion.p>
-
-            {/* Description */}
-            <motion.p
-              variants={staggerItem}
-              className="text-base sm:text-lg text-white/80 max-w-3xl mx-auto leading-relaxed"
-            >
-              {heroDescription}
-            </motion.p>
+              {heroParagraphs.map((paragraph, i) => (
+                <p key={i}>{paragraph}</p>
+              ))}
+            </motion.div>
 
             {/* CTA Buttons */}
             <motion.div variants={staggerItem} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -735,18 +692,12 @@ export default function HomePageClient({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section header */}
             <div className="text-center mb-16">
-              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
-                What We Do
-              </Badge>
               <h2
                 className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
                 Our Activities
               </h2>
-              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                Driving evidence-based policy change through research, engagement, and empowerment across Africa.
-              </p>
             </div>
 
             {/* Activity cards */}
@@ -760,10 +711,10 @@ export default function HomePageClient({
               >
                 {sortedActivities.map((activity) => {
                   const IconComponent = getActivityIcon(activity.icon);
-                  // Use description if available, otherwise extract snippet from content
-                  const description = activity.description || activity.content
-                    ? activity.description || activity.content.replace(/<[^>]*>/g, '').trim().substring(0, 150) + '...'
-                    : 'Learn more about our ' + activity.title.toLowerCase() + ' programme.';
+                  // Description comes from WordPress only — no hardcoded fallback
+                  const description = activity.description || (activity.content
+                    ? activity.content.replace(/<[^>]*>/g, '').trim().substring(0, 150) + '...'
+                    : '');
                   return (
                     <motion.div key={activity.id} variants={staggerItem}>
                       <Link
@@ -776,7 +727,7 @@ export default function HomePageClient({
                         <h3 className="text-lg font-semibold text-[#0f172a] mb-2 group-hover:text-[#065f46] transition-colors" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
                           {activity.title}
                         </h3>
-                        <p className="text-sm text-[#64748b] leading-relaxed">{description}</p>
+                        {description && <p className="text-sm text-[#64748b] leading-relaxed">{description}</p>}
                         <span className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-[#065f46] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           Learn more
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -791,7 +742,6 @@ export default function HomePageClient({
                 <div className="w-16 h-16 rounded-2xl bg-[#f0fdf4] flex items-center justify-center mx-auto mb-4">
                   <FileSearch className="w-8 h-8 text-[#059669]" />
                 </div>
-                <p className="text-[#64748b] text-base">Our activities are being updated. Check back soon!</p>
               </div>
             )}
 
@@ -828,18 +778,12 @@ export default function HomePageClient({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <SectionReveal>
             <div className="text-center mb-16">
-              <Badge className="bg-[#d97706]/20 text-[#f59e0b] border-[#d97706]/30 text-sm px-3 py-1 mb-4">
-                Our Philosophy
-              </Badge>
               <h2
                 className="text-3xl sm:text-4xl font-bold text-white mt-2"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
                 Our Philosophy
               </h2>
-              <p className="mt-4 text-[#94a3b8] max-w-2xl mx-auto">
-                The core principles that guide our work and shape our approach to development in Africa.
-              </p>
             </div>
           </SectionReveal>
 
@@ -935,18 +879,12 @@ export default function HomePageClient({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section header */}
             <div className="text-center mb-16">
-              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
-                Our Team
-              </Badge>
               <h2
                 className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
                 Who We Are
               </h2>
-              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                A dedicated team of researchers, policy analysts, and development practitioners committed to Africa&apos;s transformation.
-              </p>
             </div>
 
             {/* Executive Director - Featured Card */}
@@ -1033,18 +971,12 @@ export default function HomePageClient({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section header */}
             <div className="text-center mb-16">
-              <Badge className="bg-[#fef3c7] text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
-                Advisory Board
-              </Badge>
               <h2
                 className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
                 Our Advisory Board
               </h2>
-              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                Distinguished experts who provide strategic guidance and direction to our work.
-              </p>
             </div>
 
             <motion.div
@@ -1089,18 +1021,12 @@ export default function HomePageClient({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section header */}
             <div className="text-center mb-16">
-              <Badge className="bg-[#f0fdf4] text-[#059669] border-[#065f46]/20 text-sm px-3 py-1 mb-4">
-                Board of Trustees
-              </Badge>
               <h2
                 className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
                 Board of Trustees
               </h2>
-              <p className="mt-4 text-[#64748b] max-w-2xl mx-auto">
-                Providing governance oversight and strategic direction for GTEEP&apos;s mission.
-              </p>
             </div>
 
             <motion.div
@@ -1143,124 +1069,33 @@ export default function HomePageClient({
       <OutputsCarousel outputs={allOutputs} />
 
       {/* ================================================================== */}
-      {/* SECTION 8: FIRESIDE CHAT */}
+      {/* SECTION 8: FIRESIDE CHAT — CTA navigation only (content is on the dedicated page) */}
       {/* ================================================================== */}
       <SectionReveal>
         <section className="py-20 sm:py-28 bg-gradient-to-br from-[#f0fdf4] via-white to-[#fef3c7]/30 relative overflow-hidden" id="fireside-chat" aria-label="Fireside Chat">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-              {/* Left: Content */}
-              <div>
-                <Badge className="bg-[#d97706]/10 text-[#d97706] border-[#d97706]/20 text-sm px-3 py-1 mb-4">
-                  <Flame className="w-3.5 h-3.5 mr-1" />
-                  Fireside Chat
-                </Badge>
-                <h2
-                  className="text-3xl sm:text-4xl font-bold text-[#0f172a] mt-2 mb-4"
-                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                >
-                  Where Policy Meets Practice
-                </h2>
-                <p className="text-[#64748b] leading-relaxed mb-6">
-                  Our Policy Fireside Chat brings together leading experts, policymakers, and practitioners for candid conversations about Africa&apos;s most pressing development challenges. Each session bridges the gap between research evidence and real-world policy impact.
-                </p>
-
-                {/* Feature highlights */}
-                <div className="space-y-4 mb-8">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <MessageCircle className="w-5 h-5 text-[#065f46]" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-[#0f172a] text-sm">Expert-Led Conversations</h4>
-                      <p className="text-sm text-[#64748b]">Moderated dialogues with thought leaders shaping Africa&apos;s policy landscape</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#d97706]/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <Sparkles className="w-5 h-5 text-[#d97706]" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-[#0f172a] text-sm">Actionable Insights</h4>
-                      <p className="text-sm text-[#64748b]">Every session produces concrete takeaways that inform policy and practice</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#065f46]/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <Users className="w-5 h-5 text-[#065f46]" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-[#0f172a] text-sm">Inclusive Dialogue</h4>
-                      <p className="text-sm text-[#64748b]">Amplifying diverse voices — from grassroots advocates to senior policymakers</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-4">
-                  <Button
-                    size="lg"
-                    className="bg-[#d97706] hover:bg-[#b45309] text-white px-8 rounded-xl shadow-lg shadow-[#d97706]/20 transition-all hover:shadow-xl"
-                    asChild
-                  >
-                    <a href="/what-we-do/policy-engagement/policy-firechat">
-                      <Flame className="w-5 h-5 mr-2" />
-                      Explore Fireside Chat
-                    </a>
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
-                    asChild
-                  >
-                    <a href="/outputs">
-                      View Our Outputs
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </a>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Right: Visual */}
-              <div className="relative">
-                <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                  {/* Gradient background with decorative elements */}
-                  <div className="bg-gradient-to-br from-[#065f46] via-[#047857] to-[#0d9488] p-8 sm:p-10 min-h-[400px] flex flex-col items-center justify-center text-center">
-                    {/* Decorative circles */}
-                    <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-1/2 translate-x-1/4" />
-                    <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-[#d97706]/10 translate-y-1/3 -translate-x-1/4" />
-
-                    <div className="relative z-10">
-                      <div className="w-20 h-20 rounded-full bg-[#d97706]/20 flex items-center justify-center mx-auto mb-6">
-                        <Flame className="w-10 h-10 text-[#f59e0b]" />
-                      </div>
-                      <h3
-                        className="text-2xl sm:text-3xl font-bold text-white mb-3"
-                        style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                      >
-                        Policy Fireside Chat
-                      </h3>
-                      <p className="text-white/80 text-sm max-w-sm mx-auto mb-6">
-                        Bridging evidence and action through moderated policy dialogue with Africa&apos;s foremost thinkers.
-                      </p>
-                      <div className="flex items-center justify-center gap-6 text-white/60 text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <MessageCircle className="w-4 h-4" />
-                          <span>Live Dialogue</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Sparkles className="w-4 h-4" />
-                          <span>Expert Panels</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Eye className="w-4 h-4" />
-                          <span>Policy Impact</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <Button
+                size="lg"
+                className="bg-[#d97706] hover:bg-[#b45309] text-white px-8 rounded-xl shadow-lg shadow-[#d97706]/20 transition-all hover:shadow-xl"
+                asChild
+              >
+                <a href="/what-we-do/policy-engagement/policy-firechat">
+                  <Flame className="w-5 h-5 mr-2" />
+                  Explore Fireside Chat
+                </a>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-[#065f46] text-[#065f46] hover:bg-[#065f46] hover:text-white px-8 rounded-xl transition-all"
+                asChild
+              >
+                <a href="/outputs">
+                  View Our Outputs
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </a>
+              </Button>
             </div>
           </div>
         </section>
@@ -1286,15 +1121,6 @@ export default function HomePageClient({
               <div className="w-16 h-16 mx-auto rounded-2xl bg-[#d97706]/20 flex items-center justify-center mb-6">
                 <Mail className="w-8 h-8 text-[#f59e0b]" />
               </div>
-              <h2
-                className="text-3xl sm:text-4xl font-bold text-white mb-4"
-                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-              >
-                Stay Connected
-              </h2>
-              <p className="text-[#94a3b8] max-w-xl mx-auto">
-                Subscribe to our newsletter for the latest research insights, policy analysis, and updates on our work across Africa.
-              </p>
             </div>
 
             {/* Newsletter form */}
@@ -1310,9 +1136,6 @@ export default function HomePageClient({
                   Subscribe
                 </Button>
               </div>
-              <p className="text-xs text-[#64748b] mt-3 text-center">
-                We respect your privacy. Unsubscribe at any time.
-              </p>
             </div>
 
             {/* Contact info */}

@@ -555,6 +555,37 @@ export const GET_OUTPUT_DOWNLOADABLES = `
 `;
 
 // -----------------------------------------------------------------------------
+// Follow the Money Event Files Query (ACF-based)
+// Fetches the followTheMoney ACF field group from posts.
+// This ACF group holds the document files for the "Follow the Money" event
+// (the second Fireside Chat session).
+//
+// ACF Field Group: "FollowTheMoney"
+// GraphQL Type: "FollowTheMoney"
+// Location Rule: Post Type = Post
+//
+// ACF Fields (all URL type, each pointing to a downloadable file):
+//   Field Name                              | Label                                       | Purpose
+//   ----------------------------------------|---------------------------------------------|------------------
+//   followTheMoneyBriefForRegistration      | Follow the Money Brief for Registration     | Short concept brief for event registration
+//   followTheMoneyFullConceptNote           | Follow the Money Full Concept Note          | Full concept note document
+// -----------------------------------------------------------------------------
+
+export const GET_FOLLOW_THE_MONEY_FILES = `
+  query GetFollowTheMoneyFiles($first: Int = 1) {
+    posts(first: $first, where: { status: PUBLISH }) {
+      nodes {
+        id
+        followTheMoney {
+          followTheMoneyBriefForRegistration
+          followTheMoneyFullConceptNote
+        }
+      }
+    }
+  }
+`;
+
+// -----------------------------------------------------------------------------
 // Publications Queries
 // Custom post type "publication" in WPGraphQL
 // -----------------------------------------------------------------------------

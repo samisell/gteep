@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ActivityDetailClient from '@/components/pages/ActivityDetailClient';
 import OfflinePage from '@/components/shared/OfflinePage';
-import { getActivityPage, getActivities, getOutputDownloadables, getVideoGallery, isWordPressConnected } from '@/graphql/fetchers';
+import { getActivityPage, getActivities, getOutputDownloadables, getFollowTheMoneyFiles, getVideoGallery, isWordPressConnected } from '@/graphql/fetchers';
 
 export const revalidate = 300;
 
@@ -70,9 +70,10 @@ export default async function ActivityPage({
     return <OfflinePage pageTitle="Activity" />;
   }
 
-  const [data, downloadables, videos] = await Promise.all([
+  const [data, downloadables, followTheMoney, videos] = await Promise.all([
     getActivityPage(slugPath),
     getOutputDownloadables(),
+    getFollowTheMoneyFiles(),
     getVideoGallery(),
   ]);
 
@@ -93,6 +94,7 @@ export default async function ActivityPage({
       parentPage={data.parentPage}
       relatedOutputs={relatedOutputs}
       videos={videos}
+      followTheMoney={followTheMoney}
     />
   );
 }

@@ -176,6 +176,21 @@ export interface YouTubeVideo {
 }
 
 // -----------------------------------------------------------------------------
+// Follow the Money Event Files Types
+// -----------------------------------------------------------------------------
+
+/**
+ * Files for the "Follow the Money" event (the second Fireside Chat session).
+ * Sourced from the FollowTheMoney ACF field group on WordPress posts.
+ */
+export interface FollowTheMoneyFiles {
+  /** Short concept brief document for event registration */
+  briefForRegistration?: string;
+  /** Full concept note document for the event */
+  fullConceptNote?: string;
+}
+
+// -----------------------------------------------------------------------------
 // WordPress Content Types (kept for future WP backend integration)
 // -----------------------------------------------------------------------------
 

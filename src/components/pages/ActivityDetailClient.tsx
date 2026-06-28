@@ -8,11 +8,11 @@ import { AnimatedSection } from '@/components/shared/AnimatedSection';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from '@/components/ui/tabs';
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion';
 import {
   FileSearch,
   Users,
@@ -31,10 +31,10 @@ import {
   Eye,
   Video,
   Calendar,
-  Plus,
+  ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { GTEEPActivity, GTEEPActivityChild, GTEEPOutput, YouTubeVideo } from '@/types';
+import type { GTEEPActivity, GTEEPActivityChild, GTEEPOutput, YouTubeVideo, FollowTheMoneyFiles } from '@/types';
 import { ViewDocumentButton } from '@/components/features/DocumentViewer';
 
 // =============================================================================
@@ -51,6 +51,7 @@ interface ActivityDetailClientProps {
   };
   relatedOutputs?: GTEEPOutput[];
   videos?: YouTubeVideo[];
+  followTheMoney?: FollowTheMoneyFiles;
 }
 
 // =============================================================================
@@ -206,10 +207,6 @@ function VideoGallery({ videos }: { videos: YouTubeVideo[] }) {
                   </svg>
                 </div>
               </div>
-              <Badge className="absolute top-3 left-3 bg-[#d97706]/90 text-white text-[10px] border-0">
-                <Flame className="w-3 h-3 mr-1" />
-                Fireside Chat
-              </Badge>
             </div>
             <div className="p-4">
               <h4
@@ -283,15 +280,12 @@ function RelatedOutputs({ outputs }: { outputs: GTEEPOutput[] }) {
         <div className="w-10 h-10 rounded-lg bg-[#f0fdf4] flex items-center justify-center">
           <BookOpen className="w-5 h-5 text-[#059669]" />
         </div>
-        <div>
-          <h3
-            className="text-lg font-bold text-[#0f172a]"
-            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-          >
-            Related Outputs
-          </h3>
-          <p className="text-sm text-[#64748b]">Documents related to this programme</p>
-        </div>
+        <h3
+          className="text-lg font-bold text-[#0f172a]"
+          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+        >
+          Related Outputs
+        </h3>
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
         {outputs.map((output) => (
@@ -342,12 +336,232 @@ function RelatedOutputs({ outputs }: { outputs: GTEEPOutput[] }) {
 }
 
 // =============================================================================
+// Event Accordion (rendered on the Fireside Chat page)
+// Two event topics: Gender Backlash (past) and Follow the Money (upcoming)
+// All file/document content comes from WordPress ACF.
+// =============================================================================
+
+const FOLLOW_THE_MONEY_REGISTRATION_URL = 'https://forms.gle/2KKU6bGEjewBQ7xDA';
+
+function getFileTypeLabel(ext: string): string {
+  switch (ext) {
+    case 'pptx': case 'ppt': return 'PowerPoint';
+    case 'docx': case 'doc': return 'Word Document';
+    case 'pdf': return 'PDF Document';
+    case 'xlsx': case 'xls': return 'Excel Spreadsheet';
+    default: return ext.toUpperCase() || 'Document';
+  }
+}
+
+function getFileExtension(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    return pathname.split('.').pop()?.toLowerCase() || '';
+  } catch {
+    return '';
+  }
+}
+
+/** Derive a human-readable title from a WordPress file URL filename. */
+function titleFromFilename(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const filename = pathname.split('/').pop() || '';
+    const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+    return nameWithoutExt
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .trim() || 'Document';
+  } catch {
+    return 'Document';
+  }
+}
+
+function EventFileCard({
+  url,
+  title,
+}: {
+  url: string;
+  title: string;
+}) {
+  const ext = getFileExtension(url);
+
+  return (
+    <div className="flex items-start gap-4 p-4 rounded-xl border border-[#e2e8f0] hover:border-[#d97706]/30 hover:shadow-md transition-all duration-200 group bg-white">
+      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#d97706] to-[#b45309] flex items-center justify-center shrink-0">
+        {ext === 'pptx' || ext === 'ppt' ? (
+          <Presentation className="w-6 h-6 text-white/90" />
+        ) : (
+          <FileText className="w-6 h-6 text-white/90" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <h4
+          className="text-sm font-semibold text-[#0f172a] leading-snug group-hover:text-[#d97706] transition-colors"
+          style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+        >
+          {title}
+        </h4>
+        <div className="flex items-center gap-2 mt-2">
+          <Badge className="bg-[#fef3c7] text-[#d97706] border-[#d97706]/20 text-[10px] px-1.5 py-0">
+            .{ext}
+          </Badge>
+          <span className="text-[10px] text-[#94a3b8]">{getFileTypeLabel(ext)}</span>
+        </div>
+      </div>
+      <ViewDocumentButton
+        documentUrl={url}
+        documentTitle={title}
+        fileType={ext}
+        iconOnly
+      />
+    </div>
+  );
+}
+
+function EventAccordion({
+  videos,
+  relatedOutputs,
+  followTheMoney,
+}: {
+  videos: YouTubeVideo[];
+  relatedOutputs: GTEEPOutput[];
+  followTheMoney?: FollowTheMoneyFiles;
+}) {
+  // Gender Backlash related outputs — filter by title keywords (titles come from WP ACF field names)
+  const genderBacklashOutputs = relatedOutputs.filter(
+    (o) =>
+      o.title.toLowerCase().includes('gender') ||
+      o.title.toLowerCase().includes('backlash') ||
+      o.title.toLowerCase().includes('oluponna')
+  );
+
+  const hasGenderBacklashContent = videos.length > 0 || genderBacklashOutputs.length > 0;
+
+  // Follow the Money files from WordPress ACF
+  const ftmFiles: { url: string; title: string }[] = [];
+  if (followTheMoney?.briefForRegistration) {
+    ftmFiles.push({
+      url: followTheMoney.briefForRegistration,
+      title: titleFromFilename(followTheMoney.briefForRegistration),
+    });
+  }
+  if (followTheMoney?.fullConceptNote) {
+    ftmFiles.push({
+      url: followTheMoney.fullConceptNote,
+      title: titleFromFilename(followTheMoney.fullConceptNote),
+    });
+  }
+
+  const hasFollowTheMoneyContent = ftmFiles.length > 0;
+
+  if (!hasGenderBacklashContent && !hasFollowTheMoneyContent) return null;
+
+  return (
+    <Accordion type="single" collapsible defaultValue={hasFollowTheMoneyContent ? 'follow-the-money' : 'gender-backlash'} className="w-full">
+      {hasGenderBacklashContent && (
+        <AccordionItem value="gender-backlash" className="border border-[#e2e8f0] rounded-xl mb-4 px-4 overflow-hidden">
+          <AccordionTrigger className="text-left hover:no-underline">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#fef3c7] flex items-center justify-center shrink-0">
+                <Flame className="w-5 h-5 text-[#d97706]" />
+              </div>
+              <span
+                className="text-lg font-bold text-[#0f172a]"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Gender Backlash
+              </span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-4">
+            <div className="space-y-6">
+              {videos.length > 0 && <VideoGallery videos={videos} />}
+              {genderBacklashOutputs.length > 0 && (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {genderBacklashOutputs.map((output) => (
+                    output.downloadUrl && (
+                      <EventFileCard
+                        key={output.id}
+                        url={output.downloadUrl}
+                        title={output.title}
+                      />
+                    )
+                  ))}
+                </div>
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      )}
+
+      {hasFollowTheMoneyContent && (
+        <AccordionItem value="follow-the-money" className="border border-[#d97706]/30 rounded-xl px-4 overflow-hidden bg-[#fffbeb]/30">
+          <AccordionTrigger className="text-left hover:no-underline">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#d97706] to-[#b45309] flex items-center justify-center shrink-0">
+                <Calendar className="w-5 h-5 text-white" />
+              </div>
+              <span
+                className="text-lg font-bold text-[#0f172a]"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                Follow the Money
+              </span>
+              <Badge className="bg-[#d97706]/10 text-[#d97706] border-[#d97706]/20 text-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#d97706] animate-pulse mr-1" />
+                July 25, 2026
+              </Badge>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-4 pb-4">
+            <div className="space-y-6">
+              {/* Registration link */}
+              <div className="rounded-xl bg-[#fef3c7]/60 border border-[#d97706]/20 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <p className="text-sm font-semibold text-[#0f172a]">
+                  Registration Link: Follow the Money
+                </p>
+                <a
+                  href={FOLLOW_THE_MONEY_REGISTRATION_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#d97706] hover:bg-[#b45309] text-white text-sm font-semibold transition-colors shrink-0"
+                >
+                  Register Now
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+
+              {/* Files from WordPress ACF */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                {ftmFiles.map((file, i) => (
+                  <EventFileCard
+                    key={i}
+                    url={file.url}
+                    title={file.title}
+                  />
+                ))}
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      )}
+    </Accordion>
+  );
+}
+
+// =============================================================================
 // Main Component
 // =============================================================================
 
-export default function ActivityDetailClient({ activity, parentPage, relatedOutputs = [], videos = [] }: ActivityDetailClientProps) {
+export default function ActivityDetailClient({ activity, parentPage, relatedOutputs = [], videos = [], followTheMoney }: ActivityDetailClientProps) {
   const color = activityColors[activity.slug] || activityColors['policy-research'];
   const hasChildren = activity.children && activity.children.length > 0;
+
+  // Pages that should NOT show the generic "What We Do" subtitle and the
+  // "GTEEP's <title> programme — driving evidence-based policy change..." description
+  // in their header. These pages manage their own intro content below.
+  const hideHeaderSubtitle = activity.slug === 'policy-engagement' || activity.slug === 'policy-firechat';
 
   // Build breadcrumb (PageHeader already adds "Home" as the first item)
   const breadcrumb: { label: string; href?: string }[] = [
@@ -363,8 +577,12 @@ export default function ActivityDetailClient({ activity, parentPage, relatedOutp
       {/* Page Header */}
       <PageHeader
         title={activity.title}
-        subtitle="*******"
-        description="*********"
+        subtitle={hideHeaderSubtitle ? undefined : 'What We Do'}
+        description={
+          hideHeaderSubtitle
+            ? undefined
+            : `GTEEP's ${activity.title} programme — driving evidence-based policy change across Africa.`
+        }
         breadcrumb={breadcrumb}
         backgroundImage="/images/policy-engagement.jpg"
       />
@@ -388,18 +606,11 @@ export default function ActivityDetailClient({ activity, parentPage, relatedOutp
                     >
                       {activity.title}
                     </h3>
-                    <Badge className={`${color.iconBg} ${color.iconText} border-0 text-xs px-2 py-0.5`}>
-                      GTEEP Programme
-                    </Badge>
                   </div>
 
                   {/* Sub-Programmes */}
                   {hasChildren && (
                     <div className="rounded-2xl border border-[#e2e8f0] p-6 bg-white">
-                      <h4 className="text-sm font-semibold text-[#0f172a] uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${color.accent}`} />
-                        Sub-Programmes
-                      </h4>
                       <ul className="space-y-2">
                         {activity.children!.map((child) => (
                           <li key={child.id}>
@@ -422,10 +633,6 @@ export default function ActivityDetailClient({ activity, parentPage, relatedOutp
 
                   {/* Quick Links */}
                   <div className="rounded-2xl border border-[#e2e8f0] p-6 bg-white">
-                    <h4 className="text-sm font-semibold text-[#0f172a] uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <div className={`w-1.5 h-1.5 rounded-full ${color.accent}`} />
-                      Explore
-                    </h4>
                     <ul className="space-y-2">
                       <li>
                         <Link
@@ -488,180 +695,88 @@ export default function ActivityDetailClient({ activity, parentPage, relatedOutp
                     </div>
                   )}
 
-                  {/* Policy Engagement page: Show tabs (Overview | Events) */}
+                  {/* Policy Engagement page: list the Policy Fireside Chat sub-programme */}
                   {activity.slug === 'policy-engagement' ? (
-                    <Tabs defaultValue="overview" className="w-full">
-                      <TabsList className="w-full flex-wrap h-auto gap-1 bg-[#f1f5f9] p-1.5 rounded-xl mb-8">
-                        <TabsTrigger
-                          value="overview"
-                          className="text-sm px-4 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm flex-1"
-                        >
-                          Overview
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="events"
-                          className="text-sm px-4 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm flex-1"
-                        >
-                          <Calendar className="w-4 h-4 mr-1.5" />
-                          Events
-                        </TabsTrigger>
-                      </TabsList>
-
-                      {/* Overview Tab */}
-                      <TabsContent value="overview" className="space-y-8">
-                        {activity.content ? (
-                          <WpContent html={activity.content} />
-                        ) : (
-                          <div className="text-center py-12">
-                            <div className={`w-16 h-16 rounded-xl ${color.iconBg} flex items-center justify-center mx-auto mb-4`}>
-                              <ActivityIcon name={activity.icon} className={`w-8 h-8 ${color.iconText}`} />
-                            </div>
-                            <h3
-                              className="text-xl font-bold text-[#0f172a] mb-3"
-                              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                            >
-                              Content Coming Soon
-                            </h3>
-                            <p className="text-[#64748b] max-w-md mx-auto">
-                              Detailed information about our {activity.title.toLowerCase()} programme is being developed. Check back soon for updates.
-                            </p>
-                          </div>
-                        )}
-                        {relatedOutputs.length > 0 && (
-                          <RelatedOutputs outputs={relatedOutputs} />
-                        )}
-                      </TabsContent>
-
-                      {/* Events Tab */}
-                      <TabsContent value="events">
-                        <div className="space-y-6">
-                          <div className="text-center mb-8">
-                            <h3
-                              className="text-xl font-bold text-[#0f172a] mb-2"
-                              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                            >
-                              Policy Engagement Events
-                            </h3>
-                            <p className="text-[#64748b] max-w-lg mx-auto">
-                              Our events bring together experts, policymakers, and practitioners for impactful dialogues.
-                            </p>
-                          </div>
-                          <Link
-                            href="/what-we-do/policy-engagement/policy-firechat"
-                            className="group block rounded-2xl border border-[#e2e8f0] hover:border-[#d97706]/40 bg-white overflow-hidden hover:shadow-xl transition-all duration-300"
-                          >
-                            <div className="bg-gradient-to-br from-[#d97706] to-[#b45309] p-6 relative">
-                              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/5 -translate-y-1/4 translate-x-1/4" />
-                              <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-1/3 -translate-x-1/4" />
-                              <div className="relative z-10 flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                                  <Flame className="w-8 h-8 text-white" />
-                                </div>
-                                <div>
-                                  <Badge className="bg-white/20 text-white border-white/30 text-xs mb-2 hover:bg-white/30">
-                                    <Calendar className="w-3 h-3 mr-1" />
-                                    Recurring Event
-                                  </Badge>
-                                  <h4
-                                    className="text-xl font-bold text-white"
-                                    style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                                  >
-                                    Policy Fireside Chat
-                                  </h4>
-                                  <p className="text-white/80 text-sm mt-1">Development Conversations</p>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="p-6">
-                              <p className="text-[#64748b] leading-relaxed mb-4">
-                                Our Policy Fireside Chat brings together leading experts, policymakers, and practitioners for candid conversations about Africa&apos;s most pressing development challenges. Each session bridges the gap between research evidence and real-world policy impact.
-                              </p>
-                              <div className="flex items-center text-sm font-medium text-[#d97706] group-hover:text-[#b45309]">
-                                View Fireside Chat
-                                <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                              </div>
-                            </div>
-                          </Link>
-                          <div className="text-center py-8 border-2 border-dashed border-[#e2e8f0] rounded-2xl">
-                            <Plus className="w-10 h-10 mx-auto text-[#cbd5e1] mb-3" />
-                            <p className="text-sm text-[#94a3b8]">More events will be added as they are scheduled.</p>
-                          </div>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  ) : activity.slug === 'policy-firechat' ? (
-                    /* Policy Fireside Chat page: Show content + Video Gallery */
                     <div className="space-y-8">
-                      {activity.content || activity.policyFirechat ? (
-                        <WpContent html={activity.content || activity.policyFirechat || ''} />
-                      ) : (
-                        <div className="text-center py-12">
-                          <div className="w-16 h-16 rounded-xl bg-[#fef3c7] flex items-center justify-center mx-auto mb-4">
-                            <Flame className="w-8 h-8 text-[#d97706]" />
-                          </div>
-                          <h3
-                            className="text-xl font-bold text-[#0f172a] mb-3"
-                            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                          >
-                            Policy Fireside Chat
-                          </h3>
-                          <p className="text-[#64748b] max-w-md mx-auto">
-                            Our Policy Fireside Chat brings together leading experts, policymakers, and practitioners for candid conversations about Africa&apos;s most pressing development challenges.
-                          </p>
+                      {activity.content && <WpContent html={activity.content} />}
+
+                      {/* List sub-programmes (Policy Fireside Chat) */}
+                      {hasChildren && activity.children && activity.children.length > 0 && (
+                        <div className="space-y-4">
+                          {activity.children.map((child) => (
+                            <Link
+                              key={child.id}
+                              href={`/what-we-do/${activity.slug}/${child.slug}`}
+                              className="group block rounded-2xl border border-[#e2e8f0] hover:border-[#d97706]/40 bg-white overflow-hidden hover:shadow-xl transition-all duration-300"
+                            >
+                              <div className="bg-gradient-to-br from-[#d97706] to-[#b45309] p-6 relative">
+                                <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/5 -translate-y-1/4 translate-x-1/4" />
+                                <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-1/3 -translate-x-1/4" />
+                                <div className="relative z-10 flex items-center gap-4">
+                                  <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                    <Flame className="w-8 h-8 text-white" />
+                                  </div>
+                                  <div>
+                                    <h4
+                                      className="text-xl font-bold text-white"
+                                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                                    >
+                                      {child.title}
+                                    </h4>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="p-6">
+                                <div className="flex items-center text-sm font-medium text-[#d97706] group-hover:text-[#b45309]">
+                                  View {child.title}
+                                  <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
                         </div>
                       )}
-                      <div className="pt-8 border-t border-[#e2e8f0]">
-                        <div className="flex items-center gap-3 mb-6">
-                          <div className="w-10 h-10 rounded-lg bg-[#fef3c7] flex items-center justify-center">
-                            <Video className="w-5 h-5 text-[#d97706]" />
-                          </div>
-                          <div>
-                            <h3
-                              className="text-lg font-bold text-[#0f172a]"
-                              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                            >
-                              Fireside Chat Videos
-                            </h3>
-                            <p className="text-sm text-[#64748b]">Watch our recorded policy conversations</p>
-                          </div>
-                        </div>
-                        {videos.length > 0 ? (
-                          <VideoGallery videos={videos} />
-                        ) : (
-                          <div className="text-center py-12 bg-[#f8fafc] rounded-2xl border border-[#e2e8f0]">
-                            <Video className="w-12 h-12 mx-auto text-[#cbd5e1] mb-4" />
-                            <h4 className="text-base font-semibold text-[#0f172a] mb-2">No videos available yet</h4>
-                            <p className="text-sm text-[#64748b] max-w-md mx-auto">
-                              Videos from our Fireside Chat sessions will appear here once they are published.
-                            </p>
-                          </div>
-                        )}
-                      </div>
+
                       {relatedOutputs.length > 0 && (
                         <RelatedOutputs outputs={relatedOutputs} />
+                      )}
+                    </div>
+                  ) : activity.slug === 'policy-firechat' ? (
+                    /* Policy Fireside Chat page: WP content + Event Accordion (Gender Backlash / Follow the Money) */
+                    <div className="space-y-8">
+                      {/* WordPress content (from page editor or policyFirechat ACF field) */}
+                      {(activity.content || activity.policyFirechat) && (
+                        <WpContent html={activity.content || activity.policyFirechat || ''} />
+                      )}
+
+                      {/* Event Accordion — Gender Backlash + Follow the Money */}
+                      <EventAccordion
+                        videos={videos}
+                        relatedOutputs={relatedOutputs}
+                        followTheMoney={followTheMoney}
+                      />
+
+                      {/* Remaining related outputs (not event-specific) */}
+                      {relatedOutputs.filter(
+                        (o) =>
+                          !o.title.toLowerCase().includes('gender') &&
+                          !o.title.toLowerCase().includes('backlash') &&
+                          !o.title.toLowerCase().includes('oluponna')
+                      ).length > 0 && (
+                        <RelatedOutputs
+                          outputs={relatedOutputs.filter(
+                            (o) =>
+                              !o.title.toLowerCase().includes('gender') &&
+                              !o.title.toLowerCase().includes('backlash') &&
+                              !o.title.toLowerCase().includes('oluponna')
+                          )}
+                        />
                       )}
                     </div>
                   ) : (
                     /* Default: all other activity pages */
                     <div className="space-y-8">
-                      {activity.content ? (
-                        <WpContent html={activity.content} />
-                      ) : (
-                        <div className="text-center py-12">
-                          <div className={`w-16 h-16 rounded-xl ${color.iconBg} flex items-center justify-center mx-auto mb-4`}>
-                            <ActivityIcon name={activity.icon} className={`w-8 h-8 ${color.iconText}`} />
-                          </div>
-                          <h3
-                            className="text-xl font-bold text-[#0f172a] mb-3"
-                            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                          >
-                            Content Coming Soon
-                          </h3>
-                          <p className="text-[#64748b] max-w-md mx-auto">
-                            Detailed information about our {activity.title.toLowerCase()} programme is being developed. Check back soon for updates.
-                          </p>
-                        </div>
-                      )}
+                      {activity.content && <WpContent html={activity.content} />}
                       {relatedOutputs.length > 0 && (
                         <RelatedOutputs outputs={relatedOutputs} />
                       )}
@@ -675,12 +790,6 @@ export default function ActivityDetailClient({ activity, parentPage, relatedOutp
               {hasChildren && activity.slug !== 'policy-engagement' && (
                 <AnimatedSection>
                   <div className="mt-12 pt-10 border-t border-[#e2e8f0]">
-                    <h3
-                      className="text-xl font-bold text-[#0f172a] mb-6"
-                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                    >
-                      Sub-Programmes under {activity.title}
-                    </h3>
                     <div className="grid sm:grid-cols-2 gap-6">
                       {activity.children!.map((child) => (
                         <Link
@@ -697,11 +806,6 @@ export default function ActivityDetailClient({ activity, parentPage, relatedOutp
                                 className="object-cover"
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                              <div className="absolute bottom-3 left-3">
-                                <Badge className="bg-white/90 text-[#0f172a] text-xs">
-                                  {child.slug === 'policy-firechat' ? '🔥 Firechat' : 'Sub-Programme'}
-                                </Badge>
-                              </div>
                             </div>
                           )}
                           <div className="p-5">

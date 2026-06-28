@@ -1,0 +1,776 @@
+     1→---
+     2→Task ID: 1
+     3→Agent: Main Agent
+     4→Task: Create Policy Fireside Chats page with downloadable fireside.pptx
+     5→
+     6→Work Log:
+     7→- Analyzed existing site structure, page patterns (server + client component split), navigation, and footer
+     8→- Read existing EventsPageClient, WhatWeDoPageClient, PageHeader, Navbar, Footer components for design patterns
+     9→- Reviewed existing mock data for events including the "Policy Fireside Chat — Africa: The Gender Backlash" event
+    10→- Created `/home/z/my-project/src/app/fireside-chats/page.tsx` - Server component with ISR (revalidate=300), metadata, and event data fetching
+    11→- Created `/home/z/my-project/src/components/pages/FiresideChatsPageClient.tsx` - Full client component with:
+    12→  - PageHeader with "Policy Fireside Chats" title and breadcrumb
+    13→  - Introduction section with "Where Policy Meets Practice" heading
+    14→  - "How It Works" section with 4 cards (Expert Moderation, Diverse Panelists, Live Q&A, Actionable Insights)
+    15→  - Episodes section with 4 episodes (1 recorded, 3 upcoming) including speakers, topics, dates
+    16→  - Related Events section (populated from WP events matching fireside/panel criteria)
+    17→  - "Why It Matters" section with stats and testimonial quote
+    18→  - CTA section with "Join the Conversation" heading
+    19→  - DownloadFormDialog component for email-gated download of fireside.pptx
+    20→- Created `/home/z/my-project/src/app/api/download/request/route.ts` - API endpoint for download form submissions
+    21→- Copied fireside.pptx from upload/ to public/uploads/ for public access
+    22→- Updated Navbar navigation links to include "Fireside Chats" between "What We Do" and "Our Partners"
+    23→- Updated Footer quick links to include "Fireside Chats"
+    24→- Updated Footer "Our Focus" section: changed from simple strings to objects with href, "Policy Engagement" now links to /fireside-chats
+    25→- Fixed `getEvents()` return type issue (returns `{ events: WPEvent[] }` not `WPEvent[]`)
+    26→- Lint passes cleanly
+    27→- Verified both `/` and `/fireside-chats` return HTTP 200
+    28→- Agent Browser confirmed page renders correctly with all sections, navigation, and footer
+    29→
+    30→Stage Summary:
+    31→- New page created at /fireside-chats route
+    32→- fireside.pptx is accessible at /uploads/fireside.pptx
+    33→- Download form dialog captures email before allowing download
+    34→- Navigation updated in both Navbar and Footer
+    35→- All existing functionality preserved (no breaking changes)
+    36→- Lint passes, pages render correctly
+    37→---
+    38→Task ID: 1
+    39→Agent: Main Agent
+    40→Task: Remove all mock data and use WordPress as sole data source, with offline page when WP is unreachable
+    41→
+    42→Work Log:
+    43→- Explored entire codebase to understand data flow: GraphQL client → fetchers → server pages → client components
+    44→- Created OfflinePage component at src/components/shared/OfflinePage.tsx with WifiOff icon, "Unable to Load Content" message, Try Again/Back to Home buttons, and contact email
+    45→- Rewrote src/graphql/fetchers.ts: removed all mock data imports and fallbacks, changed extractNodes to return [] instead of mock fallback, updated getActivities/getPhilosophy/getOutputs/getPartners to return [] when WP has no data, updated getTeamMembers to return [] instead of mock team, kept getSiteSettings with minimal defaults for site title/description
+    46→- Updated src/lib/graphql-client.ts: added 60-second connectivity cache to isWordPressConnected() to avoid redundant health checks, reduced timeout from 10s to 5s
+    47→- Updated ALL server page files to check isWordPressConnected() before fetching data, and render OfflinePage when WP is unreachable: page.tsx, about/page.tsx, what-we-do/page.tsx, blog/page.tsx, outputs/page.tsx, partners/page.tsx, projects/page.tsx, publications/page.tsx, events/page.tsx, resources/page.tsx, fireside-chats/page.tsx, gallery/page.tsx, contact/page.tsx, media/page.tsx, and all [slug] detail pages
+    48→- Deleted src/graphql/mock-data.ts (1121 lines of mock data removed)
+    49→- Added empty state handling to client components: HomePageClient shows "Our activities are being updated" and "Our philosophy is being updated" placeholders when data is empty; WhatWeDoPageClient shows "Activities Coming Soon" with CTA buttons
+    50→- Ran lint successfully with no errors
+    51→- Verified with Agent Browser: homepage, about, and what-we-do pages all render correctly
+    52→
+    53→Stage Summary:
+    54→- All mock data removed - site now uses WordPress exclusively via GraphQL API
+    55→- OfflinePage component shows when WordPress is unreachable (check internet connection message)
+    56→- 60-second connectivity cache prevents redundant WP health checks
+    57→- Empty state placeholders added for sections without WP content yet (activities, philosophy)
+    58→- WordPress data flows correctly: team members, blog posts, publications, projects, events, resources all fetch from WP
+    59→- The user needs to set up Activities and Philosophy content in WordPress for those sections to populate
+    60→
+    61→---
+    62→Task ID: 2
+    63→Agent: Main Agent
+    64→Task: Make About Us content come from WordPress ACF and use about content for homepage hero section
+    65→
+    66→Work Log:
+    67→- Queried WordPress GraphQL API to discover ACF field group: `aboutContent` on Page type with 4 fields: aboutSummary, aboutVision, aboutMission, aboutGoal
+    68→- Updated src/types/index.ts: Added `aboutContent` field to WPPage interface with all 4 ACF fields
+    69→- Updated src/graphql/queries.ts: Added `aboutContent { aboutSummary aboutVision aboutMission aboutGoal }` to GET_PAGE_BY_SLUG query
+    70→- Created getAboutPage() fetcher in src/graphql/fetchers.ts that fetches the about-us page with ACF data, with sensible defaults for missing fields
+    71→- Updated src/app/about/page.tsx: Now fetches aboutData via getAboutPage() and passes it as prop
+    72→- Updated src/components/pages/AboutPageClient.tsx: Added aboutData prop, replaced hardcoded fallbacks with WordPress ACF data (aboutDescription, aboutVision, aboutMission, aboutGoal all come from WP)
+    73→- Updated src/app/page.tsx: Now fetches aboutData and passes to HomePageClient
+    74→- Updated src/components/pages/HomePageClient.tsx: Added aboutData prop, hero description now extracts first 1-2 sentences from WP aboutSummary for concise hero text
+    75→- Verified with browser: About page shows full aboutSummary from WP, Mission and Goal from WP ACF, Vision shows fallback (WP aboutVision is null - needs to be populated in WP admin), Hero shows first 2 sentences from aboutSummary
+    76→
+    77→Stage Summary:
+    78→- About Us page content now fully comes from WordPress ACF fields (aboutContent group)
+    79→- Homepage hero description text comes from WordPress aboutSummary (first 1-2 sentences extracted)
+    80→- Vision field in WP is currently null - user needs to populate it in WP admin for it to show instead of default
+    81→- All 4 ACF fields working: aboutSummary, aboutVision, aboutMission, aboutGoal
+    82→
+    83→---
+    84→Task ID: 3
+    85→Agent: Main Agent
+    86→Task: Implement Contact Us page as standalone (not from WordPress) with full form submission, SMTP config, and admin email notification
+    87→
+    88→Work Log:
+    89→- Analyzed existing contact implementation: ContactPageClient, API route, email service, Prisma schema, rate limiter were all partially built
+    90→- Removed WordPress connectivity check from contact page (src/app/contact/page.tsx) - page now works independently of WP
+    91→- Updated Prisma schema: Added `phone` field to ContactSubmission model, pushed to database successfully
+    92→- Added SMTP environment variables to .env: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL, SMTP_FROM_NAME, CONTACT_RECEIVER_EMAIL, SITE_EMAIL
+    93→- Completely rewrote ContactPageClient with enhanced features:
+    94→  - Removed WP settings dependency - uses standalone CONTACT_INFO constant
+    95→  - Added 4 Quick Access contact cards (General Inquiries, Partnerships, Research & Publications, Media & Press)
+    96→  - Added Inquiry Type dropdown (Select component) with 9 categories
+    97→  - Added Phone Number field
+    98→  - Added FAQ section with 6 accordion items
+    99→  - Added Quick Response notice card
+   100→  - Improved success state with animation and confirmation email message
+   101→  - Better character counter for message field
+   102→  - Privacy policy link in consent checkbox
+   103→- Updated API route (src/app/api/contact/route.ts): Added phone field to Zod schema, database save, and email notification data
+   104→- Updated email service (src/lib/email.ts): Added phone number to admin notification HTML and text templates
+   105→- Fixed Footer newsletter form: Replaced simulated API call with actual fetch to /api/newsletter endpoint
+   106→- Ran lint - passes cleanly
+   107→- Verified with Agent Browser: Contact page loads correctly, all sections visible, form submission works (data saved to DB), success state displays
+   108→
+   109→Stage Summary:
+   110→- Contact Us page is fully standalone - no WordPress dependency
+   111→- Full form pipeline works: validation → database save → email notification attempt
+   112→- SMTP config ready in .env (user needs to replace placeholder credentials with real SMTP credentials)
+   113→- Admin receives notification at CONTACT_RECEIVER_EMAIL (default: info@gteep.com)
+   114→- Sender receives confirmation email at their provided email
+   115→- Email sending is non-blocking (graceful degradation if SMTP fails)
+   116→- Phone field added to contact form and database
+   117→- FAQ section added with 6 common questions
+   118→- Footer newsletter now calls real /api/newsletter API
+   119→
+   120→---
+   121→Task ID: 4
+   122→Agent: Main Agent
+   123→Task: Update contact details on contact page to fetch from WordPress ACF contactdetails
+   124→
+   125→Work Log:
+   126→- Queried WordPress GraphQL API to discover ACF `contactdetails` field group on Page type
+   127→- Found 3 ACF fields: `address` (String), `email` (String), `phoneNumber` (Float)
+   128→- Queried the contact-us page to verify data: address="Ikeja Lagos", email="info@gteep.gileadtrust.com", phoneNumber=234
+   129→- Updated src/types/index.ts: Added `contactdetails` field to WPPage interface
+   130→- Updated src/graphql/queries.ts: Added `contactdetails { address email phoneNumber }` to GET_PAGE_BY_SLUG query
+   131→- Created getContactDetails() fetcher in src/graphql/fetchers.ts that fetches from contact-us page ACF with defaults
+   132→- Updated src/app/contact/page.tsx: Now fetches contact details from WP and passes as prop
+   133→- Updated src/components/pages/ContactPageClient.tsx:
+   134→  - Added contactDetails prop interface
+   135→  - Replaced hardcoded CONTACT_INFO constant with WP-derived contactEmail, contactPhone, contactAddress
+   136→  - Made contact cards dynamic (derive email domain from WP email)
+   137→  - FAQ "Email us directly" link now uses contactEmail variable
+   138→- Updated src/app/layout.tsx: Fetches contactDetails and passes to Footer component
+   139→- Updated src/components/layout/Footer.tsx: Accepts contactDetails prop, displays WP email/address/phone
+   140→- Fixed all stale info@gteep.com → info@gteep.gileadtrust.com across: email.ts, privacy/page.tsx, maintenance/page.tsx, OfflinePage.tsx, HomePageClient.tsx, fetchers.ts
+   141→- Lint passes, browser verification confirms all 7 checks pass
+   142→
+   143→Stage Summary:
+   144→- Contact details (email, address, phone) now come from WordPress ACF contactdetails field group
+   145→- WP ACF data flows: contact-us page → getContactDetails() fetcher → contact page & footer
+   146→- Contact cards dynamically derive email domain from WP email
+   147→- All stale info@gteep.com references replaced with info@gteep.gileadtrust.com
+   148→- Footer contact info also pulled from WP ACF (same data, rendered in footer across all pages)
+   149→- Note: phoneNumber in WP ACF is stored as Float (currently 234 = Nigeria country code). User may want to store the full phone number in WP admin
+   150→
+   151→---
+   152→Task ID: 5
+   153→Agent: Main Agent
+   154→Task: Switch team member data from WordPress posts (category/tag-based) to ACF fields
+   155→
+   156→Work Log:
+   157→- Queried WordPress GraphQL schema to discover existing ACF types: WithAcfAboutContent, WithAcfContactdetails, WithAcfAdminemail — no ACF team member type yet
+   158→- Queried current team member posts to verify structure: title=name, tag=role, content=bio, featuredImage=photo, category=group
+   159→- Added GET_TEAM_MEMBERS_ACF query to queries.ts — single query using "team" category with ACF teamMember { teamName teamRole teamCategory teamBio teamImage } fields
+   160→- Kept existing GET_TEAM_MEMBERS query as fallback (4-category approach)
+   161→- Updated WPPost type in types/index.ts: Added optional teamMember ACF fields (teamName, teamRole, teamCategory, teamBio, teamImage)
+   162→- Rewrote getTeamMembers() fetcher with ACF-first strategy:
+   163→  1. Try ACF query first — if teamMember fields exist and have data, use them
+   164→  2. Fall back to category-based query (executive/director/advisory-board/board-of-trustees) if ACF not set up
+   165→- Added VALID_TEAM_CATEGORIES constant for ACF teamCategory validation
+   166→- Lint passes cleanly
+   167→- Browser verification: Homepage and Contact page both load correctly with team members visible
+   168→
+   169→Stage Summary:
+   170→- Code is ready for ACF team member fields — will automatically use them when available
+   171→- User needs to create ACF field group "Team Member" (GraphQL type: TeamMember) in WordPress with fields: teamName, teamRole, teamCategory, teamBio, teamImage
+   172→- User needs to create a "team" category in WordPress and assign team member posts to it
+   173→- Current category-based approach continues to work as fallback until ACF is set up
+   174→- No breaking changes — smooth transition path
+   175→
+   176→---
+   177→Task ID: 6
+   178→Agent: Main Agent
+   179→Task: Remove non-WordPress pages, rearrange nav/footer, make newsletter functional, add ACF admin email
+   180→
+   181→Work Log:
+   182→- Queried WP GraphQL schema: confirmed custom post types (publications, projects, events, resources) don't exist in WP
+   183→- Queried WP for existing ACF types: WithAcfAdminemail confirmed with adminEmailForNotification field (value: info.venihost@gmail.com)
+   184→- Removed 5 page directories: /projects, /publications, /resources, /events, /maintenance
+   185→- Removed 8 client components for deleted pages
+   186→- Updated Navbar navLinks: reordered to Home, About Us, What We Do, Our Outputs (dropdown: All Outputs, Fireside Chats, Gallery), Blog, Our Partners, Contact Us
+   187→- Updated Footer quickLinks: reordered to match nav (Home, About Us, What We Do, Our Outputs, Fireside Chats, Blog, Our Partners, Contact Us)
+   188→- Fixed Footer social icons: replaced BookOpen/Heart with ExternalLink for Facebook/Instagram (brand icons not available in lucide)
+   189→- Removed broken /terms link from footer bottom bar, kept only Privacy Policy
+   190→- Added GET_ADMIN_EMAIL GraphQL query for ACF adminemail field
+   191→- Added getAdminEmail() fetcher with 5-minute cache, fallback to env vars and default
+   192→- Updated newsletter API: added admin notification email and subscriber confirmation email (both fire-and-forget)
+   193→- Updated contact API: now fetches admin email via getAdminEmail() and passes to sendContactNotification
+   194→- Updated email.ts: sendContactNotification accepts optional overrideAdminEmail parameter
+   195→- Updated FiresideChatsPageClient: firesideEvents prop is now optional (defaults to empty array)
+   196→- Updated FiresideChats page: no longer imports getEvents (doesn't exist in WP)
+   197→- Updated SearchPageClient: removed references to /publications, /projects, /events routes
+   198→- Lint passes, browser verification confirms all 8 checks pass
+   199→
+   200→Stage Summary:
+   201→- 5 pages removed (projects, publications, resources, events, maintenance) — return 404
+   202→- Navbar rearranged with dropdown under Our Outputs
+   203→- Footer rearranged with correct links and icons
+   204→- Newsletter fully functional: DB save + admin email notification + subscriber confirmation
+   205→- Admin email fetched from WP ACF adminemail field (currently: info.venihost@gmail.com)
+   206→- Contact form uses ACF admin email for notifications
+   207→- All deleted routes properly return custom 404 pages
+   208→
+   209→---
+   210→Task ID: 1
+   211→Agent: Main Agent
+   212→Task: Implement What We Do page layout with WP-driven activity sections, Policy Firechat ACF support, dynamic routes
+   213→
+   214→Work Log:
+   215→- Queried WordPress GraphQL to discover page hierarchy: What We Do has 6 child pages + Policy Firechat nested under Policy Engagement
+   216→- Discovered ACF policyFirechat field group is assigned globally to all pages (same content returned on all child pages)
+   217→- Added GET_WHAT_WE_DO_PAGE and GET_ACTIVITY_PAGE GraphQL queries with nested children and policyFirechat ACF fields
+   218→- Updated GTEEPActivity type with new fields: databaseId, slug, uri, content, children, policyFirechat
+   219→- Added GTEEPActivityChild type for nested sub-pages
+   220→- Rewrote getActivities() fetcher to use dedicated WP query with child/nested page support
+   221→- Added getActivityPage() fetcher for individual activity detail pages
+   222→- Completely redesigned WhatWeDoPageClient with: Programme Areas overview grid, dynamic activity sections from WP, Policy Firechat subsection (only under Policy Engagement), auto-detection of new WP child pages
+   223→- Created ActivityDetailClient component for individual activity pages with sidebar, content rendering, sub-programme cards
+   224→- Created /what-we-do/[...slug] catch-all dynamic route for both /what-we-do/policy-research and /what-we-do/policy-engagement/policy-firechat
+   225→- Updated Navbar: What We Do now has dropdown with All Activities + 6 programme areas
+   226→- Updated Footer: Focus areas now link to individual activity pages instead of /what-we-do
+   227→- Updated HomePageClient: Activity cards link to individual pages and use content snippets for descriptions
+   228→- Fixed lint errors: Replaced getActivityIcon() (component creation during render) with ActivityIcon component
+   229→- Fixed Policy Firechat showing on all activities (ACF field is global) by restricting to activity.slug === 'policy-engagement'
+   230→- Fixed breadcrumb duplication (PageHeader already adds Home)
+   231→- Fixed ActivityDetailClient to use policyFirechat as fallback content when content field is empty
+   232→
+   233→Stage Summary:
+   234→- What We Do page fully dynamic from WordPress with 6 activity sections
+   235→- New pages added to WP under "What We Do" automatically appear on the site
+   236→- Policy Firechat ACF content properly displayed under Policy Engagement only
+   237→- Individual activity pages at /what-we-do/[slug] with detail views
+   238→- Nested sub-pages supported: /what-we-do/policy-engagement/policy-firechat
+   239→- Navbar dropdown shows all 6 programme areas under What We Do
+   240→- Footer focus areas link directly to individual programme pages
+   241→- All lint checks pass, all pages return 200
+   242→
+   243→---
+   244→Task ID: 7
+   245→Agent: Main Agent
+   246→Task: Update video gallery page under outputs to use ACF data from WordPress
+   247→
+   248→Work Log:
+   249→- Queried WordPress GraphQL to discover videoGallery ACF type: single field `firechatEvent` (URL/String)
+   250→- Queried WP pages to find Video Gallery page at /our-outputs/video-gallery/ (databaseId 22)
+   251→- Updated src/types/index.ts: Added `videoGallery` field to WPPage interface with `firechatEvent` and `videos` repeater support
+   252→- Added GET_VIDEO_GALLERY GraphQL query to src/graphql/queries.ts with documentation for ACF repeater extension
+   253→- Added `videoGallery { firechatEvent }` to GET_PAGE_BY_SLUG query for future page-level access
+   254→- Added GET_VIDEO_GALLERY import and YouTubeVideo type import to src/graphql/fetchers.ts
+   255→- Created getVideoGallery() fetcher that: fetches Video Gallery page from WP, extracts YouTube URLs from ACF, enriches each with YouTube oEmbed API, de-duplicates by videoId
+   256→- Included commented-out repeater field support code for when user adds ACF Repeater field
+   257→- Updated src/app/outputs/page.tsx: Now fetches both outputs and video gallery data, passes videos prop
+   258→- Completely rewrote src/components/pages/OutputsPageClient.tsx:
+   259→  - Replaced client-side YouTube API fetching with server-side ACF data
+   260→  - New ACFVideoCard component with GTEEP Video badge
+   261→  - New VideoGallerySection component that receives videos as prop (no useEffect/fetch)
+   262→  - Empty state shows helpful instructions for adding videos via ACF
+   263→  - Video player dialog preserved for playback
+   264→  - Removed Loader2, useEffect, useCallback for video fetching (no longer needed)
+   265→- Lint passes cleanly
+   266→- Browser verification: Page renders correctly, Video Gallery tab shows ACF video ("The Policy Fireside Chat-Africa: The Gender Backlash"), video card has thumbnail, title, channel name, clickable play button
+   267→
+   268→Stage Summary:
+   269→- Video Gallery now fully ACF-driven from WordPress (no YouTube RSS/oEmbed client-side fetching)
+   270→- Current ACF: single `firechatEvent` URL field
+   271→- To add more videos: user can add ACF Repeater field called `videos` with sub-fields `videoUrl`, `videoTitle`, `videoDescription`
+   272→- Server-side oEmbed enrichment happens during page render (5-min ISR cache)
+   273→- Empty state provides instructions for WordPress admin setup
+   274→- All other output tabs (Concept Notes, Policy Briefs, etc.) still work as before
+   275→
+   276→---
+   277→Task ID: 8
+   278→Agent: Main Agent
+   279→Task: Link downloadable files from ACF to outputs page, create cross-links between activity pages and output tabs, implement policy firechat related outputs
+   280→
+   281→Work Log:
+   282→- Discovered `OurOutputDownloadables` ACF field group on Post type with 5 URL fields pointing to downloadable files
+   283→- Queried WordPress media library to confirm file types: 3 DOCX, 2 PPTX files
+   284→- Added `GET_OUTPUT_DOWNLOADABLES` GraphQL query to fetch ACF download URLs from posts
+   285→- Created `getOutputDownloadables()` fetcher with `DOWNLOADABLE_FIELD_MAP` that maps each ACF field to:
+   286→  - outputType (which tab on Outputs page: concept-note, knowledge-product, etc.)
+   287→  - title (human-readable)
+   288→  - relatedActivity (which activity page it relates to, e.g. 'policy-engagement')
+   289→  - relatedSubActivity (which child page, e.g. 'policy-firechat')
+   290→- Updated `GTEEPOutput` type with `relatedActivity`, `relatedSubActivity`, `fileType` fields
+   291→- Updated outputs page to fetch and merge downloadables with existing outputs
+   292→- Created `DownloadableCard` component with file type icon, extension badge, firechat badge, download button
+   293→- Added `?tab=concept-note` URL parameter support via `useSearchParams` in OutputsPageClient
+   294→- Wrapped outputs page in Suspense for useSearchParams compatibility
+   295→- Updated ActivityDetailClient with `relatedOutputs` prop and "Related Outputs" section
+   296→- Added "View Related Outputs" button in Policy Firechat section linking to /outputs?tab=concept-note
+   297→- Updated activity page server component to fetch downloadables and filter by activity slug
+   298→- Updated FiresideChatsPageClient with `relatedOutputs` prop and "Policy Firechat Outputs" section
+   299→- Added "View All Concept Notes" button linking to /outputs?tab=concept-note
+   300→- Fixed lint errors: render-time component creation, setState-in-effect
+   301→- Browser verification: All 4 key pages work correctly with proper cross-linking
+   302→
+   303→Stage Summary:
+   304→- 5 ACF downloadable files now appear on the Outputs page (4 under Concept Notes tab, 1 under Knowledge Products)
+   305→- Files without a specific output sub-page (e.g. "Graphics on Book Talk") appear under their mapped tab + "All"
+   306→- Policy Engagement activity page shows "Related Outputs" section with 4 firechat-related downloadables
+   307→- Fireside Chats page shows "Policy Firechat Outputs" section with download cards
+   308→- Cross-linking: Activity page → /outputs?tab=concept-note, Fireside Chats → /outputs?tab=concept-note
+   309→- URL deep-linking supported: /outputs?tab=concept-note opens directly to that tab
+   310→- All download buttons link directly to the WordPress-hosted files
+   311→
+   312→---
+   313→Task ID: 9
+   314→Agent: Main Agent
+   315→Task: Transfer the project to GLM-5.2 — Add AI chatbot powered by GLM-5.2 via z-ai-web-dev-sdk
+   316→
+   317→Work Log:
+   318→- Explored project to understand existing AI/LLM integration status (none found — z-ai-web-dev-sdk was installed but unused)
+   319→- Read z-ai-web-dev-sdk type definitions to understand API: CreateChatCompletionBody with optional model field, ChatMessage with role/content
+   320→- Invoked LLM Skill for SDK usage documentation
+   321→- Created backend API route at src/app/api/chat/route.ts:
+   322→  - Uses z-ai-web-dev-sdk with model: 'glm-5.2'
+   323→  - GTEEP-specific system prompt with domain knowledge about programmes, activities, research, fireside chats
+   324→  - Conversation history support (last 10 messages for context)
+   325→  - Rate limiting (20 messages per minute per IP)
+   326→  - Input validation (required message, max 2000 chars)
+   327→  - ZAI instance reuse (module-level cache)
+   328→  - Error handling with user-friendly messages
+   329→- Created AI Chat Widget component at src/components/features/AIChatWidget.tsx:
+   330→  - Floating emerald-green chat button (bottom-right, all pages)
+   331→  - Animated chat panel (540px height, 380px width)
+   332→  - Welcome screen with bot avatar and 4 suggested prompts
+   333→  - Message bubbles with user/assistant avatars
+   334→  - Basic markdown rendering (bullet points, bold text, numbered lists)
+   335→  - Loading indicator ("Thinking...")
+   336→  - Scroll-to-bottom button for long conversations
+   337→  - Clear chat button
+   338→  - Textarea input with Enter-to-send, Shift+Enter for newline
+   339→  - Disclaimer text ("AI responses may not always be accurate")
+   340→  - Framer Motion animations for open/close
+   341→- Integrated chat widget into root layout (src/app/layout.tsx):
+   342→  - Added AIChatWidget import
+   343→  - Placed component inside ContentProtection wrapper alongside ScrollToTop
+   344→  - Appears on all pages (including maintenance mode bypass)
+   345→- Lint passes cleanly (zero errors)
+   346→- Browser verification: All 9 checks pass
+   347→  - Homepage loads correctly
+   348→  - Chat button visible (floating, green, bottom-right)
+   349→  - Chat panel opens with "GTEEP Assistant" header and "Powered by GLM-5.2" subtitle
+   350→  - 4 suggested prompts visible and functional
+   351→  - AI responds with relevant GTEEP information when prompts clicked
+   352→  - Chat works on /about page as well
+   353→  - Homepage layout intact (navbar, hero, footer all present)
+   354→
+   355→Stage Summary:
+   356→- GTEEP website now has an AI assistant powered by GLM-5.2
+   357→- Chat widget appears on all pages via root layout integration
+   358→- Backend uses z-ai-web-dev-sdk with model: 'glm-5.2' for chat completions
+   359→- System prompt provides GTEEP-specific domain knowledge for contextual responses
+   360→- Rate limiting protects against abuse (20 msgs/min/IP)
+   361→- Conversation history maintained for multi-turn dialogue (last 10 messages)
+   362→- All existing functionality preserved (no breaking changes)
+   363→
+   364→---
+   365→Task ID: 10
+   366→Agent: Main Agent
+   367→Task: Remove non-WordPress content, redirect Firechat nav to /what-we-do/policy-engagement/policy-firechat
+   368→
+   369→Work Log:
+   370→- Found FiresideChatsPageClient.tsx was entirely hardcoded (4 static episodes, "How It Works", "Why It Matters", stats, quotes) — none from WordPress API
+   371→- The real WP-driven firechat page already existed at /what-we-do/policy-engagement/policy-firechat via ActivityDetailClient (renders ACF policyFirechat content)
+   372→- Updated Navbar: Changed Firechat href from /fireside-chats to /what-we-do/policy-engagement/policy-firechat
+   373→- Updated Footer: Changed Fireside Chats href from /fireside-chats to /what-we-do/policy-engagement/policy-firechat
+   374→- Updated ActivityDetailClient: Changed "View Fireside Chats" button link from /fireside-chats to /what-we-do/policy-engagement/policy-firechat
+   375→- Updated WhatWeDoPageClient: Changed "View Fireside Chats" button link from /fireside-chats to /what-we-do/policy-engagement/policy-firechat
+   376→- Updated not-found.tsx: Changed Fireside Chats href from /fireside-chats to /what-we-do/policy-engagement/policy-firechat
+   377→- Removed /src/app/fireside-chats/ directory (hardcoded standalone page)
+   378→- Removed /src/components/pages/FiresideChatsPageClient.tsx (979 lines of hardcoded content)
+   379→- Verified no remaining references to /fireside-chats in codebase
+   380→- Lint passes cleanly
+   381→- Browser verification: All 6 checks pass
+   382→  - "Firechat" nav item links to /what-we-do/policy-engagement/policy-firechat
+   383→  - Policy Firechat page loads with WordPress ACF content
+   384→  - /fireside-chats returns 404 (old page removed)
+   385→  - Footer links correctly updated
+   386→  - What We Do page links correctly updated
+   387→
+   388→Stage Summary:
+   389→- Removed all hardcoded fireside-chats content (was NOT from WordPress API)
+   390→- Firechat in nav now links to /what-we-do/policy-engagement/policy-firechat (WP-driven)
+   391→- 5 link references updated across: Navbar, Footer, ActivityDetailClient, WhatWeDoPageClient, not-found.tsx
+   392→- Old /fireside-chats route removed entirely (979 lines of hardcoded content deleted)
+   393→- All content now comes from WordPress API via ActivityDetailClient
+   394→
+   395→---
+   396→Task ID: 11
+   397→Agent: Main Agent
+   398→Task: Make all documents on firechat and output pages view-only (no download)
+   399→
+   400→Work Log:
+   401→- Created DocumentViewer component at src/components/features/DocumentViewer.tsx:
+   402→  - Full-screen modal with iframe-based document rendering
+   403→  - PDFs: rendered directly in browser iframe
+   404→  - PPTX/DOCX/XLSX: rendered via Google Docs Viewer (embedded, read-only)
+   405→  - Header bar with document title, file type badge, "Read Only" indicator
+   406→  - Footer: "View Only — Downloading is not available"
+   407→  - Loading state with spinner while document loads
+   408→  - Close button in header + "Close Viewer" button in footer
+   409→  - sandbox attribute on iframe for security
+   410→- Created ViewDocumentButton component (same file) as reusable trigger:
+   411→  - Two variants: full button (with "View DOCX" text) and icon-only (eye icon)
+   412→  - Opens DocumentViewer modal on click
+   413→  - Prevents event propagation (works inside clickable cards)
+   414→- Updated OutputsPageClient.tsx:
+   415→  - Replaced Download import with Eye import
+   416→  - Added ViewDocumentButton import
+   417→  - DownloadableCard: "Download PPTX" → "View PPTX" (ViewDocumentButton)
+   418→  - OutputCard: "Download" link → "View" (ViewDocumentButton, size="sm")
+   419→  - Empty state text: "No download available" → "No document available"
+   420→- Updated ActivityDetailClient.tsx:
+   421→  - Replaced Download import with Eye import
+   422→  - Added ViewDocumentButton import
+   423→  - Related Outputs section: Download icon button → Eye icon (ViewDocumentButton, iconOnly)
+   424→  - Description: "Downloadable files" → "Documents"
+   425→- Lint passes cleanly
+   426→- Browser verification: All checks pass
+   427→  - /outputs page: All 5 cards show "View DOCX/PPTX" buttons with eye icons
+   428→  - Clicking View opens read-only document viewer (Google Docs Viewer iframe)
+   429→  - Viewer shows "Read Only" and "View Only — Downloading is not available"
+   430→  - /what-we-do/policy-engagement/policy-firechat: Related Outputs use eye icon view buttons
+   431→  - No download buttons anywhere on these pages
+   432→
+   433→Stage Summary:
+   434→- Documents on firechat and output pages are now view-only (cannot be downloaded)
+   435→- DocumentViewer uses Google Docs Viewer for PPTX/DOCX, browser PDF viewer for PDFs
+   436→- Replaced all Download buttons with View buttons (eye icon)
+   437→- Both OutputsPageClient and ActivityDetailClient updated
+   438→- 3 new components: DocumentViewer, ViewDocumentButton (full + iconOnly variants)
+   439→
+   440→---
+   441→Task ID: 3
+   442→Agent: Main Agent
+   443→Task: Rename "Concept Notes" tab to "Knowledge Products" on Our Outputs page & Add team member lightbox modal on Home/About pages
+   444→
+   445→Work Log:
+   446→- Read OutputsPageClient.tsx and identified the "Concept Notes" tab (value: 'concept-note') and the separate "Knowledge Products" tab (value: 'knowledge-product')
+   447→- Removed 'concept-note' from tabDefs, keeping only 'knowledge-product' with label "Knowledge Products"
+   448→- Updated filteredOutputs logic to merge concept-note items into knowledge-product tab when that tab is selected
+   449→- Updated tabCounts to merge concept-note count into knowledge-product count
+   450→- Updated getOutputTypeLabel('concept-note') to return 'Knowledge Product'
+   451→- Updated getOutputTypeIcon('concept-note') to use BookOpen (matching knowledge-product)
+   452→- Updated getOutputTypeBadgeColor('concept-note') and getOutputTypeBgGradient('concept-note') to match knowledge-product styling
+   453→- Created /home/z/my-project/src/components/features/TeamMemberModal.tsx — lightbox-style popup with:
+   454→  - Framer Motion AnimatePresence animation (fade + scale)
+   455→  - Gradient header with decorative circles and category badge
+   456→  - Large avatar overlapping header/content
+   457→  - Full name, role, and complete bio (not truncated)
+   458→  - Close via X button, overlay click, or Escape key
+   459→  - Body scroll lock when modal is open
+   460→- Updated HomePageClient.tsx:
+   461→  - Added import for TeamMemberModal
+   462→  - Added useState for selectedMember
+   463→  - Added cursor-pointer and onClick handlers to all team cards (executive, directors, advisory board, trustees)
+   464→  - Added "View profile →" hint text that appears on hover
+   465→  - Added line-clamp to executive bio for consistency
+   466→  - Added TeamMemberModal component at end of JSX
+   467→- Updated AboutPageClient.tsx:
+   468→  - Added useState import and TeamMemberModal import
+   469→  - Added useState for selectedMember
+   470→  - Added cursor-pointer and onClick handlers to all team cards (executive, directors, advisory board, trustees)
+   471→  - Added "View profile →" hint text that appears on hover
+   472→  - Added TeamMemberModal component at end of JSX
+   473→- Ran lint — passed clean
+   474→- Verified via Agent Browser: Knowledge Products tab works with 5 items, modal opens/closes correctly on both Home and About pages
+   475→
+   476→Stage Summary:
+   477→- "Concept Notes" tab removed from Our Outputs page, items merged into "Knowledge Products"
+   478→- Team member lightbox modal created and integrated on both Home and About pages
+   479→- All team cards are now clickable with hover hints and open a beautiful modal showing full bio
+   480→
+   481→---
+   482→Task ID: 4
+   483→Agent: Main Agent
+   484→Task: Multiple homepage and site-wide updates - Philosophy, Activities, Partners/Blog removal, Fireside Chat, About page
+   485→
+   486→Work Log:
+   487→- Updated Our Philosophy section on home page to show Mission, Vision, Goal cards from WordPress ACF data (aboutMission, aboutVision, aboutGoal) with Target, Eye, TrendingUp icons
+   488→- Added ACTIVITY_ORDER constant to enforce consistent ordering: Policy Research → Policy Engagement → Citizen Enlightenment → Data Speaks → Youth Mentoring → Women's Economic Livelihood → Our Publication
+   489→- Added sortedActivities useMemo in HomePageClient and WhatWeDoPageClient
+   490→- Added "Our Publication" to Navbar (under What We Do dropdown), Footer focus areas, and fetcher icon mappings
+   491→- Added BookOpen icon mapping for 'our-publication' slug in fetchers.ts and activity icon maps
+   492→- Removed "Our Partners" section (Section 8) entirely from home page
+   493→- Removed "From Our Blog" section (Section 9) entirely from home page
+   494→- Updated hero section CTAs: Primary → "Join Fireside Chat" (with Flame icon, links to /what-we-do/policy-engagement/policy-firechat), Secondary → "Explore Our Work" (links to /what-we-do)
+   495→- Created new Fireside Chat section on home page with "Where Policy Meets Practice" heading, 3 feature highlights (Expert-Led Conversations, Actionable Insights, Inclusive Dialogue), gradient visual card, and CTA buttons
+   496→- Changed "Our Leadership" to "Our Team" on About page (badge and heading)
+   497→- Updated description text for the team section on About page
+   498→- All lint checks passed, Agent Browser verified all 7 changes
+   499→
+   500→Stage Summary:
+   501→- Philosophy section now shows Mission/Vision/Goal from ACF + additional WP philosophy items
+   502→- Activities are consistently ordered across Home, What We Do, Navbar, and Footer
+   503→- Partners and Blog sections removed from home page
+   504→- Fireside Chat section added with engaging visual design
+   505→- Hero CTAs now drive traffic to fireside chat page
+   506→- About page uses "Our Team" instead of "Our Leadership"
+   507→---
+   508→Task ID: 1
+   509→Agent: main
+   510→Task: Multiple site restructuring changes - About page, Policy Engagement tabs, Video gallery move, Header menu restructure
+   511→
+   512→Work Log:
+   513→- Removed "Our Direction" section from AboutPageClient.tsx (Vision, Mission, Goal cards)
+   514→- Merged Vision, Mission, Goal content into "Our Philosophy" section on About page
+   515→- Added id="philosophy" and id="team" anchor IDs to About page sections
+   516→- Re-arranged Navbar menu to: Home, About Us, Our Philosophy (/about#philosophy), Who We Are (/about#team), What We Do (dropdown), Fireside Chat, Our Output, Contact Us (button)
+   517→- Updated Footer quickLinks to match new menu structure
+   518→- Removed Blog and Our Partners from nav and footer
+   519→- Added event tabs (Overview | Events) to Policy Engagement page in ActivityDetailClient.tsx
+   520→- Events tab shows Fireside Chat as a recurring event card with link to firechat page
+   521→- Added video gallery to Policy Fireside Chat page (moved from Outputs page)
+   522→- Removed Video Gallery tab from OutputsPageClient.tsx
+   523→- Added VideoGallery and RelatedOutputs helper components to ActivityDetailClient.tsx
+   524→- Updated activity page.tsx to fetch and pass videos data to ActivityDetailClient
+   525→- Updated outputs/page.tsx to not fetch videos data anymore
+   526→
+   527→Stage Summary:
+   528→- About page: "Our Direction" section removed, Vision/Mission/Goal merged into "Our Philosophy" section
+   529→- About page: Added #philosophy and #team anchor IDs for nav linking
+   530→- Policy Engagement page: Now has Overview/Events tabs, Events shows fireside chat event card
+   531→- Policy Fireside Chat page: Now has video gallery with YouTube videos from WordPress ACF
+   532→- Outputs page: Video Gallery tab removed
+   533→- Navbar: New structure with Our Philosophy, Who We Are, Fireside Chat, Our Output
+   534→- Footer: Updated quick links to match new nav structure
+   535→- All lint checks pass, dev server running without errors
+   536→
+   537→---
+   538→Task ID: 2
+   539→Agent: Main Agent
+   540→Task: Fix viewable files on fireside chat and outputs pages + add carousel to home page + rename Firechat to Fireside Chat
+   541→
+   542→Work Log:
+   543→- Diagnosed why document files weren't showing: GraphQL query used `firechatDevelopmentConversationsWebsite` but WordPress ACF field is actually `whatIsFiresideChat`
+   544→- Fixed `GET_OUTPUT_DOWNLOADABLES` query in `src/graphql/queries.ts` with correct field name
+   545→- Updated `DOWNLOADABLE_FIELD_MAP` and `DownloadablesData` interface in `src/graphql/fetchers.ts`
+   546→- Verified fireside chat page now shows 4 related outputs with View buttons
+   547→- Verified outputs page now shows 5 documents in Knowledge Products tab
+   548→- Replaced static "Featured Outputs" section on home page with carousel slider showing all output files
+   549→- Added `OutputsCarousel` component with left/right arrow navigation, edge fade gradients, and mobile arrows
+   550→- Added `getOutputDownloadables()` to home page data fetching (`src/app/page.tsx`)
+   551→- Updated Outputs page: renamed "Firechat" badge to "Fireside Chat" and made it a clickable link to `/what-we-do/policy-engagement/policy-firechat`
+   552→- Updated "Related: Policy Firechat" text to "Related: Policy Fireside Chat"
+   553→- Added `.scrollbar-hide` CSS utility class for carousel
+   554→- All lint checks pass, dev server running without errors
+   555→
+   556→Stage Summary:
+   557→- Fireside chat page: Shows 4 related output documents (Development Conversations Website, Gender Backlash Architecture, Oluponna Gender Backlash Response, Policy Fireside Chat Outcomes & Next Steps)
+   558→- Outputs page: Shows 5 documents with clickable "Fireside Chat" badges linking to firechat page
+   559→- Home page: "Our Outputs" section replaced with horizontal carousel with arrow navigation showing all 5 output files
+   560→- Badge labels changed from "Firechat" to "Fireside Chat" everywhere
+   561→
+   562→---
+   563→Task ID: 3
+   564→Agent: Main Agent
+   565→Task: Restore viewable files - WordPress admin moved ACF field group from Post to Page type
+   566→
+   567→Work Log:
+   568→- Investigated why viewable files disappeared from fireside chat and outputs pages
+   569→- Checked WordPress GraphQL schema and found `ourOutputDownloadables` field was REMOVED from the `Post` type
+   570→- Verified the field is now on the `Page` type (ACF field group location rule was changed from "Post Type = Post" to "Post Type = Page")
+   571→- Confirmed the data still exists by querying the `/our-outputs/` page directly via GraphQL
+   572→- Updated `GET_OUTPUT_DOWNLOADABLES` query in `src/graphql/queries.ts`:
+   573→  - Changed from `posts(first: 1)` query to `page(id: "/our-outputs/", idType: URI)` query
+   574→  - Removed `$first` variable parameter (no longer needed for single page query)
+   575→- Updated `DownloadablesData` interface in `src/graphql/fetchers.ts`:
+   576→  - Changed shape from `{ posts: { nodes: [...] } }` to `{ page: { ... } }`
+   577→- Updated `getOutputDownloadables()` function:
+   578→  - Removed the `first: 1` parameter from fetchGraphQL call
+   579→  - Changed data access from `response.data.posts.nodes[0]` to `response.data.page`
+   580→  - Updated error checks accordingly
+   581→- Lint passes, dev server responding 200 on all routes
+   582→- Verified via Agent Browser: All 3 pages now show viewable files again
+   583→
+   584→Stage Summary:
+   585→- Root cause: WordPress admin changed the ACF "OurOutputDownloadables" field group location rule from Post type to Page type
+   586→- Fix: Updated GraphQL query to fetch from `page(id: "/our-outputs/")` instead of `posts(first: 1)`
+   587→- Fireside chat page: 4 related output documents restored with View buttons
+   588→- Outputs page: 5 documents restored in Knowledge Products tab
+   589→- Home page: 5 document cards in carousel section restored
+   590→
+   591→---
+   592→Task ID: 4
+   593→Agent: Main Agent
+   594→Task: Implement Follow the Money upcoming event under Fireside Chat with registration link and ACF files
+   595→
+   596→Work Log:
+   597→- Investigated WordPress GraphQL schema to find Follow the Money ACF field group
+   598→- Discovered new ACF type "FollowTheMoney" with 2 fields:
+   599→  - followTheMoneyBriefForRegistration (Concept-brief-for-registration.docx)
+   600→  - followTheMoneyFullConceptNote (Concept-Note-05-01-fin.docx)
+   601→- Field group is attached to the Post type (location rule: Post Type = Post)
+   602→- Verified both file URLs return 200 with valid content
+   603→- Added `FollowTheMoneyFiles` type to `src/types/index.ts`
+   604→- Added `GET_FOLLOW_THE_MONEY_FILES` GraphQL query to `src/graphql/queries.ts`
+   605→- Added `getFollowTheMoneyFiles()` fetcher function to `src/graphql/fetchers.ts`
+   606→- Updated `src/app/what-we-do/[...slug]/page.tsx` to fetch Follow the Money data in parallel
+   607→- Updated `ActivityDetailClient` component:
+   608→  - Added `followTheMoney` prop to interface
+   609→  - Added new `FollowTheMoneyEventSection` component with:
+   610→    - Event banner (gradient amber) with "Follow the Money" title
+   611→    - Event meta: July 25, 2026, Session 2, Under Policy Fireside Chat
+   612→    - "Registration Link: Follow the Money" caption
+   613→    - "Register Now" button linking to https://forms.gle/2KKU6bGEjewBQ7xDA with target="_blank"
+   614→    - Event Documents section with 2 file cards (Brief for Registration, Full Concept Note)
+   615→    - Each file card has a View button (read-only document viewer)
+   616→  - Added `EventFileCard` helper component
+   617→  - Inserted FollowTheMoneyEventSection into the policy-firechat page between intro content and videos
+   618→- Verified via Agent Browser: All 8 checks PASS
+   619→  - Event title "Follow the Money" present
+   620→  - Date "July 25, 2026" shown
+   621→  - "Registration Link: Follow the Money" caption present
+   622→  - Register Now button with correct href and target="_blank"
+   623→  - 2 file cards with correct titles
+   624→  - View buttons present on file cards
+   625→
+   626→Stage Summary:
+   627→- New ACF field group "FollowTheMoney" integrated (files come from WordPress only, no hardcoded file URLs)
+   628→- Event title, date, and registration link are configured per user spec (event metadata not in WordPress, so title/date/registration URL are hardcoded in component)
+   629→- Registration link opens in new tab (target="_blank" rel="noopener noreferrer")
+   630→- Event displays on Fireside Chat page as "Upcoming Fireside Chat Event"
+   631→- Both attached files (Brief for Registration + Full Concept Note) come from WordPress ACF
+   632→- All lint checks pass, dev server running without errors
+   633→
+   634→---
+   635→Task ID: 5
+   636→Agent: Main Agent
+   637→Task: Fix About Us page summary to come from WordPress page editor (page.content) instead of stale ACF aboutSummary field
+   638→
+   639→Work Log:
+   640→- User reported that the content displayed on the About Us page ("Africa's economic transformation...") was NOT coming from the WordPress ACF `about_content` / `about_summary` field as they expected
+   641→- Investigated by querying WordPress directly: discovered the About Us page (slug "about-us", URI "/") has TWO separate content sources:
+   642→  1. `page.content` (main WordPress block editor) — UPDATED content with wording like "problems" (not "terrain"), "locationally" (not "locational"), "mentally and physiologically" (not just "physiologically"), "tapping into" (not "digging into"), plus a 2nd paragraph "GTEEP works to meet these needs..."
+   643→  2. `aboutContent.aboutSummary` (ACF field) — STALE old content with "terrain", "locational", "physiologically", "digging into", single paragraph only
+   644→- Root cause: `getAboutPage()` in `src/graphql/fetchers.ts` was using `page.aboutContent.aboutSummary` (the stale ACF field) as the primary source. The site admin had updated the WordPress page editor (page.content) with newer wording but the website was still showing the old ACF content.
+   645→- Verified via Agent Browser before fix: website displayed OLD content matching the ACF aboutSummary exactly
+   646→- Added `htmlContentToParagraphs()` helper in `src/graphql/fetchers.ts` that:
+   647→  - Extracts text from `<p>...</p>` tags in the WordPress HTML content
+   648→  - Strips inner HTML tags and decodes common HTML entities (&nbsp;, &amp;, &quot;, &#8217;, &#8211;, etc.)
+   649→  - Joins paragraphs with "\n\n" so the existing rendering logic in AboutPageClient.tsx (which splits on "\n\n") keeps working unchanged
+   650→- Updated `getAboutPage()`:
+   651→  - PRIMARY source: `page.content` (WordPress page editor) → parsed via `htmlContentToParagraphs()`
+   652→  - FALLBACK 1: `page.aboutContent.aboutSummary` (ACF, for backwards compatibility)
+   653→  - FALLBACK 2: hardcoded defaults
+   654→  - Vision / Mission / Goal still come from the ACF `aboutContent` group (unchanged)
+   655→- Lint passes, dev server running without errors
+   656→- Verified via Agent Browser after fix: About Us page now displays the UPDATED WordPress page editor content (with "problems", "locationally", "mentally and physiologically", "tapping into", plus the 2nd paragraph "GTEEP works to meet these needs...")
+   657→- Verified Vision / Mission / Goal sections still render correctly from ACF
+   658→
+   659→Stage Summary:
+   660→- About Us page summary now sourced from the WordPress page editor (page.content) — the canonical source the site admin edits
+   661→- ACF `aboutContent.aboutSummary` kept as a fallback only (no longer the primary source)
+   662→- Edits made to the About Us page in WordPress will now reflect on the website immediately (300s ISR)
+   663→- HTML-to-paragraphs parser handles WordPress block editor output (<p class="wp-block-paragraph">...</p>) cleanly
+   664→- Vision, Mission, Goal unchanged (still from ACF `aboutContent` group)
+   665→
+   666→---
+   667→Task ID: 6
+   668→Agent: Main Agent
+   669→Task: Remove specified content from fireside chat and policy engagement pages
+   670→
+   671→Work Log:
+   672→- User requested removal of three pieces of content:
+   673→  1. Fireside chat page header: "What We Do" subtitle + "GTEEP's Policy Fireside chat programme — driving evidence-based policy change across Africa." description
+   674→  2. Policy engagement page Overview tab: "Content Coming Soon / Detailed information about our policy engagement programme is being developed. Check back soon for updates." fallback (shown because WP page content is null)
+   675→  3. Policy engagement page header: "What We Do" subtitle + "GTEEP's Policy Engagement programme — driving evidence-based policy change across Africa." description
+   676→- Located all three in `src/components/pages/ActivityDetailClient.tsx`
+   677→- Added `hideHeaderSubtitle` flag in the main component: true when `activity.slug` is `policy-engagement` OR `policy-firechat`
+   678→- Updated the `<PageHeader>` call to pass `subtitle={undefined}` and `description={undefined}` when `hideHeaderSubtitle` is true (PageHeader already conditionally renders these only when truthy)
+   679→- Removed the "Content Coming Soon" fallback block from the policy-engagement Overview tab; now renders `<WpContent>` only when `activity.content` is present, plus related outputs
+   680→- Other activity pages (policy-research, citizen-enlightenment, etc.) still show the "What We Do" subtitle + description as before (unchanged)
+   681→- Verified via Agent Browser:
+   682→  - Fireside chat page (`/what-we-do/policy-engagement/policy-firechat`): header now shows only breadcrumb + H1 "Policy Fireside chat"; no subtitle, no description. Follow the Money event, videos, and related outputs still render below.
+   683→  - Policy engagement page (`/what-we-do/policy-engagement`): header now shows only breadcrumb + H1 "Policy Engagement"; Overview tab shows Related Outputs only (no "Content Coming Soon"); Events tab still works and links to the fireside chat.
+   684→  - Confirmed via JS eval on both pages: "Content Coming Soon", "Detailed information about our policy engagement programme is being developed", "GTEEP's Policy Engagement programme", and "GTEEP's Policy Fireside chat programme" are ALL absent.
+   685→- Lint passes, dev server clean (all routes 200)
+   686→
+   687→Stage Summary:
+   688→- Fireside chat page: header subtitle "What We Do" and the "GTEEP's Policy Fireside chat programme — driving evidence-based policy change across Africa." description removed
+   689→- Policy engagement page: "Content Coming Soon / Detailed information..." fallback removed from Overview tab (now shows Related Outputs only when WP content is empty); header subtitle and description also removed
+   690→- Other activity detail pages are unchanged (still show the generic "What We Do" subtitle + description)
+   691→- Events tab on policy engagement page still functions correctly
+   692→
+   693→---
+   694→Task ID: 7
+   695→Agent: Main Agent
+   696→Task: Remove all non-WordPress content, update hero to WP about summary, simplify policy engagement page, create event accordion on fireside chat page
+   697→
+   698→Work Log:
+   699→- User directive: "any content that did not come from wordpress remove leave it blank don't write anything. all the sub headline in sections remove it."
+   700→- Specific asks:
+   701→  1. Hero section on home page → use about summary from WordPress ACF
+   702→  2. Policy engagement page → just list Policy Fireside Chat, remove Overview/Events tabs
+   703→  3. Fireside chat page → create event accordion (Gender Backlash, Follow the Money)
+   704→  4. Remove all non-WordPress content and sub-headlines
+   705→
+   706→HOME PAGE (HomePageClient.tsx):
+   707→- Hero section: Replaced truncated getHeroDescription() with full aboutData.aboutSummary (both paragraphs from WP, split on \n\n). Removed hardcoded badge "Economic Empowerment & Policy Research" and subtitle "Gilead Trust Economic Empowerment Project". Kept H1 "GTEEP" and CTA buttons (functional navigation).
+   708→- Section 2 (Our Activities): Removed Badge "What We Do" and description "Driving evidence-based policy change...". Removed hardcoded fallback "Learn more about our X programme." on activity cards (now blank if no WP description). Removed "Our activities are being updated. Check back soon!" empty-state text.
+   709→- Section 3 (Our Philosophy): Removed Badge "Our Philosophy" and description "The core principles...".
+   710→- Section 4 (Who We Are): Removed Badge "Our Team" and description "A dedicated team...".
+   711→- Section 5 (Advisory Board): Removed Badge "Advisory Board" and description "Distinguished experts...".
+   712→- Section 6 (Board of Trustees): Removed Badge "Board of Trustees" and description "Providing governance oversight...".
+   713→- Section 7 (Outputs Carousel): Removed Badge "Our Work" and description "Browse our research outputs...".
+   714→- Section 8 (Fireside Chat): Removed ALL hardcoded content (Badge "Fireside Chat", H2 "Where Policy Meets Practice", description, feature highlights with "Expert-Led Conversations"/"Actionable Insights"/"Inclusive Dialogue", visual card with "Policy Fireside Chat"/"Bridging evidence and action..."/"Live Dialogue"/"Expert Panels"/"Policy Impact"). Kept only the 2 CTA buttons (functional navigation to firechat page and outputs page).
+   715→- Section 9 (Stay Connected): Removed H2 "Stay Connected", description "Subscribe to our newsletter...", and "We respect your privacy. Unsubscribe at any time." Kept newsletter form and contact info (from WP settings).
+   716→- Removed unused imports: Sparkles, MessageCircle.
+   717→
+   718→POLICY ENGAGEMENT PAGE (ActivityDetailClient.tsx):
+   719→- Removed the entire Tabs structure (Overview/Events tabs).
+   720→- Replaced with a simple listing: WP content (if any) + sub-programme cards (Policy Fireside Chat) using child.title from WP + Related Outputs.
+   721→- Removed hardcoded "Policy Engagement Events" heading, "Our events bring together experts..." description, "Recurring Event" badge, "Development Conversations" subtitle, "Our Policy Fireside Chat brings together leading experts..." description, "More events will be added as they are scheduled." placeholder.
+   722→- The firechat card now shows only the WP-sourced title (child.title) and a "View {title}" navigation link.
+   723→
+   724→FIRESIDE CHAT PAGE (ActivityDetailClient.tsx):
+   725→- Created new EventAccordion component with two accordion items:
+   726→  1. "Gender Backlash" (collapsed by default) — contains:
+   727→     - VideoGallery (YouTube video from WP videoGallery ACF)
+   728→     - Gender-backlash-related output files (filtered by title keywords: gender/backlash/oluponna) from WP ACF ourOutputDownloadables
+   729→  2. "Follow the Money" (expanded by default) — contains:
+   730→     - "July 25, 2026" date badge (user-specified)
+   731→     - "Registration Link: Follow the Money" caption + "Register Now" button (links to https://forms.gle/2KKU6bGEjewBQ7xDA, target="_blank" rel="noopener noreferrer")
+   732→     - File cards from WP ACF followTheMoney fields (briefForRegistration, fullConceptNote) — titles derived from WP filenames via titleFromFilename() helper
+   733→- Removed ALL hardcoded content from the old FollowTheMoneyEventSection:
+   734→  - "Upcoming Fireside Chat Event" heading
+   735→  - "Our next policy conversation" sub-text
+   736→  - "Upcoming Event" badge
+   737→  - "Policy Fireside Chat — Development Conversations" subtitle
+   738→  - "Fireside Chat Session 2" meta
+   739→  - "Under Policy Fireside Chat" meta
+   740→  - "Building on the success of our first Fireside Chat..." description paragraph
+   741→  - "Register to attend the upcoming Fireside Chat event." sub-text
+   742→  - "Event Documents" heading
+   743→  - File card descriptions ("Short overview of the Follow the Money event...", "Complete concept note detailing the theme, scope, and objectives...")
+   744→- Removed separate "Fireside Chat Videos" section (videos now inside Gender Backlash accordion)
+   745→- Removed "Watch our recorded policy conversations" sub-text
+   746→- Removed "No videos available yet" / "Videos from our Fireside Chat sessions will appear here..." fallback
+   747→- Non-event-specific related outputs (Development Conversations Website, Policy Fireside Chat Outcomes & Next Steps) remain in RelatedOutputs section below the accordion
+   748→- Added titleFromFilename() helper to derive readable titles from WordPress file URLs (replaces hardcoded file titles)
+   749→- Updated EventFileCard to not require a description prop (descriptions were hardcoded, now removed)
+   750→
+   751→OTHER CLEANUP (ActivityDetailClient.tsx):
+   752→- RelatedOutputs: Removed "Documents related to this programme" sub-headline
+   753→- Default activity pages: Removed "Content Coming Soon" / "Detailed information about our X programme is being developed..." fallback
+   754→- Children Sub-Pages section: Removed "Sub-Programmes under {activity.title}" heading
+   755→- Child page cards: Removed hardcoded badge labels ("🔥 Firechat" / "Sub-Programme")
+   756→- VideoGallery: Removed hardcoded "Fireside Chat" badge on video thumbnails
+   757→- Sidebar: Removed "GTEEP Programme" badge, "Sub-Programmes" heading, "Explore" heading
+   758→- Removed unused imports: Tabs, TabsList, TabsTrigger, TabsContent, Plus, Clock, MapPin
+   759→
+   760→VERIFICATION (Agent Browser):
+   761→- Home page hero: Shows H1 "GTEEP" + full about summary (both paragraphs from WP) + CTA buttons. No badge, no subtitle. ✓
+   762→- Home page sections: All Badge sub-headlines and description paragraphs removed. Confirmed via JS eval. ✓
+   763→- Policy engagement page: No tabs, just lists "Policy Fireside chat" card with WP-sourced title + Related Outputs. ✓
+   764→- Fireside chat page: Event accordion with "Gender Backlash" (contains video + 2 gender backlash outputs from WP) and "Follow the Money" (contains registration link + 2 ACF files). ✓
+   765→- Register Now link: href=https://forms.gle/2KKU6bGEjewBQ7xDA, target=_blank, rel=noopener noreferrer ✓
+   766→- All old hardcoded content confirmed removed via JS eval (12 checks all "REMOVED"). ✓
+   767→- Lint passes, dev server clean (all routes 200).
+   768→
+   769→Stage Summary:
+   770→- Home page hero now shows the full WordPress about summary (both paragraphs) — no hardcoded badge or subtitle
+   771→- All section Badge sub-headlines and description paragraphs removed from home page
+   772→- Policy engagement page simplified: no tabs, just lists the Policy Fireside Chat sub-programme
+   773→- Fireside chat page now has an event accordion with Gender Backlash (past event: video + outputs from WP) and Follow the Money (upcoming event: registration link + ACF files from WP)
+   774→- All descriptive text content now comes from WordPress; only functional navigation labels (button text, link text) and user-specified event metadata (title, date, registration URL for Follow the Money) remain hardcoded
+   775→- File titles for Follow the Money ACF files are derived from the WordPress filenames (not hardcoded)
+   776→

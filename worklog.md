@@ -587,3 +587,311 @@ Stage Summary:
 - Fireside chat page: 4 related output documents restored with View buttons
 - Outputs page: 5 documents restored in Knowledge Products tab
 - Home page: 5 document cards in carousel section restored
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Implement Follow the Money upcoming event under Fireside Chat with registration link and ACF files
+
+Work Log:
+- Investigated WordPress GraphQL schema to find Follow the Money ACF field group
+- Discovered new ACF type "FollowTheMoney" with 2 fields:
+  - followTheMoneyBriefForRegistration (Concept-brief-for-registration.docx)
+  - followTheMoneyFullConceptNote (Concept-Note-05-01-fin.docx)
+- Field group is attached to the Post type (location rule: Post Type = Post)
+- Verified both file URLs return 200 with valid content
+- Added `FollowTheMoneyFiles` type to `src/types/index.ts`
+- Added `GET_FOLLOW_THE_MONEY_FILES` GraphQL query to `src/graphql/queries.ts`
+- Added `getFollowTheMoneyFiles()` fetcher function to `src/graphql/fetchers.ts`
+- Updated `src/app/what-we-do/[...slug]/page.tsx` to fetch Follow the Money data in parallel
+- Updated `ActivityDetailClient` component:
+  - Added `followTheMoney` prop to interface
+  - Added new `FollowTheMoneyEventSection` component with:
+    - Event banner (gradient amber) with "Follow the Money" title
+    - Event meta: July 25, 2026, Session 2, Under Policy Fireside Chat
+    - "Registration Link: Follow the Money" caption
+    - "Register Now" button linking to https://forms.gle/2KKU6bGEjewBQ7xDA with target="_blank"
+    - Event Documents section with 2 file cards (Brief for Registration, Full Concept Note)
+    - Each file card has a View button (read-only document viewer)
+  - Added `EventFileCard` helper component
+  - Inserted FollowTheMoneyEventSection into the policy-firechat page between intro content and videos
+- Verified via Agent Browser: All 8 checks PASS
+  - Event title "Follow the Money" present
+  - Date "July 25, 2026" shown
+  - "Registration Link: Follow the Money" caption present
+  - Register Now button with correct href and target="_blank"
+  - 2 file cards with correct titles
+  - View buttons present on file cards
+
+Stage Summary:
+- New ACF field group "FollowTheMoney" integrated (files come from WordPress only, no hardcoded file URLs)
+- Event title, date, and registration link are configured per user spec (event metadata not in WordPress, so title/date/registration URL are hardcoded in component)
+- Registration link opens in new tab (target="_blank" rel="noopener noreferrer")
+- Event displays on Fireside Chat page as "Upcoming Fireside Chat Event"
+- Both attached files (Brief for Registration + Full Concept Note) come from WordPress ACF
+- All lint checks pass, dev server running without errors
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Fix About Us page summary to come from WordPress page editor (page.content) instead of stale ACF aboutSummary field
+
+Work Log:
+- User reported that the content displayed on the About Us page ("Africa's economic transformation...") was NOT coming from the WordPress ACF `about_content` / `about_summary` field as they expected
+- Investigated by querying WordPress directly: discovered the About Us page (slug "about-us", URI "/") has TWO separate content sources:
+  1. `page.content` (main WordPress block editor) — UPDATED content with wording like "problems" (not "terrain"), "locationally" (not "locational"), "mentally and physiologically" (not just "physiologically"), "tapping into" (not "digging into"), plus a 2nd paragraph "GTEEP works to meet these needs..."
+  2. `aboutContent.aboutSummary` (ACF field) — STALE old content with "terrain", "locational", "physiologically", "digging into", single paragraph only
+- Root cause: `getAboutPage()` in `src/graphql/fetchers.ts` was using `page.aboutContent.aboutSummary` (the stale ACF field) as the primary source. The site admin had updated the WordPress page editor (page.content) with newer wording but the website was still showing the old ACF content.
+- Verified via Agent Browser before fix: website displayed OLD content matching the ACF aboutSummary exactly
+- Added `htmlContentToParagraphs()` helper in `src/graphql/fetchers.ts` that:
+  - Extracts text from `<p>...</p>` tags in the WordPress HTML content
+  - Strips inner HTML tags and decodes common HTML entities (&nbsp;, &amp;, &quot;, &#8217;, &#8211;, etc.)
+  - Joins paragraphs with "\n\n" so the existing rendering logic in AboutPageClient.tsx (which splits on "\n\n") keeps working unchanged
+- Updated `getAboutPage()`:
+  - PRIMARY source: `page.content` (WordPress page editor) → parsed via `htmlContentToParagraphs()`
+  - FALLBACK 1: `page.aboutContent.aboutSummary` (ACF, for backwards compatibility)
+  - FALLBACK 2: hardcoded defaults
+  - Vision / Mission / Goal still come from the ACF `aboutContent` group (unchanged)
+- Lint passes, dev server running without errors
+- Verified via Agent Browser after fix: About Us page now displays the UPDATED WordPress page editor content (with "problems", "locationally", "mentally and physiologically", "tapping into", plus the 2nd paragraph "GTEEP works to meet these needs...")
+- Verified Vision / Mission / Goal sections still render correctly from ACF
+
+Stage Summary:
+- About Us page summary now sourced from the WordPress page editor (page.content) — the canonical source the site admin edits
+- ACF `aboutContent.aboutSummary` kept as a fallback only (no longer the primary source)
+- Edits made to the About Us page in WordPress will now reflect on the website immediately (300s ISR)
+- HTML-to-paragraphs parser handles WordPress block editor output (<p class="wp-block-paragraph">...</p>) cleanly
+- Vision, Mission, Goal unchanged (still from ACF `aboutContent` group)
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Remove specified content from fireside chat and policy engagement pages
+
+Work Log:
+- User requested removal of three pieces of content:
+  1. Fireside chat page header: "What We Do" subtitle + "GTEEP's Policy Fireside chat programme — driving evidence-based policy change across Africa." description
+  2. Policy engagement page Overview tab: "Content Coming Soon / Detailed information about our policy engagement programme is being developed. Check back soon for updates." fallback (shown because WP page content is null)
+  3. Policy engagement page header: "What We Do" subtitle + "GTEEP's Policy Engagement programme — driving evidence-based policy change across Africa." description
+- Located all three in `src/components/pages/ActivityDetailClient.tsx`
+- Added `hideHeaderSubtitle` flag in the main component: true when `activity.slug` is `policy-engagement` OR `policy-firechat`
+- Updated the `<PageHeader>` call to pass `subtitle={undefined}` and `description={undefined}` when `hideHeaderSubtitle` is true (PageHeader already conditionally renders these only when truthy)
+- Removed the "Content Coming Soon" fallback block from the policy-engagement Overview tab; now renders `<WpContent>` only when `activity.content` is present, plus related outputs
+- Other activity pages (policy-research, citizen-enlightenment, etc.) still show the "What We Do" subtitle + description as before (unchanged)
+- Verified via Agent Browser:
+  - Fireside chat page (`/what-we-do/policy-engagement/policy-firechat`): header now shows only breadcrumb + H1 "Policy Fireside chat"; no subtitle, no description. Follow the Money event, videos, and related outputs still render below.
+  - Policy engagement page (`/what-we-do/policy-engagement`): header now shows only breadcrumb + H1 "Policy Engagement"; Overview tab shows Related Outputs only (no "Content Coming Soon"); Events tab still works and links to the fireside chat.
+  - Confirmed via JS eval on both pages: "Content Coming Soon", "Detailed information about our policy engagement programme is being developed", "GTEEP's Policy Engagement programme", and "GTEEP's Policy Fireside chat programme" are ALL absent.
+- Lint passes, dev server clean (all routes 200)
+
+Stage Summary:
+- Fireside chat page: header subtitle "What We Do" and the "GTEEP's Policy Fireside chat programme — driving evidence-based policy change across Africa." description removed
+- Policy engagement page: "Content Coming Soon / Detailed information..." fallback removed from Overview tab (now shows Related Outputs only when WP content is empty); header subtitle and description also removed
+- Other activity detail pages are unchanged (still show the generic "What We Do" subtitle + description)
+- Events tab on policy engagement page still functions correctly
+
+---
+Task ID: 7
+Agent: Main Agent
+Task: Remove all non-WordPress content, update hero to WP about summary, simplify policy engagement page, create event accordion on fireside chat page
+
+Work Log:
+- User directive: "any content that did not come from wordpress remove leave it blank don't write anything. all the sub headline in sections remove it."
+- Specific asks:
+  1. Hero section on home page → use about summary from WordPress ACF
+  2. Policy engagement page → just list Policy Fireside Chat, remove Overview/Events tabs
+  3. Fireside chat page → create event accordion (Gender Backlash, Follow the Money)
+  4. Remove all non-WordPress content and sub-headlines
+
+HOME PAGE (HomePageClient.tsx):
+- Hero section: Replaced truncated getHeroDescription() with full aboutData.aboutSummary (both paragraphs from WP, split on \n\n). Removed hardcoded badge "Economic Empowerment & Policy Research" and subtitle "Gilead Trust Economic Empowerment Project". Kept H1 "GTEEP" and CTA buttons (functional navigation).
+- Section 2 (Our Activities): Removed Badge "What We Do" and description "Driving evidence-based policy change...". Removed hardcoded fallback "Learn more about our X programme." on activity cards (now blank if no WP description). Removed "Our activities are being updated. Check back soon!" empty-state text.
+- Section 3 (Our Philosophy): Removed Badge "Our Philosophy" and description "The core principles...".
+- Section 4 (Who We Are): Removed Badge "Our Team" and description "A dedicated team...".
+- Section 5 (Advisory Board): Removed Badge "Advisory Board" and description "Distinguished experts...".
+- Section 6 (Board of Trustees): Removed Badge "Board of Trustees" and description "Providing governance oversight...".
+- Section 7 (Outputs Carousel): Removed Badge "Our Work" and description "Browse our research outputs...".
+- Section 8 (Fireside Chat): Removed ALL hardcoded content (Badge "Fireside Chat", H2 "Where Policy Meets Practice", description, feature highlights with "Expert-Led Conversations"/"Actionable Insights"/"Inclusive Dialogue", visual card with "Policy Fireside Chat"/"Bridging evidence and action..."/"Live Dialogue"/"Expert Panels"/"Policy Impact"). Kept only the 2 CTA buttons (functional navigation to firechat page and outputs page).
+- Section 9 (Stay Connected): Removed H2 "Stay Connected", description "Subscribe to our newsletter...", and "We respect your privacy. Unsubscribe at any time." Kept newsletter form and contact info (from WP settings).
+- Removed unused imports: Sparkles, MessageCircle.
+
+POLICY ENGAGEMENT PAGE (ActivityDetailClient.tsx):
+- Removed the entire Tabs structure (Overview/Events tabs).
+- Replaced with a simple listing: WP content (if any) + sub-programme cards (Policy Fireside Chat) using child.title from WP + Related Outputs.
+- Removed hardcoded "Policy Engagement Events" heading, "Our events bring together experts..." description, "Recurring Event" badge, "Development Conversations" subtitle, "Our Policy Fireside Chat brings together leading experts..." description, "More events will be added as they are scheduled." placeholder.
+- The firechat card now shows only the WP-sourced title (child.title) and a "View {title}" navigation link.
+
+FIRESIDE CHAT PAGE (ActivityDetailClient.tsx):
+- Created new EventAccordion component with two accordion items:
+  1. "Gender Backlash" (collapsed by default) — contains:
+     - VideoGallery (YouTube video from WP videoGallery ACF)
+     - Gender-backlash-related output files (filtered by title keywords: gender/backlash/oluponna) from WP ACF ourOutputDownloadables
+  2. "Follow the Money" (expanded by default) — contains:
+     - "July 25, 2026" date badge (user-specified)
+     - "Registration Link: Follow the Money" caption + "Register Now" button (links to https://forms.gle/2KKU6bGEjewBQ7xDA, target="_blank" rel="noopener noreferrer")
+     - File cards from WP ACF followTheMoney fields (briefForRegistration, fullConceptNote) — titles derived from WP filenames via titleFromFilename() helper
+- Removed ALL hardcoded content from the old FollowTheMoneyEventSection:
+  - "Upcoming Fireside Chat Event" heading
+  - "Our next policy conversation" sub-text
+  - "Upcoming Event" badge
+  - "Policy Fireside Chat — Development Conversations" subtitle
+  - "Fireside Chat Session 2" meta
+  - "Under Policy Fireside Chat" meta
+  - "Building on the success of our first Fireside Chat..." description paragraph
+  - "Register to attend the upcoming Fireside Chat event." sub-text
+  - "Event Documents" heading
+  - File card descriptions ("Short overview of the Follow the Money event...", "Complete concept note detailing the theme, scope, and objectives...")
+- Removed separate "Fireside Chat Videos" section (videos now inside Gender Backlash accordion)
+- Removed "Watch our recorded policy conversations" sub-text
+- Removed "No videos available yet" / "Videos from our Fireside Chat sessions will appear here..." fallback
+- Non-event-specific related outputs (Development Conversations Website, Policy Fireside Chat Outcomes & Next Steps) remain in RelatedOutputs section below the accordion
+- Added titleFromFilename() helper to derive readable titles from WordPress file URLs (replaces hardcoded file titles)
+- Updated EventFileCard to not require a description prop (descriptions were hardcoded, now removed)
+
+OTHER CLEANUP (ActivityDetailClient.tsx):
+- RelatedOutputs: Removed "Documents related to this programme" sub-headline
+- Default activity pages: Removed "Content Coming Soon" / "Detailed information about our X programme is being developed..." fallback
+- Children Sub-Pages section: Removed "Sub-Programmes under {activity.title}" heading
+- Child page cards: Removed hardcoded badge labels ("🔥 Firechat" / "Sub-Programme")
+- VideoGallery: Removed hardcoded "Fireside Chat" badge on video thumbnails
+- Sidebar: Removed "GTEEP Programme" badge, "Sub-Programmes" heading, "Explore" heading
+- Removed unused imports: Tabs, TabsList, TabsTrigger, TabsContent, Plus, Clock, MapPin
+
+VERIFICATION (Agent Browser):
+- Home page hero: Shows H1 "GTEEP" + full about summary (both paragraphs from WP) + CTA buttons. No badge, no subtitle. ✓
+- Home page sections: All Badge sub-headlines and description paragraphs removed. Confirmed via JS eval. ✓
+- Policy engagement page: No tabs, just lists "Policy Fireside chat" card with WP-sourced title + Related Outputs. ✓
+- Fireside chat page: Event accordion with "Gender Backlash" (contains video + 2 gender backlash outputs from WP) and "Follow the Money" (contains registration link + 2 ACF files). ✓
+- Register Now link: href=https://forms.gle/2KKU6bGEjewBQ7xDA, target=_blank, rel=noopener noreferrer ✓
+- All old hardcoded content confirmed removed via JS eval (12 checks all "REMOVED"). ✓
+- Lint passes, dev server clean (all routes 200).
+
+Stage Summary:
+- Home page hero now shows the full WordPress about summary (both paragraphs) — no hardcoded badge or subtitle
+- All section Badge sub-headlines and description paragraphs removed from home page
+- Policy engagement page simplified: no tabs, just lists the Policy Fireside Chat sub-programme
+- Fireside chat page now has an event accordion with Gender Backlash (past event: video + outputs from WP) and Follow the Money (upcoming event: registration link + ACF files from WP)
+- All descriptive text content now comes from WordPress; only functional navigation labels (button text, link text) and user-specified event metadata (title, date, registration URL for Follow the Money) remain hardcoded
+- File titles for Follow the Money ACF files are derived from the WordPress filenames (not hardcoded)
+
+---
+Task ID: 8
+Agent: About Us Cleanup Agent
+Task: Remove all non-WordPress content from About Us page
+
+Work Log:
+- Read worklog.md to understand the pattern established by Tasks 6 and 7 (removing non-WordPress content / sub-headlines / hardcoded marketing copy)
+- Read the full AboutPageClient.tsx (642 lines) and the PageHeader component to confirm subtitle/description are conditionally rendered only when truthy
+- Used MultiEdit to make 16 atomic edits to /home/z/my-project/src/components/pages/AboutPageClient.tsx:
+  1. Removed `import { Badge } from '@/components/ui/badge';` (Badge no longer used anywhere after removals)
+  2. PageHeader: changed `subtitle="Gilead Trust Economic Empowerment Project"` → `subtitle={undefined}` and `description="Evidence-driven policy analysis for socially inclusive development in Africa."` → `description={undefined}` (matching the pattern from Task 6)
+  3. About Section: removed `<Badge>About Us</Badge>` and `<h2>Gilead Trust Economic Empowerment Project</h2>`; kept the gradient divider, the `aboutDescription.split('\n\n')` WordPress paragraphs, and the two CTA buttons ("Our Activities" with ArrowRight, "Contact Us" with Mail) as functional navigation labels
+  4. About Section visual: removed the centered overlay text block (`<Handshake>` icon + "GTEEP" heading + "Gilead Trust Economic Empowerment Project" paragraph) but kept the Image, the gradient overlay, and the decorative blurred circles
+  5. Philosophy Section: removed `<Badge>Our Philosophy</Badge>`, `<h2>Our Philosophy</h2>`, and the description `<p>` "Our vision, mission, goal and the core principles..." (left the wrapping `<div className="text-center mb-16"></div>` empty)
+  6. Vision / Mission / Goal cards: removed the three `<h3>` headings ("Our Vision", "Our Mission", "Our Goal") while keeping the card containers, the Eye/Target/Crosshair icons, and the WordPress `{aboutVision}` / `{aboutMission}` / `{aboutGoal}` paragraphs
+  7. Leadership Section: removed `<Badge>Our Team</Badge>`, `<h2>Our Team</h2>`, and the description `<p>` "A dedicated team of researchers, policy analysts, and development practitioners..."
+  8. Executive Director card: removed the `<Badge>Executive Director</Badge>` element and the "Click to view full profile →" hover span; kept avatar, name (h3), role, bio, onClick handler
+  9. Directors card: removed the `<Badge variant="secondary">Director</Badge>` element and the "View full profile →" hover span; kept avatar, name (h3), role, bio, onClick
+  10. Advisory Board Section: removed `<Badge>Advisory Board</Badge>`, `<h2>Our Advisory Board</h2>`, the description `<p>` "Distinguished experts who provide strategic guidance and direction to our work.", and the "View profile →" hover span (used replace_all=true since the same span markup appears in both Advisory Board and Board of Trustees cards)
+  11. Board of Trustees Section: removed `<Badge>Board of Trustees</Badge>`, `<h2>Board of Trustees</h2>`, the description `<p>` "Providing governance oversight and strategic direction for GTEEP's mission.", and the "View profile →" hover span
+  12. CTA Section: removed the entire `<section aria-label="Call to Action">` block plus its preceding comment header ("CTA SECTION") — this contained the H2 "Get Involved with GTEEP", the "Whether you're a researcher..." paragraph, and the two CTA buttons (Contact Us, View Our Outputs). Left no replacement.
+- Import audit: confirmed Handshake is still used in the `getPhilosophyIcon` iconMap (lines 52 + 58 fallback), Eye/Target/Crosshair still used in the Vision/Mission/Goal card icons, ArrowRight still used in the "Our Activities" button, Mail still used in the "Contact Us" button. All other icon imports (Microscope, TrendingUp, UserCheck, Scale) remain valid via the iconMap. Only the Badge import was removed.
+- Ran `bun run lint` — passes with no errors and no warnings
+- Verified via Grep: zero remaining `<Badge` occurrences in the file; all retained icon imports are still referenced
+- File shrank from 642 lines to 482 lines
+
+Stage Summary:
+- About Us page now displays only WordPress-sourced content: aboutSummary (page editor content, split on \n\n), aboutVision / aboutMission / aboutGoal (ACF), philosophy items (ACF title + description + icon), team members (ACF name + role + bio + image + category)
+- All hardcoded sub-headlines (Badge labels, H2 section titles, descriptive paragraphs) removed from the About, Philosophy, Leadership, Advisory Board, and Board of Trustees sections
+- All hardcoded UI affordance text ("Click to view full profile →", "View full profile →", "View profile →") removed from member cards
+- The image overlay text block (Handshake icon + "GTEEP" + tagline) removed from the About section visual; Image + gradient overlay + decorative circles preserved
+- Entire CTA Section ("Get Involved with GTEEP") removed; no replacement content
+- PageHeader subtitle and description set to undefined (matching the Task 6 pattern); H1 "About Us" and breadcrumb kept
+- Functional elements preserved: section containers, id anchors (#philosophy, #team), AnimatedSection/motion.div animations, card grids, icon containers, TeamAvatar, TeamMemberModal, onClick handlers, the two About CTA buttons (functional navigation)
+- Badge import removed; all Lucide icon imports retained (each is still referenced either in the iconMap or in the About CTA buttons or the Vision/Mission/Goal card icons)
+- Lint passes with zero errors
+
+---
+Task ID: 9
+Agent: What We Do + Outputs Cleanup Agent
+Task: Remove all non-WordPress content from What We Do and Outputs pages
+
+Work Log:
+- Read worklog.md to understand prior cleanup patterns established in Task IDs 6 and 7 (PageHeader subtitle/description → undefined; remove hardcoded sub-headlines/Badges/descriptions/fallbacks; keep functional navigation and WP-sourced content; leave blank if no WP content)
+- Read WhatWeDoPageClient.tsx and OutputsPageClient.tsx in full to identify every hardcoded string vs. WP-sourced value
+- Verified eslint.config.mjs: @typescript-eslint/no-unused-vars and no-unused-vars are disabled, so unused imports do not fail lint (explains pre-existing unused Plus/Eye imports in OutputsPageClient.tsx)
+
+WhatWeDoPageClient.tsx edits:
+- PageHeader: removed subtitle="Our Activities" and description="Driving evidence-based policy change through research, engagement, and empowerment across Africa." (kept title="What We Do", breadcrumb, backgroundImage)
+- Activities Overview section: removed the entire <AnimatedSection> wrapper that contained the "Our Programme Areas" H2 and the "GTEEP operates across six interconnected programme areas..." description. Kept the quick-nav cards grid (each card shows WP-sourced activity.title + functional anchor link)
+- ActivitySection component:
+  - Removed the <Badge>Activity {index + 1}</Badge> chip above the activity title
+  - Replaced the fallback <p>"Content for this activity is being developed. Check back soon for detailed information about our {activity.title.toLowerCase()} work."</p> with `{activity.content ? <WpContent .../> : null}` (renders nothing when WP content is empty)
+  - Removed the "Sub-Programmes ({N})" outline Button (redundant with the Learn More button — both link to the same activity page)
+  - Removed the "Sub-Programmes under {activity.title}" <h3> heading above the children grid (kept the grid of WP-sourced child cards below)
+  - Removed the "View details" + ChevronRight affordance text inside each child card (kept the image, icon, WP-sourced child.title and content snippet)
+  - Kept the activity <h2>{activity.title}</h2> (WP-sourced) and the "Learn More" Button (functional nav)
+- PolicyFirechatSection component:
+  - Removed the hardcoded "Development Conversations • Under Policy Engagement" <p> subtitle
+  - Changed `{childPage?.title || 'Policy Firechat'}` to `{childPage?.title}` (no hardcoded fallback)
+  - Replaced the entire <details>/<summary> "Read more about Policy Firechats" block with a plain `<div><WpContent html={rest} /></div>` when `rest` exists (no hardcoded summary text)
+  - Kept the "View Fireside Chats" and "Learn More" Buttons (functional nav, button text acceptable per Task 7 precedent)
+- Removed the entire "Activities Coming Soon" fallback section (was shown when sortedActivities.length === 0 — contained hardcoded H2, description, FileSearch icon, "Learn About GTEEP" and "Contact Us" buttons). Page now renders nothing when there are no WP activities.
+- Removed the entire bottom CTA section ("Explore Our Work" H2, description, "View Our Outputs" and "Contact Us" buttons, decorative gradient blurs). No replacement content.
+- Cleaned up unused Lucide imports: removed Mail (was only in CTA + Coming Soon buttons) and ChevronRight (was only in removed summary + "View details" text). Verified FileSearch is still used in activityIcons fallback, BookOpen still used in activityIcons map, ArrowRight still used in "Learn More" buttons, Badge still used in "+N sub" quick-nav badge, Flame still used in PolicyFirechatSection and sub-programme cards.
+
+OutputsPageClient.tsx edits:
+- PageHeader: removed subtitle="Research & Knowledge Products" and description="Browse our comprehensive collection of research outputs, policy briefs, data resources, videos, and knowledge products." (kept title="Our Outputs", breadcrumb)
+- Empty-state fallback (shown when filteredOutputs.length === 0): removed the entire block — BarChart3 icon, "No outputs found" H3, "There are no outputs in this category yet. Check back soon." paragraph. Tab content now renders `null` when empty.
+- DownloadableCard: removed the entire `{output.relatedActivity && (<div className="mb-3">...</div>)}` block that contained the Flame icon + "Related: Policy Fireside Chat" hardcoded link text. The clickable Fireside Chat badge at the top of the card (with Flame icon) already provides the same visual indicator and is kept.
+- DownloadableCard: removed the `<span className="text-sm text-[#94a3b8]">No document available</span>` fallback. Now renders `null` when no downloadUrl (ViewDocumentButton only renders when downloadUrl exists).
+- OutputCard: removed the entire "Read More" <Button variant="link"> block (was the fallback when an output had no downloadUrl AND no externalUrl — a non-functional button that didn't link anywhere). Now renders `null` in that case.
+- OutputCard: kept the `<p>{output.excerpt}</p>` (WP-sourced — renders empty <p> if excerpt is undefined, which is fine per "if no content leave it blank")
+- Cleaned up unused imports: removed BarChart3 (was only in empty state) and ArrowRight (was only in Read More button) from lucide-react import list. Also removed the now-unused `import { Button } from '@/components/ui/button'` (no plain <Button> usage remains after Read More removal — only ViewDocumentButton is used, which is imported separately). Pre-existing unused Plus and Eye imports left untouched (they were unused before this task and ESLint config disables no-unused-vars).
+
+Verification:
+- Ran `bun run lint` — passes cleanly with exit code 0
+- Skipped Agent Browser verification per task instructions (main agent will verify)
+
+Stage Summary:
+- What We Do page: all hardcoded marketing copy removed — PageHeader subtitle/description, "Our Programme Areas" heading + description, "Activity N" badges, "Content coming soon" fallback, "Sub-Programmes (N)" button, "Sub-Programmes under X" headings, "View details" affordance text, "Development Conversations • Under Policy Engagement" subtitle, "Read more about Policy Firechats" summary, "Activities Coming Soon" fallback section, and the bottom CTA section. Page now shows only WP-sourced activity titles, content, sub-programme cards (WP titles + content snippets), the PolicyFirechatSection (WP intro + WP rest content), and functional "Learn More" / "View Fireside Chats" navigation buttons. If WP returns no activities, the page renders nothing below the header.
+- Outputs page: PageHeader subtitle/description removed; "No outputs found" empty state removed (renders blank when empty); "Related: Policy Fireside Chat" link text removed (kept the Fireside Chat badge with Flame icon as visual indicator); "No document available" fallback removed; fake "Read More" button removed. Page now shows only WP-sourced output titles, descriptions, excerpts, dates, tags, download/external links, and the Fireside Chat badge. If a tab has no outputs, it renders blank.
+- All WP-sourced content preserved (activity.title, activity.content, activity.image, activity.icon, child.title, child.content, child.image, child.slug, output.title, output.description, output.excerpt, output.date, output.downloadUrl, output.externalUrl, output.fileType, output.tags, output.relatedActivity, output.relatedSubActivity)
+- All functional structure preserved (sections, AnimatedSection animations, layout grids, icons, tabs, tab navigation, ViewDocumentButton modal trigger, anchor links, breadcrumb, backgroundImage)
+- Lint passes with zero errors; both files compile cleanly
+
+---
+Task ID: 10
+Agent: Contact Page Cleanup Agent
+Task: Remove all non-WordPress content from Contact page
+
+Work Log:
+- Read worklog.md to understand prior cleanup patterns (Tasks 6 & 7: removing non-WP content + sub-headlines from ActivityDetailClient, HomePageClient, etc.)
+- Read full ContactPageClient.tsx (758 lines) to map all hardcoded content vs WP-sourced content (contactDetails.email/phone/address)
+- Imports cleanup: removed `motion` (framer-motion), `Separator`, `Accordion`/`AccordionContent`/`AccordionItem`/`AccordionTrigger`, and Lucide icons `Clock`, `CheckCircle2`, `MessageSquare`, `Handshake`, `BookOpen`, `Users`, `Building2`, `HelpCircle` (all unused after section removals)
+- Removed `OFFICE_HOURS` constant (hardcoded string)
+- Kept `SUBJECT_OPTIONS` constant (functional form dropdown options, not marketing content)
+- Removed entire `FAQ_ITEMS` constant (hardcoded Q&A marketing copy)
+- Removed entire `getContactCards` function (4 cards with hardcoded titles/descriptions + derived emails not actually in WP)
+- Removed `containerVariants` and `itemVariants` animation constants (only used by removed contact cards motion.div)
+- Removed `isSuccess` state declaration and `setIsSuccess(true)` call in handleSubmit; removed `contactCards` derived variable
+- Updated `toast.success('Message sent!')` to remove hardcoded description "Thank you for reaching out..."
+- PageHeader: changed `subtitle` and `description` to `undefined` (kept "Contact Us" title + breadcrumb)
+- Removed entire "Quick Contact Options" section (4-card grid with motion.div + contactCards.map)
+- Removed entire success state block (CheckCircle2, "Message Sent Successfully!" heading, "Thank you for reaching out..." description, "A confirmation email..." sub-text, "Send Another Message" button). The form now always renders directly inside CardContent (no ternary).
+- Removed "Send a Message" h2 heading + "Fill out the form below..." description from form
+- Removed "Office Information" h3 heading from sidebar card
+- Removed hardcoded "Email", "Phone", "Address" field labels (icons provide visual context; WP-sourced values remain)
+- Removed Office Hours block (used removed OFFICE_HOURS constant)
+- Removed "GTEEP Headquarters" text from Map Card (kept Globe2 icon + WP-sourced address)
+- Removed entire Quick Response Notice card (hardcoded heading + marketing copy)
+- Removed entire FAQ section (badge, "Frequently Asked Questions" heading, description, Accordion, "Still have questions?" text)
+- Left toast.error calls unchanged (functional error feedback, not marketing content)
+- Left form field labels (Full Name, Email Address, Organization, Phone Number, Inquiry Type, Subject, Message), placeholders, validation messages, consent checkbox label, "Sending..." and "Send Message" button text, and character counter all unchanged (functional UI affordances)
+- Verified: `bun run lint` passes with zero errors. `bunx tsc --noEmit` reports zero errors in ContactPageClient.tsx (other files have pre-existing errors unrelated to this task)
+
+Stage Summary:
+- ContactPageClient.tsx reduced from 758 lines to 427 lines (~44% reduction)
+- All hardcoded marketing copy removed; only WP-sourced content (contactEmail, contactPhone, contactAddress from contactDetails ACF) + functional form structure remain
+- Page now consists of: PageHeader (title + breadcrumb only), Contact Form section (form fields, validation, submit handler, toast notifications), and a slim Contact Info sidebar (icon + WP value for each of email/phone/address) plus a Map Card showing the WP address
+- Lint and TypeScript checks pass for the modified file
